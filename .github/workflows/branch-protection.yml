@@ -1,0 +1,80 @@
+name: Branch Protection Status
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  protection-status:
+    name: Branch Protection Status Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check Pull Request Status
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { owner, repo } = context.repo;
+          const pull_number = context.issue.number;
+          
+          // Get PR details
+          const pr = await github.rest.pulls.get({
+            owner,
+            repo,
+            pull_number
+          });
+          
+          console.log(`Checking PR #${pull_number}: ${pr.data.title}`);
+          console.log(`From: ${pr.data.head.ref} -> ${pr.data.base.ref}`);
+          
+          // Check if PR is ready for review (not draft)
+          if (pr.data.draft) {
+            console.log('⚠️ PR is in draft mode - protection checks will run when ready for review');
+            return;
+          }
+          
+          // Get branch protection status
+          try {
+            const protection = await github.rest.repos.getBranchProtection({
+              owner,
+              repo,
+              branch: pr.data.base.ref
+            });
+            
+            console.log('✅ Branch protection is enabled for', pr.data.base.ref);
+            
+            // Check required status checks
+            const requiredChecks = protection.data.required_status_checks?.contexts || [];
+            console.log('Required status checks:', requiredChecks);
+            
+            if (requiredChecks.length === 0) {
+              console.log('⚠️ No required status checks configured');
+            }
+            
+          } catch (error) {
+            if (error.status === 404) {
+              console.log('⚠️ No branch protection rules found for', pr.data.base.ref);
+              console.log('Consider enabling branch protection for enhanced security');
+            } else {
+              console.error('Error checking branch protection:', error.message);
+            }
+          }
+
+    - name: Validate CI Requirements
+      run: |
+        echo "## Branch Protection Validation" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Required for Main Branch Merge:" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ All CI builds must pass (Ubuntu, macOS, Windows)" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ All 20 unit tests must pass" >> $GITHUB_STEP_SUMMARY  
+        echo "- ✅ Code quality checks must pass" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Security scan must complete" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Project structure validation must pass" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Recommended Branch Protection Settings:" >> $GITHUB_STEP_SUMMARY
+        echo "- Require pull request reviews before merging" >> $GITHUB_STEP_SUMMARY
+        echo "- Require status checks to pass before merging" >> $GITHUB_STEP_SUMMARY
+        echo "- Require branches to be up to date before merging" >> $GITHUB_STEP_SUMMARY
+        echo "- Require linear history" >> $GITHUB_STEP_SUMMARY
+        echo "- Include administrators in restrictions" >> $GITHUB_STEP_SUMMARY
