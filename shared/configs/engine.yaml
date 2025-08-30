@@ -1,0 +1,102 @@
+# Opera Engine Configuration
+engine:
+  name: "Opera Engine"
+  version: "1.0.0"
+  author: "Opera Chess Project"
+  
+  # Core engine settings
+  hash_size_mb: 256
+  threads: 1
+  
+  # Morphy style settings
+  morphy_style: true
+  
+# Paul Morphy playing style configuration
+morphy_settings:
+  # Evaluation weights (multipliers)
+  development_weight: 1.2      # Bonus for piece development
+  initiative_weight: 1.1       # Bonus for maintaining initiative
+  king_hunt_weight: 1.5        # Bonus for king attack opportunities
+  sacrifice_threshold: 100     # Centipawn threshold for sacrifices
+  
+  # Search modifications
+  tactical_depth_extension: 2  # Extra depth for tactical positions
+  sacrifice_search_extension: 3 # Extra depth for sacrifice analysis
+  
+  # Opening preferences
+  rapid_development: true      # Prioritize quick piece development
+  center_control: true         # Value central squares highly
+  king_safety_aggressive: true # Aggressive approach to king safety
+
+# Search configuration
+search:
+  # Time management
+  move_time_ms: 1000          # Default time per move
+  max_depth: 64               # Maximum search depth
+  
+  # Algorithm parameters
+  aspiration_window: 50       # Initial aspiration window size
+  null_move_reduction: 2      # Null move pruning reduction
+  late_move_reduction: 1      # Late move reduction depth
+  
+  # Transposition table
+  tt_size_mb: 256            # Transposition table size
+  tt_replacement_strategy: "depth_preferred"
+
+# Evaluation settings
+evaluation:
+  # Material values (centipawns)
+  piece_values:
+    pawn: 100
+    knight: 320
+    bishop: 330
+    rook: 500
+    queen: 900
+    king: 20000
+  
+  # Positional factors
+  mobility_weight: 0.1
+  pawn_structure_weight: 0.2
+  king_safety_weight: 0.3
+  
+# UCI options
+uci:
+  # Standard options
+  hash: 256
+  threads: 1
+  ponder: false
+  
+  # Custom options
+  morphy_style: true
+  development_bonus: 20
+  sacrifice_aggression: 50
+
+# Logging and debugging  
+debug:
+  log_level: "info"           # debug, info, warn, error
+  log_file: "opera_engine.log"
+  search_debug: false         # Enable search debugging
+  eval_debug: false          # Enable evaluation debugging
+  perft_verification: true   # Verify move generation with perft
+  
+# Performance tuning
+performance:
+  # Threading
+  lazy_smp: true             # Use lazy SMP for multi-threading
+  numa_aware: false          # NUMA-aware memory allocation
+  
+  # Memory
+  large_pages: false         # Use large pages if available
+  prefetch: true            # Enable memory prefetching
+  
+# Opening book configuration
+opening_book:
+  enabled: true
+  book_file: "shared/data/morphy_openings.bin"
+  max_book_ply: 20
+  
+# Endgame tablebase
+tablebase:
+  enabled: false
+  syzygy_path: ""
+  max_pieces: 6
