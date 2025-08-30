@@ -22,15 +22,7 @@ include_directories(include)
 set(CORE_SOURCES
     src/board/Board.cpp
     src/board/MoveGenerator.cpp
-    src/board/MagicBitboards.cpp
-    src/board/Zobrist.cpp
-    src/search/Search.cpp
-    src/search/TranspositionTable.cpp
-    src/evaluation/Evaluator.cpp
-    src/evaluation/MorphyEvaluator.cpp
-    src/uci/UCIInterface.cpp
-    src/utils/Logger.cpp
-    src/utils/Config.cpp
+    src/utils/Types.cpp
 )
 
 add_library(opera_core STATIC ${CORE_SOURCES})
@@ -38,6 +30,16 @@ add_library(opera_core STATIC ${CORE_SOURCES})
 # Main executable
 add_executable(opera-engine src/main.cpp)
 target_link_libraries(opera-engine opera_core)
+
+# Debug executables
+add_executable(debug_test src/debug_test.cpp)
+target_link_libraries(debug_test opera_core)
+
+add_executable(debug_promotion src/debug_promotion.cpp)
+target_link_libraries(debug_promotion opera_core)
+
+add_executable(square_debug src/square_debug.cpp)
+target_link_libraries(square_debug opera_core)
 
 # Optional: Find and link pybind11 for Python bindings
 find_package(pybind11 QUIET)

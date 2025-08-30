@@ -278,14 +278,16 @@ class MorphySearch : public Search {
 9. **Training Pipeline**: Neural network training infrastructure
 10. **Style Refinement**: Iterative improvement of Morphy characteristics
 
+Always update your progress and decisions inside .claude/PROGRESS.md
+
 ---
 
 ## Development Philosophy
 
 This project prioritizes **elegant code architecture** and **distinctive playing style** over pure engine strength. Every component should be:
 - **Well-tested**: Comprehensive unit and integration tests
-- **Clearly documented**: Self-explanatory code with good comments
-- **Performance-conscious**: Efficient but not at the cost of clarity
+- **Clearly documented**: Self-explanatory code with good comments. Comment the WHY. NOT the what - unless it is absolutely necessary for human readability
+- **Performance-conscious**: Maximum efficiency - as optimized as possible. ALWAYS consider if operations or entire systems could be optimized more, both at the bit and architectural level.
 - **Modular**: Easy to extend and modify
 - **Style-consistent**: Reflects the Morphy aesthetic in both code and play
 
