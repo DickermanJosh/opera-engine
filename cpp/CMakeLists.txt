@@ -44,6 +44,9 @@ target_link_libraries(square_debug opera_core)
 add_executable(debug_pawn debug_pawn.cpp)
 target_link_libraries(debug_pawn opera_core)
 
+add_executable(debug_endgame debug_endgame.cpp)
+target_link_libraries(debug_endgame opera_core)
+
 # Optional: Find and link pybind11 for Python bindings
 find_package(pybind11 QUIET)
 if(pybind11_FOUND)

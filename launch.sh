@@ -15,6 +15,7 @@ NC='\033[0m' # No Color
 # Default values
 BUILD_TYPE="Release"
 RUN_TESTS=false
+RUN_PERFORMANCE_TESTS=false
 BUILD_FIRST=false
 SHOW_HELP=false
 DEBUG_MODE=false
@@ -24,6 +25,10 @@ for arg in "$@"; do
     case $arg in
         --test)
             RUN_TESTS=true
+            shift
+            ;;
+        --performance)
+            RUN_PERFORMANCE_TESTS=true
             shift
             ;;
         --build)
@@ -53,16 +58,18 @@ if [ "$SHOW_HELP" = true ]; then
     echo "Usage: ./launch.sh [options]"
     echo ""
     echo "Options:"
-    echo "  --test      Run test suite instead of normal application"
-    echo "  --build     Force rebuild before running"
-    echo "  --debug     Build and run in debug mode"
-    echo "  --help, -h  Show this help message"
+    echo "  --test          Run test suite instead of normal application"
+    echo "  --performance   Run comprehensive performance test suite"
+    echo "  --build         Force rebuild before running"
+    echo "  --debug         Build and run in debug mode"
+    echo "  --help, -h      Show this help message"
     echo ""
     echo "Examples:"
-    echo "  ./launch.sh              # Run normal application"
-    echo "  ./launch.sh --test       # Run test suite"
-    echo "  ./launch.sh --build --test  # Rebuild and run tests"
-    echo "  ./launch.sh --debug      # Run in debug mode"
+    echo "  ./launch.sh                    # Run normal application"
+    echo "  ./launch.sh --test             # Run test suite"
+    echo "  ./launch.sh --performance      # Run performance tests"
+    echo "  ./launch.sh --build --test     # Rebuild and run tests"
+    echo "  ./launch.sh --debug            # Run in debug mode"
     exit 0
 fi
 
@@ -82,11 +89,11 @@ fi
 cd build
 
 # Build if requested or if executables don't exist
-if [ "$BUILD_FIRST" = true ] || [ ! -f "opera-engine" ] || ([ "$RUN_TESTS" = true ] && [ ! -f "tests/opera_tests" ]); then
+if [ "$BUILD_FIRST" = true ] || [ ! -f "opera-engine" ] || ([ "$RUN_TESTS" = true ] && [ ! -f "tests/opera_tests" ]) || ([ "$RUN_PERFORMANCE_TESTS" = true ] && [ ! -f "tests/opera_tests" ]); then
     echo -e "${YELLOW}Building Opera Engine ($BUILD_TYPE mode)...${NC}"
     
     # Configure with CMake
-    if [ "$RUN_TESTS" = true ]; then
+    if [ "$RUN_TESTS" = true ] || [ "$RUN_PERFORMANCE_TESTS" = true ]; then
         cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTS=ON
     else
         cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTS=OFF
@@ -105,7 +112,38 @@ if [ "$BUILD_FIRST" = true ] || [ ! -f "opera-engine" ] || ([ "$RUN_TESTS" = tru
 fi
 
 # Run based on mode
-if [ "$RUN_TESTS" = true ]; then
+if [ "$RUN_PERFORMANCE_TESTS" = true ]; then
+    echo -e "${BLUE}🚀 Running Performance Test Suite...${NC}"
+    echo "=================================="
+    
+    if [ -f "tests/opera_tests" ]; then
+        # Check if performance test script exists
+        if [ -f "../cpp/run_performance_tests.sh" ]; then
+            echo -e "${YELLOW}Using dedicated performance test runner...${NC}"
+            cd ../cpp
+            chmod +x run_performance_tests.sh
+            ./run_performance_tests.sh
+            PERF_RESULT=$?
+            cd build
+        else
+            echo -e "${YELLOW}Running performance tests directly...${NC}"
+            # Run performance-specific test filters
+            ./tests/opera_tests --gtest_filter="PerformanceTest.*:BoardPerformanceTest.*" --gtest_color=yes
+            PERF_RESULT=$?
+        fi
+        
+        echo ""
+        if [ $PERF_RESULT -eq 0 ]; then
+            echo -e "${GREEN}🎉 All performance tests passed successfully!${NC}"
+        else
+            echo -e "${RED}💥 Some performance tests failed. Exit code: $PERF_RESULT${NC}"
+            exit $PERF_RESULT
+        fi
+    else
+        echo -e "${RED}❌ Test executable not found! Try running with --build flag.${NC}"
+        exit 1
+    fi
+elif [ "$RUN_TESTS" = true ]; then
     echo -e "${BLUE}🧪 Running Test Suite...${NC}"
     echo "========================"
     

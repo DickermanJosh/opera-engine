@@ -12,6 +12,9 @@ set(TEST_SOURCES
     BoardTest.cpp
     MoveGenTest.cpp
     PawnMoveTest.cpp
+    PerformanceTest.cpp
+    BoardPerformanceTest.cpp
+    MemoryAuditTest.cpp
 )
 
 # Create test executable
