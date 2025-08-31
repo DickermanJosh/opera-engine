@@ -11,6 +11,7 @@ include_directories(../include)
 set(TEST_SOURCES
     BoardTest.cpp
     MoveGenTest.cpp
+    PawnMoveTest.cpp
 )
 
 # Create test executable

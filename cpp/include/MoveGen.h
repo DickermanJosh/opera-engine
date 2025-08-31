@@ -320,4 +320,10 @@ using MoveGenList64 = MoveGenList<64>;
 using MoveGenList128 = MoveGenList<128>;
 using MoveGenList256 = MoveGenList<256>;
 
+// Forward declarations for move generation functions
+class Board;
+
+// Pawn move generation functions
+void generatePawnMoves(const Board& board, MoveGenList<>& moves, Color color);
+
 } // namespace opera
