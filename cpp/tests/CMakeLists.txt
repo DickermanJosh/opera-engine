@@ -10,6 +10,7 @@ include_directories(../include)
 # Test sources
 set(TEST_SOURCES
     BoardTest.cpp
+    MoveGenTest.cpp
 )
 
 # Create test executable
