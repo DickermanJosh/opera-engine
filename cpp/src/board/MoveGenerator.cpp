@@ -92,4 +92,69 @@ void generatePawnMoves(const Board& board, MoveGenList<>& moves, Color color) {
     }
 }
 
+void generateKnightMoves(const Board& board, MoveGenList<>& moves, Color color) {
+    const Bitboard knights = board.getPieceBitboard(color, KNIGHT);
+    
+    // Knight move offsets: L-shaped moves (2+1 or 1+2 squares)
+    const int knightOffsets[8] = {
+        -17,  // 2 up, 1 left    (north-north-west)
+        -15,  // 2 up, 1 right   (north-north-east)
+        -10,  // 1 up, 2 left    (north-west-west)
+         -6,  // 1 up, 2 right   (north-east-east)
+          6,  // 1 down, 2 right (south-east-east)
+         10,  // 1 down, 2 left  (south-west-west)
+         15,  // 2 down, 1 left  (south-south-west)
+         17   // 2 down, 1 right (south-south-east)
+    };
+    
+    // Iterate through all knights of the given color
+    Bitboard knightsCopy = knights;
+    while (knightsCopy) {
+        const Square fromSquare = static_cast<Square>(__builtin_ctzll(knightsCopy));
+        knightsCopy &= knightsCopy - 1; // Clear the least significant bit
+        
+        const File fromFile = fileOf(fromSquare);
+        const Rank fromRank = rankOf(fromSquare);
+        
+        // Try all 8 knight moves
+        for (int i = 0; i < 8; ++i) {
+            const int toSquareInt = static_cast<int>(fromSquare) + knightOffsets[i];
+            
+            // Check if destination is within board bounds
+            if (toSquareInt < static_cast<int>(A1) || toSquareInt > static_cast<int>(H8)) {
+                continue;
+            }
+            
+            const Square toSquare = static_cast<Square>(toSquareInt);
+            const File toFile = fileOf(toSquare);
+            const Rank toRank = rankOf(toSquare);
+            
+            // Verify the move is actually L-shaped (prevent wrapping around board)
+            const int fileDiff = abs(toFile - fromFile);
+            const int rankDiff = abs(toRank - fromRank);
+            
+            if (!((fileDiff == 2 && rankDiff == 1) || (fileDiff == 1 && rankDiff == 2))) {
+                continue; // Not a valid L-shaped move (board wrap-around)
+            }
+            
+            // Check what piece (if any) is on the destination square
+            const Piece targetPiece = board.getPiece(toSquare);
+            
+            // Can't move to square occupied by own piece
+            if (targetPiece != NO_PIECE && colorOf(targetPiece) == color) {
+                continue; // Blocked by own piece
+            }
+            
+            // Check if it's a capture
+            if (targetPiece != NO_PIECE) {
+                // It's a capture (must be enemy piece since we filtered out own pieces above)
+                moves.add(MoveGen(fromSquare, toSquare, MoveGen::MoveType::NORMAL, NO_PIECE, targetPiece));
+            } else {
+                // It's a quiet move
+                moves.add(MoveGen(fromSquare, toSquare, MoveGen::MoveType::NORMAL));
+            }
+        }
+    }
+}
+
 } // namespace opera

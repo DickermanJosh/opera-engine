@@ -326,4 +326,7 @@ class Board;
 // Pawn move generation functions
 void generatePawnMoves(const Board& board, MoveGenList<>& moves, Color color);
 
+// Knight move generation functions
+void generateKnightMoves(const Board& board, MoveGenList<>& moves, Color color);
+
 } // namespace opera

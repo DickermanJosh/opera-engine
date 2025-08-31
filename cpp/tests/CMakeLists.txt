@@ -12,6 +12,7 @@ set(TEST_SOURCES
     BoardTest.cpp
     MoveGenTest.cpp
     PawnMoveTest.cpp
+    KnightMoveTest.cpp
     PerformanceTest.cpp
     BoardPerformanceTest.cpp
     MemoryAuditTest.cpp
