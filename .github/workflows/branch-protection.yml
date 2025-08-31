@@ -9,6 +9,9 @@ jobs:
   protection-status:
     name: Branch Protection Status Check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     
     steps:
     - name: Check Pull Request Status
