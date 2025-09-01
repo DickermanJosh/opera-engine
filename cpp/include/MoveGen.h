@@ -334,4 +334,10 @@ void generateBishopMoves(const Board& board, MoveGenList<>& moves, Color color);
 void generateRookMoves(const Board& board, MoveGenList<>& moves, Color color);
 void generateQueenMoves(const Board& board, MoveGenList<>& moves, Color color);
 
+// King move generation functions
+void generateKingMoves(const Board& board, MoveGenList<>& moves, Color color);
+
+// Helper function for castling move generation (internal use)
+void generateCastlingMoves(const Board& board, MoveGenList<>& moves, Color color, Square kingSquare);
+
 } // namespace opera

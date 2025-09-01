@@ -274,4 +274,113 @@ void generateQueenMoves(const Board& board, MoveGenList<>& moves, Color color) {
     }
 }
 
+void generateKingMoves(const Board& board, MoveGenList<>& moves, Color color) {
+    const Bitboard kings = board.getPieceBitboard(color, KING);
+    
+    // King move offsets: all 8 adjacent squares
+    const int kingOffsets[8] = {
+        -9,  // Southwest (1 left, 1 down)
+        -8,  // South (straight down)
+        -7,  // Southeast (1 right, 1 down)
+        -1,  // West (1 left)
+         1,  // East (1 right)
+         7,  // Northwest (1 left, 1 up)
+         8,  // North (straight up)
+         9   // Northeast (1 right, 1 up)
+    };
+    
+    // Iterate through all kings of the given color (should be only one)
+    Bitboard kingsCopy = kings;
+    while (kingsCopy) {
+        const Square fromSquare = static_cast<Square>(__builtin_ctzll(kingsCopy));
+        kingsCopy &= kingsCopy - 1; // Clear the least significant bit
+        
+        const File fromFile = fileOf(fromSquare);
+        const Rank fromRank = rankOf(fromSquare);
+        
+        // Try all 8 king moves
+        for (int i = 0; i < 8; ++i) {
+            const int toSquareInt = static_cast<int>(fromSquare) + kingOffsets[i];
+            
+            // Check if destination is within board bounds
+            if (toSquareInt < static_cast<int>(A1) || toSquareInt > static_cast<int>(H8)) {
+                continue;
+            }
+            
+            const Square toSquare = static_cast<Square>(toSquareInt);
+            const File toFile = fileOf(toSquare);
+            const Rank toRank = rankOf(toSquare);
+            
+            // Verify the move is actually adjacent (prevent wrapping around board)
+            const int fileDiff = abs(toFile - fromFile);
+            const int rankDiff = abs(toRank - fromRank);
+            
+            if (fileDiff > 1 || rankDiff > 1) {
+                continue; // Board wrap-around, not a valid king move
+            }
+            
+            // Check what piece (if any) is on the destination square
+            const Piece targetPiece = board.getPiece(toSquare);
+            
+            // Can't move to square occupied by own piece
+            if (targetPiece != NO_PIECE && colorOf(targetPiece) == color) {
+                continue; // Blocked by own piece
+            }
+            
+            // Check if it's a capture or quiet move
+            if (targetPiece != NO_PIECE) {
+                // It's a capture (enemy piece)
+                moves.add(MoveGen(fromSquare, toSquare, MoveGen::MoveType::NORMAL, NO_PIECE, targetPiece));
+            } else {
+                // It's a quiet move
+                moves.add(MoveGen(fromSquare, toSquare, MoveGen::MoveType::NORMAL));
+            }
+        }
+        
+        // Check for castling moves
+        generateCastlingMoves(board, moves, color, fromSquare);
+    }
+}
+
+void generateCastlingMoves(const Board& board, MoveGenList<>& moves, Color color, Square kingSquare) {
+    // Determine expected king and rook positions for castling
+    const Rank homeRank = (color == WHITE) ? 0 : 7;
+    const Square expectedKingSquare = static_cast<Square>(homeRank * 8 + 4); // e1 or e8
+    
+    // Only generate castling moves if king is on its starting square
+    if (kingSquare != expectedKingSquare) {
+        return;
+    }
+    
+    // Check kingside castling
+    if (board.canCastleKingside(color)) {
+        const Square kingTargetSquare = static_cast<Square>(homeRank * 8 + 6);   // g1 or g8
+        const Square f_square = static_cast<Square>(homeRank * 8 + 5);           // f1 or f8
+        
+        // Check if path is clear (f and g squares must be empty)
+        if (board.getPiece(f_square) == NO_PIECE && 
+            board.getPiece(kingTargetSquare) == NO_PIECE) {
+            
+            // Add kingside castling move
+            moves.add(MoveGen(kingSquare, kingTargetSquare, MoveGen::MoveType::CASTLING));
+        }
+    }
+    
+    // Check queenside castling
+    if (board.canCastleQueenside(color)) {
+        const Square kingTargetSquare = static_cast<Square>(homeRank * 8 + 2);    // c1 or c8
+        const Square d_square = static_cast<Square>(homeRank * 8 + 3);            // d1 or d8
+        const Square b_square = static_cast<Square>(homeRank * 8 + 1);            // b1 or b8
+        
+        // Check if path is clear (b, c, and d squares must be empty)
+        if (board.getPiece(b_square) == NO_PIECE && 
+            board.getPiece(kingTargetSquare) == NO_PIECE && 
+            board.getPiece(d_square) == NO_PIECE) {
+            
+            // Add queenside castling move
+            moves.add(MoveGen(kingSquare, kingTargetSquare, MoveGen::MoveType::CASTLING));
+        }
+    }
+}
+
 } // namespace opera
