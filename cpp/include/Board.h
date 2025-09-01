@@ -7,6 +7,9 @@
 
 namespace opera {
 
+// Forward declarations
+class MoveGen;
+
 class Board {
 private:
     // Bitboard representation - 12 bitboards for each piece type/color combination
@@ -105,13 +108,18 @@ public:
     int getPieceCount(Color color, PieceType pieceType) const;
     int getTotalPieceCount(Color color) const;
     
-    // Move operations
-    void makeMove(const Move& move);
+    // Move operations (primary MoveGen system)
+    bool makeMove(const MoveGen& move);  // Returns true if move is legal  
+    void unmakeMove(const MoveGen& move);
+    
+    // Temporary compatibility for existing tests (deprecated)
+    bool makeMove(const Move& move);
     void unmakeMove(const Move& move);
     
-    // Move validation
-    bool isLegalMove(const Move& move) const;
-    bool isPseudoLegalMove(const Move& move) const;
+    // Move validation  
+    bool isLegalMove(const MoveGen& move, Color color) const;
+    bool isPseudoLegalMove(const MoveGen& move) const;
+    bool wouldBeInCheck(const MoveGen& move, Color color) const;
     
     // Castling legality
     bool canCastle(Color color, bool kingside) const;
@@ -119,9 +127,9 @@ public:
     bool canCastleQueenside(Color color) const;
     
     // Special move detection
-    bool isEnPassantCapture(const Move& move) const;
-    bool isCastlingMove(const Move& move) const;
-    bool isPromotionMove(const Move& move) const;
+    bool isEnPassantCapture(const MoveGen& move) const;
+    bool isCastlingMove(const MoveGen& move) const;
+    bool isPromotionMove(const MoveGen& move) const;
     
     // Position evaluation helpers
     bool hasNonPawnMaterial(Color color) const;
@@ -131,6 +139,16 @@ public:
     // Position properties
     bool isDrawByMaterial() const;
     bool isDrawByFiftyMoveRule() const;
+    
+    // Complete chess rules implementation
+    bool isCheckmate(Color color) const;
+    bool isStalemate(Color color) const;
+    bool isDraw() const;
+    bool isInsufficientMaterial() const;
+    bool isFiftyMoveRule() const;
+    bool isThreefoldRepetition() const;
+    
+    // Legal move validation (already declared above, removing duplicate)
     bool hasRepeated() const;
     
     // Utility methods
@@ -158,22 +176,25 @@ private:
     Bitboard generateSlidingAttacks(Square sq, const int* directions, int numDirs, Bitboard occupied) const;
     
     // Castling helper methods
-    void updateCastlingRights(const Move& move);
+    void updateCastlingRights(const MoveGen& move);
     void restoreCastlingRights(const BoardState& state);
     
     // Move execution helpers
-    void executeCastling(const Move& move);
-    void undoCastling(const Move& move);
-    void executeEnPassant(const Move& move);
-    void undoEnPassant(const Move& move, const BoardState& state);
-    void executePromotion(const Move& move);
-    void undoPromotion(const Move& move, const BoardState& state);
+    void executeCastling(const MoveGen& move);
+    void undoCastling(const MoveGen& move);
+    void executeEnPassant(const MoveGen& move);
+    void undoEnPassant(const MoveGen& move, const BoardState& state);
+    void executePromotion(const MoveGen& move);
+    void undoPromotion(const MoveGen& move, const BoardState& state);
     
     // Zobrist key updates
     void togglePiece(Square sq, Piece piece);
     void toggleSideToMove();
     void toggleCastlingRight(int right);
     void toggleEnPassantFile(File file);
+    
+    // Chess rules helper methods
+    bool hasLegalMovesForColor(Color color) const;
 };
 
 // Inline implementations for performance-critical methods

@@ -15,6 +15,7 @@ set(TEST_SOURCES
     KnightMoveTest.cpp
     SlidingPieceTest.cpp
     KingMoveTest.cpp
+    ChessRulesTest.cpp
     PerformanceTest.cpp
     BoardPerformanceTest.cpp
     MemoryAuditTest.cpp

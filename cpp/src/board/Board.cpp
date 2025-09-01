@@ -1,4 +1,5 @@
 #include "Board.h"
+#include "MoveGen.h"
 #include <sstream>
 #include <iostream>
 #include <random>
@@ -488,107 +489,10 @@ int Board::getTotalPieceCount(Color color) const {
 }
 
 // Move operations
-void Board::makeMove(const Move& move) {
-    // Save current state for undo
-    BoardState state;
-    state.castling = castling;
-    state.enPassant = enPassant;
-    state.halfmoveClock = halfmoveClock;
-    state.fullmoveNumber = fullmoveNumber;
-    state.sideToMove = sideToMove;
-    state.zobristKey = zobristKey;
-    state.capturedPiece = getPiece(move.to());
-    
-    history.push_back(state);
-    
-    Square from = move.from();
-    Square to = move.to();
-    Piece movingPiece = getPiece(from);
-    Piece capturedPiece = getPiece(to);
-    
-    // Handle special moves
-    if (move.isCastling()) {
-        executeCastling(move);
-    } else if (move.isEnPassant()) {
-        executeEnPassant(move);
-    } else if (move.isPromotion()) {
-        executePromotion(move);
-    } else {
-        // Normal move
-        removePiece(from);
-        removePiece(to); // Remove captured piece
-        setPiece(to, movingPiece);
-    }
-    
-    // Update castling rights
-    updateCastlingRights(move);
-    
-    // Update en passant square
-    enPassant = NO_SQUARE;
-    
-    // Check for double pawn push
-    if (typeOf(movingPiece) == PAWN && abs(to - from) == 16) {
-        enPassant = (from + to) / 2; // En passant target square
-    }
-    
-    // Update move counters
-    halfmoveClock++;
-    if (typeOf(movingPiece) == PAWN || capturedPiece != NO_PIECE) {
-        halfmoveClock = 0;
-    }
-    
-    if (sideToMove == BLACK) {
-        fullmoveNumber++;
-    }
-    
-    // Switch sides
-    sideToMove = ~sideToMove;
-    
-    updateOccupancy();
-    zobristKey = computeZobristKey();
-}
-
-void Board::unmakeMove(const Move& move) {
-    if (history.empty()) return;
-    
-    BoardState state = history.back();
-    history.pop_back();
-    
-    // Restore game state
-    castling = state.castling;
-    enPassant = state.enPassant;
-    halfmoveClock = state.halfmoveClock;
-    fullmoveNumber = state.fullmoveNumber;
-    sideToMove = state.sideToMove;
-    zobristKey = state.zobristKey;
-    
-    Square from = move.from();
-    Square to = move.to();
-    
-    // Handle special moves
-    if (move.isCastling()) {
-        undoCastling(move);
-    } else if (move.isEnPassant()) {
-        undoEnPassant(move, state);
-    } else if (move.isPromotion()) {
-        undoPromotion(move, state);
-    } else {
-        // Normal move
-        Piece movingPiece = getPiece(to);
-        removePiece(to);
-        setPiece(from, movingPiece);
-        
-        // Restore captured piece
-        if (state.capturedPiece != NO_PIECE) {
-            setPiece(to, state.capturedPiece);
-        }
-    }
-    
-    updateOccupancy();
-}
+// Legacy methods removed - using MoveGen only
 
 // Castling helpers
-void Board::executeCastling(const Move& move) {
+void Board::executeCastling(const MoveGen& move) {
     Square from = move.from();
     Square to = move.to();
     Color color = sideToMove;
@@ -613,7 +517,7 @@ void Board::executeCastling(const Move& move) {
     }
 }
 
-void Board::undoCastling(const Move& move) {
+void Board::undoCastling(const MoveGen& move) {
     Square from = move.from();
     Square to = move.to();
     Color color = sideToMove; // Side that's about to move (restored)
@@ -638,7 +542,7 @@ void Board::undoCastling(const Move& move) {
     }
 }
 
-void Board::executeEnPassant(const Move& move) {
+void Board::executeEnPassant(const MoveGen& move) {
     Square from = move.from();
     Square to = move.to();
     Color color = sideToMove;
@@ -652,7 +556,7 @@ void Board::executeEnPassant(const Move& move) {
     removePiece(capturedSquare);
 }
 
-void Board::undoEnPassant(const Move& move, const BoardState& /* state */) {
+void Board::undoEnPassant(const MoveGen& move, const BoardState& /* state */) {
     Square from = move.from();
     Square to = move.to();
     Color color = sideToMove; // Side that's about to move (restored)
@@ -666,7 +570,7 @@ void Board::undoEnPassant(const Move& move, const BoardState& /* state */) {
     setPiece(capturedSquare, makePiece(~color, PAWN));
 }
 
-void Board::executePromotion(const Move& move) {
+void Board::executePromotion(const MoveGen& move) {
     Square from = move.from();
     Square to = move.to();
     Color color = sideToMove;
@@ -679,11 +583,11 @@ void Board::executePromotion(const Move& move) {
     }
     
     // Place promoted piece
-    Piece promotedPiece = makePiece(color, move.promotionType());
+    Piece promotedPiece = move.promotionPiece();
     setPiece(to, promotedPiece);
 }
 
-void Board::undoPromotion(const Move& move, const BoardState& state) {
+void Board::undoPromotion(const MoveGen& move, const BoardState& state) {
     Square from = move.from();
     Square to = move.to();
     Color color = sideToMove; // Side that's about to move (restored)
@@ -700,7 +604,7 @@ void Board::undoPromotion(const Move& move, const BoardState& state) {
     }
 }
 
-void Board::updateCastlingRights(const Move& move) {
+void Board::updateCastlingRights(const MoveGen& move) {
     Square from = move.from();
     Square to = move.to();
     
@@ -789,6 +693,332 @@ std::string Board::toString() const {
 
 void Board::print() const {
     std::cout << toString() << std::endl;
+}
+
+// ============================================================================
+// CHESS RULES IMPLEMENTATION
+// ============================================================================
+
+bool Board::isCheckmate(Color color) const {
+    // Must be in check to be checkmate
+    if (!isInCheck(color)) {
+        return false;
+    }
+    
+    // If in check and no legal moves, it's checkmate
+    return !hasLegalMovesForColor(color);
+}
+
+bool Board::isStalemate(Color color) const {
+    // Must not be in check to be stalemate
+    if (isInCheck(color)) {
+        return false;
+    }
+    
+    // If not in check and no legal moves, it's stalemate
+    return !hasLegalMovesForColor(color);
+}
+
+bool Board::isDraw() const {
+    return isFiftyMoveRule() || isInsufficientMaterial() || isThreefoldRepetition() || 
+           isStalemate(sideToMove);
+}
+
+bool Board::isFiftyMoveRule() const {
+    return halfmoveClock >= 50; // 50 half-moves for 50-move rule
+}
+
+bool Board::isInsufficientMaterial() const {
+    // Count pieces for both sides
+    int whitePieces = 0, blackPieces = 0;
+    int whiteBishops = 0, blackBishops = 0;
+    int whiteKnights = 0, blackKnights = 0;
+    bool whiteBishopOnLight = false, whiteBishopOnDark = false;
+    bool blackBishopOnLight = false, blackBishopOnDark = false;
+    
+    for (int sq = A1; sq <= H8; ++sq) {
+        Piece piece = getPiece(static_cast<Square>(sq));
+        if (piece == NO_PIECE) continue;
+        
+        Color pieceColor = colorOf(piece);
+        PieceType pieceType = typeOf(piece);
+        
+        if (pieceColor == WHITE) {
+            whitePieces++;
+            if (pieceType == BISHOP) {
+                whiteBishops++;
+                if ((fileOf(static_cast<Square>(sq)) + rankOf(static_cast<Square>(sq))) % 2 == 0) {
+                    whiteBishopOnDark = true;
+                } else {
+                    whiteBishopOnLight = true;
+                }
+            } else if (pieceType == KNIGHT) {
+                whiteKnights++;
+            } else if (pieceType == PAWN || pieceType == ROOK || pieceType == QUEEN) {
+                return false; // These pieces can force mate
+            }
+        } else {
+            blackPieces++;
+            if (pieceType == BISHOP) {
+                blackBishops++;
+                if ((fileOf(static_cast<Square>(sq)) + rankOf(static_cast<Square>(sq))) % 2 == 0) {
+                    blackBishopOnDark = true;
+                } else {
+                    blackBishopOnLight = true;
+                }
+            } else if (pieceType == KNIGHT) {
+                blackKnights++;
+            } else if (pieceType == PAWN || pieceType == ROOK || pieceType == QUEEN) {
+                return false; // These pieces can force mate
+            }
+        }
+    }
+    
+    // King vs King
+    if (whitePieces == 1 && blackPieces == 1) {
+        return true;
+    }
+    
+    // King and Bishop/Knight vs King
+    if ((whitePieces == 2 && blackPieces == 1 && (whiteBishops == 1 || whiteKnights == 1)) ||
+        (blackPieces == 2 && whitePieces == 1 && (blackBishops == 1 || blackKnights == 1))) {
+        return true;
+    }
+    
+    // King and Bishop vs King and Bishop (same color squares)
+    if (whitePieces == 2 && blackPieces == 2 && whiteBishops == 1 && blackBishops == 1) {
+        if ((whiteBishopOnLight && blackBishopOnLight) || 
+            (whiteBishopOnDark && blackBishopOnDark)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+bool Board::isThreefoldRepetition() const {
+    // Count how many times current position has occurred
+    int repetitions = 1; // Current position counts as 1
+    uint64_t currentKey = zobristKey;
+    
+    // Check against all positions in history
+    for (const auto& state : history) {
+        if (state.zobristKey == currentKey) {
+            repetitions++;
+            if (repetitions >= 3) {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+bool Board::isLegalMove(const MoveGen& move, Color color) const {
+    // Make the move on a temporary board
+    Board tempBoard = *this;
+    
+    // Try to make the move using MoveGen system directly
+    // Temporarily allow illegal moves for testing check
+    tempBoard.sideToMove = color;
+    Square from = move.from();
+    Square to = move.to();
+    
+    // Execute move without legality check for testing
+    Piece movingPiece = tempBoard.getPiece(from);
+    Piece capturedPiece = tempBoard.getPiece(to);
+    
+    tempBoard.removePiece(from);
+    if (capturedPiece != NO_PIECE) {
+        tempBoard.removePiece(to);
+    }
+    tempBoard.setPiece(to, movingPiece);
+    tempBoard.updateOccupancy();
+    
+    // Check if the king is in check after the move
+    return !tempBoard.isInCheck(color);
+}
+
+bool Board::wouldBeInCheck(const MoveGen& move, Color color) const {
+    Board tempBoard = *this;
+    
+    // Execute move directly for testing
+    Square from = move.from();
+    Square to = move.to();
+    
+    Piece movingPiece = tempBoard.getPiece(from);
+    Piece capturedPiece = tempBoard.getPiece(to);
+    
+    tempBoard.removePiece(from);
+    if (capturedPiece != NO_PIECE) {
+        tempBoard.removePiece(to);
+    }
+    tempBoard.setPiece(to, movingPiece);
+    tempBoard.updateOccupancy();
+    
+    return tempBoard.isInCheck(color);
+}
+
+bool Board::makeMove(const MoveGen& move) {
+    // Check if move is legal first
+    if (!isLegalMove(move, sideToMove)) {
+        return false;
+    }
+    
+    // Save current state for undo
+    BoardState state;
+    state.castling = castling;
+    state.enPassant = enPassant;
+    state.halfmoveClock = halfmoveClock;
+    state.fullmoveNumber = fullmoveNumber;
+    state.sideToMove = sideToMove;
+    state.zobristKey = zobristKey;
+    state.capturedPiece = getPiece(move.to());
+    
+    history.push_back(state);
+    
+    Square from = move.from();
+    Square to = move.to();
+    Piece movingPiece = getPiece(from);
+    Piece capturedPiece = getPiece(to);
+    
+    // Handle special moves
+    if (move.isCastling()) {
+        executeCastling(move);
+    } else if (move.isEnPassant()) {
+        executeEnPassant(move);
+    } else if (move.isPromotion()) {
+        executePromotion(move);
+    } else {
+        // Normal move
+        removePiece(from);
+        if (capturedPiece != NO_PIECE) {
+            removePiece(to); // Remove captured piece
+        }
+        setPiece(to, movingPiece);
+    }
+    
+    // Update castling rights
+    updateCastlingRights(move);
+    
+    // Update en passant square
+    enPassant = NO_SQUARE;
+    
+    // Check for double pawn push
+    if (move.isDoublePawnPush()) {
+        enPassant = static_cast<Square>((from + to) / 2); // En passant target square
+    }
+    
+    // Update move counters
+    halfmoveClock++;
+    if (typeOf(movingPiece) == PAWN || capturedPiece != NO_PIECE) {
+        halfmoveClock = 0;
+    }
+    
+    if (sideToMove == BLACK) {
+        fullmoveNumber++;
+    }
+    
+    // Switch sides
+    sideToMove = ~sideToMove;
+    
+    updateOccupancy();
+    zobristKey = computeZobristKey();
+    return true;
+}
+
+void Board::unmakeMove(const MoveGen& move) {
+    if (history.empty()) return;
+    
+    BoardState state = history.back();
+    history.pop_back();
+    
+    // Restore game state
+    castling = state.castling;
+    enPassant = state.enPassant;
+    halfmoveClock = state.halfmoveClock;
+    fullmoveNumber = state.fullmoveNumber;
+    sideToMove = state.sideToMove;
+    zobristKey = state.zobristKey;
+    
+    Square from = move.from();
+    Square to = move.to();
+    
+    // Handle special moves
+    if (move.isCastling()) {
+        undoCastling(move);
+    } else if (move.isEnPassant()) {
+        undoEnPassant(move, state);
+    } else if (move.isPromotion()) {
+        undoPromotion(move, state);
+    } else {
+        // Normal move
+        Piece movingPiece = getPiece(to);
+        removePiece(to);
+        setPiece(from, movingPiece);
+        
+        // Restore captured piece
+        if (state.capturedPiece != NO_PIECE) {
+            setPiece(to, state.capturedPiece);
+        }
+    }
+    
+    updateOccupancy();
+}
+
+// Helper methods
+bool Board::hasLegalMovesForColor(Color color) const {
+    MoveGenList<> moves;
+    
+    // Generate all pseudo-legal moves
+    generatePawnMoves(*this, moves, color);
+    generateKnightMoves(*this, moves, color);
+    generateBishopMoves(*this, moves, color);
+    generateRookMoves(*this, moves, color);
+    generateQueenMoves(*this, moves, color);
+    generateKingMoves(*this, moves, color);
+    
+    // Check if any move is legal
+    for (size_t i = 0; i < moves.size(); ++i) {
+        if (isLegalMove(moves[i], color)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+// Temporary compatibility methods for existing tests (deprecated)
+bool Board::makeMove(const Move& move) {
+    // Convert legacy Move to MoveGen
+    MoveGen::MoveType moveType = MoveGen::MoveType::NORMAL;
+    if (move.isCastling()) moveType = MoveGen::MoveType::CASTLING;
+    else if (move.isEnPassant()) moveType = MoveGen::MoveType::EN_PASSANT;
+    else if (move.isPromotion()) moveType = MoveGen::MoveType::PROMOTION;
+    
+    Piece promotionPiece = NO_PIECE;
+    if (move.isPromotion()) {
+        promotionPiece = makePiece(sideToMove, move.promotionType());
+    }
+    
+    MoveGen moveGen(move.from(), move.to(), moveType, promotionPiece);
+    return makeMove(moveGen);
+}
+
+void Board::unmakeMove(const Move& move) {
+    // Convert legacy Move to MoveGen  
+    MoveGen::MoveType moveType = MoveGen::MoveType::NORMAL;
+    if (move.isCastling()) moveType = MoveGen::MoveType::CASTLING;
+    else if (move.isEnPassant()) moveType = MoveGen::MoveType::EN_PASSANT;
+    else if (move.isPromotion()) moveType = MoveGen::MoveType::PROMOTION;
+    
+    Piece promotionPiece = NO_PIECE;
+    if (move.isPromotion()) {
+        promotionPiece = makePiece(~sideToMove, move.promotionType()); // Opposite side after undo
+    }
+    
+    MoveGen moveGen(move.from(), move.to(), moveType, promotionPiece);
+    unmakeMove(moveGen);
 }
 
 } // namespace opera

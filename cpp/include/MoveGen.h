@@ -340,4 +340,26 @@ void generateKingMoves(const Board& board, MoveGenList<>& moves, Color color);
 // Helper function for castling move generation (internal use)
 void generateCastlingMoves(const Board& board, MoveGenList<>& moves, Color color, Square kingSquare);
 
+// ============================================================================
+// UNIFIED MOVE GENERATION INTERFACE
+// ============================================================================
+
+// Generate all pseudo-legal moves for a given color
+void generateAllMoves(const Board& board, MoveGenList<>& moves, Color color);
+
+// Generate all legal moves (filters out moves that leave king in check)
+void generateAllLegalMoves(const Board& board, MoveGenList<>& moves, Color color);
+
+// Generate only capture moves
+void generateCaptureMoves(const Board& board, MoveGenList<>& moves, Color color);
+
+// Generate only quiet (non-capture) moves
+void generateQuietMoves(const Board& board, MoveGenList<>& moves, Color color);
+
+// Check if a position has any legal moves (for stalemate detection)
+bool hasLegalMoves(const Board& board, Color color);
+
+// Count total legal moves (for perft and analysis)
+int countLegalMoves(const Board& board, Color color);
+
 } // namespace opera

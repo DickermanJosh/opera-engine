@@ -2,6 +2,7 @@
 #include <string>
 #include <cstdlib>
 #include "Board.h"
+#include "MoveGen.h"
 #include "Types.h"
 
 using namespace opera;
@@ -32,8 +33,8 @@ int main(int argc, char* argv[]) {
         std::cout << "Starting position:" << std::endl;
         board.print();
         
-        // Test a simple move
-        Move e2e4(E2, E4, NORMAL);
+        // Test a simple move using MoveGen
+        MoveGen e2e4(E2, E4, MoveGen::MoveType::NORMAL);
         std::cout << "Making move: " << e2e4.toString() << std::endl;
         board.makeMove(e2e4);
         board.print();

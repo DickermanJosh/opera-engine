@@ -352,6 +352,13 @@ void generateCastlingMoves(const Board& board, MoveGenList<>& moves, Color color
         return;
     }
     
+    // CRITICAL CASTLING RULE: King must not be in check
+    if (board.isInCheck(color)) {
+        return;
+    }
+    
+    const Color enemyColor = static_cast<Color>(1 - color);
+    
     // Check kingside castling
     if (board.canCastleKingside(color)) {
         const Square kingTargetSquare = static_cast<Square>(homeRank * 8 + 6);   // g1 or g8
@@ -361,8 +368,13 @@ void generateCastlingMoves(const Board& board, MoveGenList<>& moves, Color color
         if (board.getPiece(f_square) == NO_PIECE && 
             board.getPiece(kingTargetSquare) == NO_PIECE) {
             
-            // Add kingside castling move
-            moves.add(MoveGen(kingSquare, kingTargetSquare, MoveGen::MoveType::CASTLING));
+            // CRITICAL CASTLING RULES: King must not pass through or end in check
+            if (!board.isSquareAttacked(f_square, enemyColor) && 
+                !board.isSquareAttacked(kingTargetSquare, enemyColor)) {
+                
+                // Add kingside castling move
+                moves.add(MoveGen(kingSquare, kingTargetSquare, MoveGen::MoveType::CASTLING));
+            }
         }
     }
     
@@ -377,10 +389,80 @@ void generateCastlingMoves(const Board& board, MoveGenList<>& moves, Color color
             board.getPiece(kingTargetSquare) == NO_PIECE && 
             board.getPiece(d_square) == NO_PIECE) {
             
-            // Add queenside castling move
-            moves.add(MoveGen(kingSquare, kingTargetSquare, MoveGen::MoveType::CASTLING));
+            // CRITICAL CASTLING RULES: King must not pass through or end in check
+            // Note: b1/b8 square doesn't need to be checked for attack (king doesn't pass through it)
+            if (!board.isSquareAttacked(d_square, enemyColor) && 
+                !board.isSquareAttacked(kingTargetSquare, enemyColor)) {
+                
+                // Add queenside castling move
+                moves.add(MoveGen(kingSquare, kingTargetSquare, MoveGen::MoveType::CASTLING));
+            }
         }
     }
+}
+
+// ============================================================================
+// UNIFIED MOVE GENERATION INTERFACE
+// ============================================================================
+
+void generateAllMoves(const Board& board, MoveGenList<>& moves, Color color) {
+    moves.clear();
+    generatePawnMoves(board, moves, color);
+    generateKnightMoves(board, moves, color);
+    generateBishopMoves(board, moves, color);
+    generateRookMoves(board, moves, color);
+    generateQueenMoves(board, moves, color);
+    generateKingMoves(board, moves, color);
+}
+
+void generateAllLegalMoves(const Board& board, MoveGenList<>& moves, Color color) {
+    // First generate all pseudo-legal moves
+    MoveGenList<> pseudoLegalMoves;
+    generateAllMoves(board, pseudoLegalMoves, color);
+    
+    // Filter out illegal moves (those that leave king in check)
+    moves.clear();
+    for (size_t i = 0; i < pseudoLegalMoves.size(); ++i) {
+        if (board.isLegalMove(pseudoLegalMoves[i], color)) {
+            moves.add(pseudoLegalMoves[i]);
+        }
+    }
+}
+
+void generateCaptureMoves(const Board& board, MoveGenList<>& moves, Color color) {
+    MoveGenList<> allMoves;
+    generateAllMoves(board, allMoves, color);
+    
+    moves.clear();
+    for (size_t i = 0; i < allMoves.size(); ++i) {
+        if (allMoves[i].isCapture() || allMoves[i].isEnPassant()) {
+            moves.add(allMoves[i]);
+        }
+    }
+}
+
+void generateQuietMoves(const Board& board, MoveGenList<>& moves, Color color) {
+    MoveGenList<> allMoves;
+    generateAllMoves(board, allMoves, color);
+    
+    moves.clear();
+    for (size_t i = 0; i < allMoves.size(); ++i) {
+        if (allMoves[i].isQuiet()) {
+            moves.add(allMoves[i]);
+        }
+    }
+}
+
+bool hasLegalMoves(const Board& board, Color color) {
+    MoveGenList<> moves;
+    generateAllLegalMoves(board, moves, color);
+    return moves.size() > 0;
+}
+
+int countLegalMoves(const Board& board, Color color) {
+    MoveGenList<> moves;
+    generateAllLegalMoves(board, moves, color);
+    return static_cast<int>(moves.size());
 }
 
 } // namespace opera
