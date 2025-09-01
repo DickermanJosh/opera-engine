@@ -24,6 +24,24 @@ int main(int argc, char* argv[]) {
         return result;
     }
     
+    // Check for perft flag
+    if (argc > 1 && std::string(argv[1]) == "--perft") {
+        std::cout << "Running Opera Engine Perft validation..." << std::endl;
+        
+        if (argc == 4) {
+            // Custom FEN and depth provided: --perft "FEN" depth
+            std::string fen = argv[2];
+            std::string depth = argv[3];
+            std::string command = "./perft-runner \"" + fen + "\" " + depth;
+            int result = std::system(command.c_str());
+            return result;
+        } else {
+            // Run full test suite
+            int result = std::system("./perft-runner");
+            return result;
+        }
+    }
+    
     std::cout << "Opera Chess Engine v1.0.0" << std::endl;
     
     try {

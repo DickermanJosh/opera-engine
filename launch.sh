@@ -16,39 +16,65 @@ NC='\033[0m' # No Color
 BUILD_TYPE="Release"
 RUN_TESTS=false
 RUN_PERFORMANCE_TESTS=false
+RUN_PERFT=false
+PERFT_FEN=""
+PERFT_DEPTH=0
 BUILD_FIRST=false
 SHOW_HELP=false
 DEBUG_MODE=false
 
 # Parse command line arguments
-for arg in "$@"; do
+i=1
+while [ $i -le $# ]; do
+    arg="${!i}"
     case $arg in
         --test)
             RUN_TESTS=true
-            shift
             ;;
         --performance)
             RUN_PERFORMANCE_TESTS=true
-            shift
+            ;;
+        --perft)
+            RUN_PERFT=true
+            # Check if next argument is a FEN string (quoted)
+            next_i=$((i + 1))
+            if [ $next_i -le $# ]; then
+                next_arg="${!next_i}"
+                # If next arg doesn't start with --, treat as FEN
+                if [[ ! "$next_arg" =~ ^-- ]]; then
+                    PERFT_FEN="$next_arg"
+                    i=$((i + 1))
+                    # Check for depth argument
+                    depth_i=$((i + 1))
+                    if [ $depth_i -le $# ]; then
+                        depth_arg="${!depth_i}"
+                        if [[ "$depth_arg" =~ ^[0-9]+$ ]]; then
+                            PERFT_DEPTH="$depth_arg"
+                            i=$((i + 1))
+                        fi
+                    fi
+                fi
+            fi
             ;;
         --build)
             BUILD_FIRST=true
-            shift
             ;;
         --debug)
             DEBUG_MODE=true
             BUILD_TYPE="Debug"
-            shift
             ;;
         --help|-h)
             SHOW_HELP=true
-            shift
             ;;
         *)
-            echo -e "${RED}Unknown option: $arg${NC}"
-            SHOW_HELP=true
+            # Don't show error for FEN strings or depths that were already parsed
+            if [ "$RUN_PERFT" = false ]; then
+                echo -e "${RED}Unknown option: $arg${NC}"
+                SHOW_HELP=true
+            fi
             ;;
     esac
+    i=$((i + 1))
 done
 
 # Show help
@@ -60,6 +86,8 @@ if [ "$SHOW_HELP" = true ]; then
     echo "Options:"
     echo "  --test          Run test suite instead of normal application"
     echo "  --performance   Run comprehensive performance test suite"
+    echo "  --perft         Run Perft validation suite"
+    echo "  --perft \"FEN\" D   Run Perft on specific position to depth D"
     echo "  --build         Force rebuild before running"
     echo "  --debug         Build and run in debug mode"
     echo "  --help, -h      Show this help message"
@@ -68,6 +96,8 @@ if [ "$SHOW_HELP" = true ]; then
     echo "  ./launch.sh                    # Run normal application"
     echo "  ./launch.sh --test             # Run test suite"
     echo "  ./launch.sh --performance      # Run performance tests"
+    echo "  ./launch.sh --perft            # Run Perft validation suite"
+    echo "  ./launch.sh --perft \"FEN\" 5     # Test specific position to depth 5"
     echo "  ./launch.sh --build --test     # Rebuild and run tests"
     echo "  ./launch.sh --debug            # Run in debug mode"
     exit 0
@@ -89,7 +119,7 @@ fi
 cd build
 
 # Build if requested or if executables don't exist
-if [ "$BUILD_FIRST" = true ] || [ ! -f "opera-engine" ] || ([ "$RUN_TESTS" = true ] && [ ! -f "tests/opera_tests" ]) || ([ "$RUN_PERFORMANCE_TESTS" = true ] && [ ! -f "tests/opera_tests" ]); then
+if [ "$BUILD_FIRST" = true ] || [ ! -f "opera-engine" ] || ([ "$RUN_TESTS" = true ] && [ ! -f "tests/opera_tests" ]) || ([ "$RUN_PERFORMANCE_TESTS" = true ] && [ ! -f "tests/opera_tests" ]) || ([ "$RUN_PERFT" = true ] && [ ! -f "perft-runner" ]); then
     echo -e "${YELLOW}Building Opera Engine ($BUILD_TYPE mode)...${NC}"
     
     # Configure with CMake
@@ -112,7 +142,32 @@ if [ "$BUILD_FIRST" = true ] || [ ! -f "opera-engine" ] || ([ "$RUN_TESTS" = tru
 fi
 
 # Run based on mode
-if [ "$RUN_PERFORMANCE_TESTS" = true ]; then
+if [ "$RUN_PERFT" = true ]; then
+    echo -e "${BLUE}🎯 Running Perft Validation...${NC}"
+    echo "=============================="
+    
+    if [ -f "perft-runner" ]; then
+        if [ -n "$PERFT_FEN" ] && [ "$PERFT_DEPTH" -gt 0 ]; then
+            echo -e "${YELLOW}Testing custom position to depth $PERFT_DEPTH...${NC}"
+            ./perft-runner "$PERFT_FEN" "$PERFT_DEPTH"
+        else
+            echo -e "${YELLOW}Running full Perft test suite...${NC}"
+            ./perft-runner
+        fi
+        PERFT_RESULT=$?
+        
+        echo ""
+        if [ $PERFT_RESULT -eq 0 ]; then
+            echo -e "${GREEN}🎉 Perft validation completed successfully!${NC}"
+        else
+            echo -e "${RED}💥 Perft validation failed. Exit code: $PERFT_RESULT${NC}"
+            exit $PERFT_RESULT
+        fi
+    else
+        echo -e "${RED}❌ Perft runner executable not found! Try running with --build flag.${NC}"
+        exit 1
+    fi
+elif [ "$RUN_PERFORMANCE_TESTS" = true ]; then
     echo -e "${BLUE}🚀 Running Performance Test Suite...${NC}"
     echo "=================================="
     

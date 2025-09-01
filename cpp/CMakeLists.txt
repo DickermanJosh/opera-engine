@@ -31,6 +31,10 @@ add_library(opera_core STATIC ${CORE_SOURCES})
 add_executable(opera-engine src/main.cpp)
 target_link_libraries(opera-engine opera_core)
 
+# Perft runner executable
+add_executable(perft-runner src/perft/PerftRunner.cpp)
+target_link_libraries(perft-runner opera_core)
+
 # Debug executables (optional - build manually from debug/ directory as needed)
 # All debug files have been moved to debug/ directory
 # To build: g++ -std=c++17 -I../include -I../src/board debug/debug_*.cpp ../src/board/*.cpp ../src/utils/*.cpp -o debug_program
