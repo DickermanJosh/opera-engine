@@ -157,4 +157,121 @@ void generateKnightMoves(const Board& board, MoveGenList<>& moves, Color color) 
     }
 }
 
+void generateBishopMoves(const Board& board, MoveGenList<>& moves, Color color) {
+    const Bitboard bishops = board.getPieceBitboard(color, BISHOP);
+    const Bitboard occupied = board.getOccupiedBitboard();
+    
+    // Iterate through all bishops of the given color
+    Bitboard bishopsCopy = bishops;
+    while (bishopsCopy) {
+        const Square fromSquare = static_cast<Square>(__builtin_ctzll(bishopsCopy));
+        bishopsCopy &= bishopsCopy - 1; // Clear the least significant bit
+        
+        // Get all squares this bishop can attack
+        const Bitboard attackBitboard = board.getBishopAttacks(fromSquare, occupied);
+        
+        // Convert attack bitboard to moves
+        Bitboard attacksCopy = attackBitboard;
+        while (attacksCopy) {
+            const Square toSquare = static_cast<Square>(__builtin_ctzll(attacksCopy));
+            attacksCopy &= attacksCopy - 1; // Clear the least significant bit
+            
+            // Check what piece (if any) is on the destination square
+            const Piece targetPiece = board.getPiece(toSquare);
+            
+            // Can't move to square occupied by own piece
+            if (targetPiece != NO_PIECE && colorOf(targetPiece) == color) {
+                continue; // Skip this square
+            }
+            
+            // Check if it's a capture or quiet move
+            if (targetPiece != NO_PIECE) {
+                // It's a capture (enemy piece)
+                moves.add(MoveGen(fromSquare, toSquare, MoveGen::MoveType::NORMAL, NO_PIECE, targetPiece));
+            } else {
+                // It's a quiet move
+                moves.add(MoveGen(fromSquare, toSquare, MoveGen::MoveType::NORMAL));
+            }
+        }
+    }
+}
+
+void generateRookMoves(const Board& board, MoveGenList<>& moves, Color color) {
+    const Bitboard rooks = board.getPieceBitboard(color, ROOK);
+    const Bitboard occupied = board.getOccupiedBitboard();
+    
+    // Iterate through all rooks of the given color
+    Bitboard rooksCopy = rooks;
+    while (rooksCopy) {
+        const Square fromSquare = static_cast<Square>(__builtin_ctzll(rooksCopy));
+        rooksCopy &= rooksCopy - 1; // Clear the least significant bit
+        
+        // Get all squares this rook can attack
+        const Bitboard attackBitboard = board.getRookAttacks(fromSquare, occupied);
+        
+        // Convert attack bitboard to moves
+        Bitboard attacksCopy = attackBitboard;
+        while (attacksCopy) {
+            const Square toSquare = static_cast<Square>(__builtin_ctzll(attacksCopy));
+            attacksCopy &= attacksCopy - 1; // Clear the least significant bit
+            
+            // Check what piece (if any) is on the destination square
+            const Piece targetPiece = board.getPiece(toSquare);
+            
+            // Can't move to square occupied by own piece
+            if (targetPiece != NO_PIECE && colorOf(targetPiece) == color) {
+                continue; // Skip this square
+            }
+            
+            // Check if it's a capture or quiet move
+            if (targetPiece != NO_PIECE) {
+                // It's a capture (enemy piece)
+                moves.add(MoveGen(fromSquare, toSquare, MoveGen::MoveType::NORMAL, NO_PIECE, targetPiece));
+            } else {
+                // It's a quiet move
+                moves.add(MoveGen(fromSquare, toSquare, MoveGen::MoveType::NORMAL));
+            }
+        }
+    }
+}
+
+void generateQueenMoves(const Board& board, MoveGenList<>& moves, Color color) {
+    const Bitboard queens = board.getPieceBitboard(color, QUEEN);
+    const Bitboard occupied = board.getOccupiedBitboard();
+    
+    // Iterate through all queens of the given color
+    Bitboard queensCopy = queens;
+    while (queensCopy) {
+        const Square fromSquare = static_cast<Square>(__builtin_ctzll(queensCopy));
+        queensCopy &= queensCopy - 1; // Clear the least significant bit
+        
+        // Get all squares this queen can attack
+        const Bitboard attackBitboard = board.getQueenAttacks(fromSquare, occupied);
+        
+        // Convert attack bitboard to moves
+        Bitboard attacksCopy = attackBitboard;
+        while (attacksCopy) {
+            const Square toSquare = static_cast<Square>(__builtin_ctzll(attacksCopy));
+            attacksCopy &= attacksCopy - 1; // Clear the least significant bit
+            
+            // Check what piece (if any) is on the destination square
+            const Piece targetPiece = board.getPiece(toSquare);
+            
+            // Can't move to square occupied by own piece
+            if (targetPiece != NO_PIECE && colorOf(targetPiece) == color) {
+                continue; // Skip this square
+            }
+            
+            // Check if it's a capture or quiet move
+            if (targetPiece != NO_PIECE) {
+                // It's a capture (enemy piece)
+                moves.add(MoveGen(fromSquare, toSquare, MoveGen::MoveType::NORMAL, NO_PIECE, targetPiece));
+            } else {
+                // It's a quiet move
+                moves.add(MoveGen(fromSquare, toSquare, MoveGen::MoveType::NORMAL));
+            }
+        }
+    }
+}
+
 } // namespace opera

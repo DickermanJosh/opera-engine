@@ -142,11 +142,7 @@ public:
     std::string toString() const;
     void print() const;
     
-    // Hash table size for repetition detection
-    static constexpr size_t MAX_GAME_LENGTH = 1024;
-    
-private:
-    // Attack pattern generation (will be implemented with magic bitboards later)
+    // Attack pattern generation (needed by move generation)
     Bitboard getPawnAttacks(Square sq, Color color) const;
     Bitboard getKnightAttacks(Square sq) const;
     Bitboard getKingAttacks(Square sq) const;
@@ -154,6 +150,10 @@ private:
     Bitboard getRookAttacks(Square sq, Bitboard occupied) const;
     Bitboard getQueenAttacks(Square sq, Bitboard occupied) const;
     
+    // Hash table size for repetition detection
+    static constexpr size_t MAX_GAME_LENGTH = 1024;
+    
+private:
     // Sliding piece attack generation (simplified for initial implementation)
     Bitboard generateSlidingAttacks(Square sq, const int* directions, int numDirs, Bitboard occupied) const;
     

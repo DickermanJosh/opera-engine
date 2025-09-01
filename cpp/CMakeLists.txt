@@ -31,24 +31,9 @@ add_library(opera_core STATIC ${CORE_SOURCES})
 add_executable(opera-engine src/main.cpp)
 target_link_libraries(opera-engine opera_core)
 
-# Debug executables
-add_executable(debug_test src/debug_test.cpp)
-target_link_libraries(debug_test opera_core)
-
-add_executable(debug_promotion src/debug_promotion.cpp)
-target_link_libraries(debug_promotion opera_core)
-
-add_executable(square_debug src/square_debug.cpp)
-target_link_libraries(square_debug opera_core)
-
-add_executable(debug_pawn debug_pawn.cpp)
-target_link_libraries(debug_pawn opera_core)
-
-add_executable(debug_endgame debug_endgame.cpp)
-target_link_libraries(debug_endgame opera_core)
-
-add_executable(debug_knight debug_knight.cpp)
-target_link_libraries(debug_knight opera_core)
+# Debug executables (optional - build manually from debug/ directory as needed)
+# All debug files have been moved to debug/ directory
+# To build: g++ -std=c++17 -I../include -I../src/board debug/debug_*.cpp ../src/board/*.cpp ../src/utils/*.cpp -o debug_program
 
 # Optional: Find and link pybind11 for Python bindings
 find_package(pybind11 QUIET)

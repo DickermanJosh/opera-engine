@@ -329,4 +329,9 @@ void generatePawnMoves(const Board& board, MoveGenList<>& moves, Color color);
 // Knight move generation functions
 void generateKnightMoves(const Board& board, MoveGenList<>& moves, Color color);
 
+// Sliding piece move generation functions
+void generateBishopMoves(const Board& board, MoveGenList<>& moves, Color color);
+void generateRookMoves(const Board& board, MoveGenList<>& moves, Color color);
+void generateQueenMoves(const Board& board, MoveGenList<>& moves, Color color);
+
 } // namespace opera
