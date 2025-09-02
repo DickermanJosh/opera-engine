@@ -1,0 +1,94 @@
+[package]
+name = "opera-uci"
+version = "1.0.0"
+edition = "2021"
+authors = ["Opera Engine Team <opera@example.com>"]
+description = "UCI (Universal Chess Interface) protocol implementation for Opera Chess Engine"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/opera-engine/opera-engine"
+
+[dependencies]
+# Async runtime for non-blocking I/O and event processing
+tokio = { version = "1.35", features = ["full"] }
+
+# Safe C++ FFI integration
+cxx = "1.0"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Structured logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Serialization for configuration
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
+
+# Atomic operations and sync primitives
+parking_lot = "0.12"
+
+# Time utilities for precise timing
+chrono = { version = "0.4", features = ["serde"] }
+
+[build-dependencies]
+# Build script support for cxx integration
+cxx-build = "1.0"
+
+[dev-dependencies]
+# Property-based testing for never-panic verification
+proptest = "1.4"
+
+# Performance benchmarking
+criterion = { version = "0.5", features = ["html_reports"] }
+
+# Async testing utilities
+tokio-test = "0.4"
+
+# Fuzzing support (requires cargo install cargo-fuzz)
+# libfuzzer-sys = "0.4"
+
+[[bin]]
+name = "opera-uci"
+path = "src/main.rs"
+
+[[bench]]
+name = "uci_benchmarks"
+harness = false
+
+[profile.release]
+# Optimize for performance while maintaining safety
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"  # Never unwind, always abort on panic
+
+[profile.dev]
+# Development profile with debug info
+opt-level = 0
+debug = true
+panic = "abort"  # Consistent panic behavior
+
+# Clippy configuration for strict linting
+[lints.clippy]
+# Error on common mistakes
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+
+# Warn on style issues
+pedantic = "warn"
+nursery = "warn"
+cargo = "warn"
+
+# Allow some pedantic lints that are too strict for this codebase
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+module_name_repetitions = "allow"
+
+[lints.rust]
+unsafe_code = "deny"  # Allow unsafe code only where absolutely necessary (FFI)
+missing_docs = "warn"

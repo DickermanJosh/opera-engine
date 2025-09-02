@@ -104,6 +104,14 @@ shared/data/*.bin
 tmp/
 temp/
 
+# Rust
+rust/target/
+rust/Cargo.lock
+rust/**/*.rs.bk
+rust/fuzz/target/
+rust/fuzz/corpus/
+rust/fuzz/artifacts/
+
 # Configuration overrides
 local_config.yaml
 user_config.yaml
