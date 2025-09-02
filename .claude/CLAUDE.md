@@ -12,6 +12,12 @@ A UCI-compliant chess engine with Paul Morphy-inspired playing style, built as a
 - **Extensibility**: Modular design allowing easy integration with multiple chess platforms
 - **Testability**: Comprehensive unit testing for all components
 
+### Test Driven Development Principles 
+- **Tests First** ALWAYS create tests with expected behavior accounting for edge cases before writing any code. 
+- **Negative Tests** - Write tests that are expected to fail as well as ones that are expected to pass. It is not explicit that things that should fair will, and thus always need to be tested.
+- **Don't Modify Tests** - Think very hard when writing tests. Treat it entirely as its own phase of the project that needs to be thought about and crafted. Once tests are written and finalized, they should never be changed. (Adding new tests later is fine, but should be treated as a last resort due to a missed edge case, not something to rely upon).
+- **100% Coverage** - Always cover 100% of the codebase with tests. Every single function should have a test or multiple tests depending on the situation.
+
 ### Monorepo Structure
 ```
 opera-engine/
@@ -278,7 +284,7 @@ class MorphySearch : public Search {
 9. **Training Pipeline**: Neural network training infrastructure
 10. **Style Refinement**: Iterative improvement of Morphy characteristics
 
-Always update your progress and decisions inside .claude/PROGRESS.md
+Always update your progress and decisions inside .claude/PROGRESS.md, a premade file.
 
 ---
 
@@ -293,4 +299,6 @@ This project prioritizes **elegant code architecture** and **distinctive playing
 
 Remember: We're not just building a chess engine - we're creating a digital tribute to the chess romantic era, where beauty and brilliance matter as much as evaluation points.
 
-General note: always explicitly run commands with bash in front of them whenever you are in a shell environment. ex: ```cd foo``` -> ```bash cd foo```
+General notes: 
+- Always explicitly run commands with bash in front of them whenever you are in a shell environment. ex: ```cd foo``` -> ```bash cd foo```
+- **Never** commit or push to git / github without confirmation from the user

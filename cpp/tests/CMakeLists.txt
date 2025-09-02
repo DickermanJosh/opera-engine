@@ -10,6 +10,15 @@ include_directories(../include)
 # Test sources
 set(TEST_SOURCES
     BoardTest.cpp
+    MoveGenTest.cpp
+    PawnMoveTest.cpp
+    KnightMoveTest.cpp
+    SlidingPieceTest.cpp
+    KingMoveTest.cpp
+    ChessRulesTest.cpp
+    PerformanceTest.cpp
+    BoardPerformanceTest.cpp
+    MemoryAuditTest.cpp
 )
 
 # Create test executable
