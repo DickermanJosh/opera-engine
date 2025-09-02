@@ -32,46 +32,41 @@
 //! - **High Performance**: Zero-copy parsing and efficient async patterns
 
 use anyhow::{Context, Result};
-use std::panic;
+use opera_uci::{UCIError, initialize_engine, VERSION, NAME, AUTHOR};
 use tracing::{error, info, instrument};
-
-// Public modules for FFI integration
-pub mod ffi;
 
 /// Main entry point for the Opera UCI engine
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Set up panic hook for never-panic operation
-    setup_panic_hook();
-    
-    // Initialize structured logging
+    // Initialize structured logging first
     setup_logging()?;
     
     info!("🎼 Opera UCI Engine starting...");
-    info!("Version: {}", env!("CARGO_PKG_VERSION"));
+    info!("Version: {}", VERSION);
     
-    // TODO: Initialize UCI engine (Task 2.2)
+    // Initialize engine with comprehensive safety checks
+    if let Err(uci_error) = initialize_engine() {
+        error!("Failed to initialize UCI engine: {}", uci_error);
+        eprintln!("info string INITIALIZATION ERROR: {}", uci_error);
+        return Err(uci_error.into());
+    }
+    
+    // TODO: Initialize UCI command processor (Task 2.2)
     // TODO: Start async I/O processing loop (Task 2.4)
     
-    // Placeholder implementation - will be replaced in subsequent tasks
-    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-    
-    info!("Opera UCI Engine initialization complete");
-    println!("id name Opera Engine");
-    println!("id author Opera Engine Team");
+    // Basic UCI identification (will be expanded in subsequent tasks)
+    info!("Sending UCI identification");
+    println!("id name {}", NAME);
+    println!("id author {}", AUTHOR);
     println!("uciok");
+    
+    // Placeholder main loop - will be replaced with actual UCI processing
+    info!("UCI engine ready - entering main loop");
+    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
     
     Ok(())
 }
 
-/// Set up panic hook to ensure graceful error handling
-fn setup_panic_hook() {
-    panic::set_hook(Box::new(|panic_info| {
-        error!("CRITICAL: Panic occurred: {}", panic_info);
-        eprintln!("info string CRITICAL ERROR: Engine panic - {}", panic_info);
-        std::process::abort();
-    }));
-}
 
 /// Initialize structured logging with tracing
 #[instrument]

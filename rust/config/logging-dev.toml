@@ -1,0 +1,38 @@
+# Development Logging Configuration
+# For active development with verbose debugging output
+
+[general]
+level = "debug"
+environment = "development"
+
+[console]
+enabled = true
+format = "human"
+with_target = true
+with_thread_ids = true
+with_file_location = true
+with_timestamp = true
+with_colors = true
+
+[file]
+enabled = true
+path = "logs/opera-uci-dev.log"
+format = "human"
+with_target = true
+with_thread_ids = true
+with_file_location = true
+with_timestamp = true
+max_size_mb = 100
+rotate_count = 5
+
+[spans]
+events = ["new", "close"]
+max_level = "trace"
+
+[filters]
+# Enable all modules in development
+default = "debug"
+"opera_uci::uci" = "trace"
+"opera_uci::engine" = "debug"
+"opera_uci::ffi" = "debug"
+"opera_uci::search" = "info"

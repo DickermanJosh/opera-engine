@@ -1,0 +1,43 @@
+# Production Logging Configuration
+# Minimal logging for production deployment
+
+[general]
+level = "info"
+environment = "production"
+
+[console]
+enabled = false
+format = "json"
+with_target = false
+with_thread_ids = false
+with_file_location = false
+with_timestamp = true
+with_colors = false
+
+[file]
+enabled = true
+path = "logs/opera-uci.log"
+format = "json"
+with_target = false
+with_thread_ids = false
+with_file_location = false
+with_timestamp = true
+max_size_mb = 50
+rotate_count = 10
+
+[spans]
+events = []
+max_level = "info"
+
+[filters]
+# Minimal logging in production
+default = "info"
+"opera_uci::uci" = "info"
+"opera_uci::engine" = "warn"
+"opera_uci::ffi" = "error"
+"opera_uci::search" = "warn"
+
+[performance]
+log_search_progress = true
+log_resource_usage = false
+log_timing = false

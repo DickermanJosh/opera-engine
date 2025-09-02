@@ -10,6 +10,7 @@ repository = "https://github.com/opera-engine/opera-engine"
 [dependencies]
 # Async runtime for non-blocking I/O and event processing
 tokio = { version = "1.35", features = ["full"] }
+futures = "0.3"
 
 # Safe C++ FFI integration
 cxx = "1.0"
@@ -20,7 +21,7 @@ anyhow = "1.0"
 
 # Structured logging
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "fmt"] }
 
 # Serialization for configuration
 serde = { version = "1.0", features = ["derive"] }
@@ -41,13 +42,17 @@ cxx-build = "1.0"
 proptest = "1.4"
 
 # Performance benchmarking
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { version = "0.4", features = ["html_reports"] }
 
 # Async testing utilities
 tokio-test = "0.4"
 
 # Fuzzing support (requires cargo install cargo-fuzz)
 # libfuzzer-sys = "0.4"
+
+[lib]
+name = "opera_uci"
+path = "src/lib.rs"
 
 [[bin]]
 name = "opera-uci"
@@ -88,6 +93,10 @@ cargo = "warn"
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
 module_name_repetitions = "allow"
+
+[features]
+default = ["ffi"]
+ffi = []
 
 [lints.rust]
 unsafe_code = "deny"  # Allow unsafe code only where absolutely necessary (FFI)
