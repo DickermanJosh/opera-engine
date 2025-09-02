@@ -46,6 +46,7 @@ criterion = { version = "0.4", features = ["html_reports"] }
 
 # Async testing utilities
 tokio-test = "0.4"
+tracing-test = "0.2"
 
 # Fuzzing support (requires cargo install cargo-fuzz)
 # libfuzzer-sys = "0.4"

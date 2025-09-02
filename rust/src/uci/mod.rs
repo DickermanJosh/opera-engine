@@ -5,13 +5,17 @@
 
 pub mod commands;
 pub mod engine;
+pub mod handlers;
 pub mod parser;
+pub mod response;
 pub mod sanitizer;
 pub mod state;
 
 pub use commands::{ChessMove, Position, TimeControl, UCICommand};
 pub use engine::{EngineCommand, EngineIdentification, SearchResult, UCIEngine};
+pub use handlers::BasicCommandHandler;
 pub use parser::{BatchParser, ParserStats, ZeroCopyParser};
+pub use response::{UCIResponse, ResponseFormatter, InfoBuilder, BestMoveBuilder};
 pub use sanitizer::{InputLimits, InputSanitizer};
 pub use state::{EngineConfig, EngineState, EngineStatistics, SearchContext, StateChangeEvent, UCIState};
 

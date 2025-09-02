@@ -72,7 +72,12 @@ pub mod testing;
 
 // Re-export commonly used types
 pub use error::{UCIError, UCIResult, ErrorContext, ContextualError, ContextualResult, ResultExt};
-pub use uci::{UCICommand, ZeroCopyParser, ParserStats, InputSanitizer, ChessMove, Position, TimeControl};
+pub use uci::{
+    UCICommand, ZeroCopyParser, ParserStats, InputSanitizer, ChessMove, Position, TimeControl,
+    UCIEngine, EngineIdentification, BasicCommandHandler, UCIResponse, ResponseFormatter,
+    InfoBuilder, BestMoveBuilder, UCIState, EngineState, EngineStatistics, SearchContext,
+    StateChangeEvent, EngineConfig
+};
 
 /// Global panic hook setup for never-panic operation
 ///
