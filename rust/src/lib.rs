@@ -65,12 +65,14 @@ pub mod error;
 pub mod ffi;
 pub mod logging;
 pub mod runtime;
+pub mod uci;
 
 #[cfg(test)]
 pub mod testing;
 
 // Re-export commonly used types
 pub use error::{UCIError, UCIResult, ErrorContext, ContextualError, ContextualResult, ResultExt};
+pub use uci::{UCICommand, ZeroCopyParser, ParserStats, InputSanitizer, ChessMove, Position, TimeControl};
 
 /// Global panic hook setup for never-panic operation
 ///

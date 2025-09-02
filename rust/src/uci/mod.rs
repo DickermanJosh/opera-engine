@@ -1,0 +1,19 @@
+// UCI (Universal Chess Interface) module for Opera Chess Engine
+//
+// This module provides a complete UCI protocol implementation with zero-copy parsing,
+// comprehensive input validation, and never-panic operation for production use.
+
+pub mod commands;
+pub mod engine;
+pub mod parser;
+pub mod sanitizer;
+pub mod state;
+
+pub use commands::{ChessMove, Position, TimeControl, UCICommand};
+pub use engine::{EngineCommand, EngineIdentification, SearchResult, UCIEngine};
+pub use parser::{BatchParser, ParserStats, ZeroCopyParser};
+pub use sanitizer::{InputLimits, InputSanitizer};
+pub use state::{EngineConfig, EngineState, EngineStatistics, SearchContext, StateChangeEvent, UCIState};
+
+// Re-export commonly used error types
+pub use crate::error::{UCIError, UCIResult};

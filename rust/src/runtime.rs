@@ -7,7 +7,7 @@ use std::time::Duration;
 use tokio::runtime::{Builder, Handle, Runtime};
 use tokio::sync::{mpsc, oneshot, Mutex};
 use tokio::time::{sleep, timeout, Instant};
-use futures::future;
+// use futures::future; // TODO: Re-enable when async utilities are used
 use tracing::{debug, info, warn, instrument};
 use crate::error::{UCIResult, UCIError};
 

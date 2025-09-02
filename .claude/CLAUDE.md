@@ -1,7 +1,7 @@
 # Chess Engine Project - Development Guide
 
 ## Project Overview
-A UCI-compliant chess engine with Paul Morphy-inspired playing style, built as a monorepo with C++ core, Rust UCI system and Python AI wrapper.
+A UCI-compliant chess engine with Paul Morphy-inspired playing style, built as a monorepo with C++ core, Rust UCI system and Python AI wrapper. Refer to the project as: The Opera Engine / Opera Engine
 
 ### Core Principles
 - **Performance First**: C++ handles all time-critical operations (board representation, move generation, search)
