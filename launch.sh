@@ -22,6 +22,7 @@ PERFT_DEPTH=0
 BUILD_FIRST=false
 SHOW_HELP=false
 DEBUG_MODE=false
+CI_MODE=false
 
 # Parse command line arguments
 i=1
@@ -30,6 +31,10 @@ while [ $i -le $# ]; do
     case $arg in
         --test)
             RUN_TESTS=true
+            ;;
+        --ci)
+            RUN_TESTS=true
+            CI_MODE=true
             ;;
         --performance)
             RUN_PERFORMANCE_TESTS=true
@@ -85,6 +90,7 @@ if [ "$SHOW_HELP" = true ]; then
     echo ""
     echo "Options:"
     echo "  --test          Run test suite instead of normal application"
+    echo "  --ci            Run core tests only (excludes performance tests, ideal for CI)"
     echo "  --performance   Run comprehensive performance test suite"
     echo "  --perft         Run Perft validation suite"
     echo "  --perft \"FEN\" D   Run Perft on specific position to depth D"
@@ -94,7 +100,8 @@ if [ "$SHOW_HELP" = true ]; then
     echo ""
     echo "Examples:"
     echo "  ./launch.sh                    # Run normal application"
-    echo "  ./launch.sh --test             # Run test suite"
+    echo "  ./launch.sh --test             # Run all tests"
+    echo "  ./launch.sh --ci               # Run core tests only (for CI/CD)"
     echo "  ./launch.sh --performance      # Run performance tests"
     echo "  ./launch.sh --perft            # Run Perft validation suite"
     echo "  ./launch.sh --perft \"FEN\" 5     # Test specific position to depth 5"
@@ -199,13 +206,25 @@ elif [ "$RUN_PERFORMANCE_TESTS" = true ]; then
         exit 1
     fi
 elif [ "$RUN_TESTS" = true ]; then
-    echo -e "${BLUE}🧪 Running Test Suite...${NC}"
-    echo "========================"
+    if [ "$CI_MODE" = true ]; then
+        echo -e "${BLUE}🧪 Running Core Test Suite (CI Mode - No Performance Tests)...${NC}"
+        echo "=================================================================="
+    else
+        echo -e "${BLUE}🧪 Running Test Suite...${NC}"
+        echo "========================"
+    fi
     
     if [ -f "tests/opera_tests" ]; then
-        # Run tests directly for better output control
-        ./tests/opera_tests
-        TEST_RESULT=$?
+        if [ "$CI_MODE" = true ]; then
+            # Run only core tests, exclude performance and memory audit tests
+            echo -e "${YELLOW}Excluding performance and memory intensive tests for CI${NC}"
+            ./tests/opera_tests --gtest_filter="-PerformanceTest.*:MemoryAuditTest.*:BoardPerformanceTest.*" --gtest_color=yes
+            TEST_RESULT=$?
+        else
+            # Run all tests
+            ./tests/opera_tests
+            TEST_RESULT=$?
+        fi
         
         echo ""
         if [ $TEST_RESULT -eq 0 ]; then
