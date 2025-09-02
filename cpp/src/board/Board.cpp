@@ -826,13 +826,24 @@ bool Board::isLegalMove(const MoveGen& move, Color color) const {
     
     // Execute move without legality check for testing
     Piece movingPiece = tempBoard.getPiece(from);
-    Piece capturedPiece = tempBoard.getPiece(to);
     
     tempBoard.removePiece(from);
-    if (capturedPiece != NO_PIECE) {
-        tempBoard.removePiece(to);
+    
+    // Handle special en passant case
+    if (move.isEnPassant()) {
+        // En passant: captured pawn is not on destination square
+        Square capturedSquare = to + (color == WHITE ? SOUTH : NORTH);
+        tempBoard.removePiece(capturedSquare);
+        tempBoard.setPiece(to, movingPiece);
+    } else {
+        // Normal move or capture
+        Piece capturedPiece = tempBoard.getPiece(to);
+        if (capturedPiece != NO_PIECE) {
+            tempBoard.removePiece(to);
+        }
+        tempBoard.setPiece(to, movingPiece);
     }
-    tempBoard.setPiece(to, movingPiece);
+    
     tempBoard.updateOccupancy();
     
     // Check if the king is in check after the move
