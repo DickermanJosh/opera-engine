@@ -76,7 +76,7 @@ pub mod testing;
 pub use error::{UCIError, UCIResult, ErrorContext, ContextualError, ContextualResult, ResultExt};
 pub use uci::{
     UCICommand, ZeroCopyParser, ParserStats, InputSanitizer, ChessMove, Position, TimeControl,
-    UCIEngine, EngineIdentification, BasicCommandHandler, UCIResponse, ResponseFormatter,
+    UCIEngine, EngineIdentification, BasicCommandHandler, PositionCommandHandler, UCIResponse, ResponseFormatter,
     InfoBuilder, BestMoveBuilder, UCIState, EngineState, EngineStatistics, SearchContext,
     StateChangeEvent, EngineConfig, UCIEventLoop, EventLoopConfig, EventLoopStats, run_uci_event_loop
 };

@@ -4,5 +4,7 @@
 // organized by functionality and complexity level.
 
 pub mod basic;
+pub mod position;
 
 pub use basic::BasicCommandHandler;
+pub use position::PositionCommandHandler;
