@@ -1,4 +1,5 @@
-// Build script for cxx integration with C++ Opera Engine core
+//! Build script for cxx integration with C++ Opera Engine core
+
 use std::path::PathBuf;
 
 fn main() {
@@ -11,7 +12,6 @@ fn main() {
 
         // Get the path to the C++ engine
         let cpp_include_path = PathBuf::from("../cpp/include");
-        let cpp_lib_path = PathBuf::from("../cpp/build");
 
         // Configure cxx build with compatible toolchain settings
         // Build directly from source to avoid static library compatibility issues
