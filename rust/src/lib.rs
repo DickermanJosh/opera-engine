@@ -76,7 +76,7 @@ pub use uci::{
     UCICommand, ZeroCopyParser, ParserStats, InputSanitizer, ChessMove, Position, TimeControl,
     UCIEngine, EngineIdentification, BasicCommandHandler, UCIResponse, ResponseFormatter,
     InfoBuilder, BestMoveBuilder, UCIState, EngineState, EngineStatistics, SearchContext,
-    StateChangeEvent, EngineConfig
+    StateChangeEvent, EngineConfig, UCIEventLoop, EventLoopConfig, EventLoopStats, run_uci_event_loop
 };
 
 /// Global panic hook setup for never-panic operation
