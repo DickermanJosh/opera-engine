@@ -5,6 +5,8 @@
 
 pub mod basic;
 pub mod position;
+pub mod newgame;
 
 pub use basic::BasicCommandHandler;
 pub use position::PositionCommandHandler;
+pub use newgame::NewGameHandler;
