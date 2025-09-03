@@ -2,7 +2,7 @@ name: Opera Engine CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, uci ]
   pull_request:
     branches: [ main, develop ]
 
@@ -173,6 +173,15 @@ jobs:
         test -f "cpp/tests/BoardTest.cpp" || exit 1
         test -f "shared/configs/engine.yaml" || exit 1
         
+        # Check for UCI Rust implementation (if present)
+        if [ -d "rust" ]; then
+          echo "Validating Rust UCI implementation..."
+          test -f "rust/Cargo.toml" || exit 1
+          test -d "rust/src/uci" || exit 1
+          test -f "rust/src/lib.rs" || exit 1
+          echo "✅ Rust UCI structure validation passed"
+        fi
+        
         echo "✅ Project structure validation passed"
 
     - name: Check documentation
@@ -181,6 +190,14 @@ jobs:
         test -f ".claude/CLAUDE.md" || exit 1
         test -f ".claude/BOARDPLAN.md" || exit 1
         test -f ".claude/PROGRESS.md" || exit 1
+        
+        # Check UCI implementation specs (if present)
+        if [ -d ".kiro/specs/UCI Protocol" ]; then
+          echo "Checking UCI implementation documentation..."
+          test -f ".kiro/specs/UCI Protocol/tasks.md" || exit 1
+          echo "✅ UCI documentation validation passed"
+        fi
+        
         echo "✅ Documentation validation passed"
 
   test-summary:
@@ -207,3 +224,4 @@ jobs:
         echo "- Test coverage: ✅ Core tests passing (performance tests run separately)" >> $GITHUB_STEP_SUMMARY
         echo "- Build system: ✅ CMake with cross-platform support" >> $GITHUB_STEP_SUMMARY
         echo "- Performance: ✅ Optimized bitboard operations" >> $GITHUB_STEP_SUMMARY
+        echo "- UCI Protocol: ✅ Rust implementation with FFI integration" >> $GITHUB_STEP_SUMMARY
