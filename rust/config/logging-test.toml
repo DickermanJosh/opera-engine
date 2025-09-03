@@ -1,0 +1,44 @@
+# Testing Logging Configuration
+# For running tests with appropriate logging levels
+
+[general]
+level = "trace"
+environment = "testing"
+
+[console]
+enabled = true
+format = "human"
+with_target = true
+with_thread_ids = false
+with_file_location = true
+with_timestamp = false
+with_colors = true
+
+[file]
+enabled = false
+path = "logs/opera-uci-test.log"
+format = "human"
+with_target = true
+with_thread_ids = false
+with_file_location = true
+with_timestamp = false
+max_size_mb = 10
+rotate_count = 2
+
+[spans]
+events = ["enter", "exit"]
+max_level = "trace"
+
+[filters]
+# Comprehensive logging for testing
+default = "trace"
+"opera_uci::uci" = "trace"
+"opera_uci::engine" = "trace"
+"opera_uci::ffi" = "debug"
+"opera_uci::search" = "trace"
+"opera_uci::error" = "trace"
+
+[performance]
+log_search_progress = false
+log_resource_usage = false
+log_timing = true

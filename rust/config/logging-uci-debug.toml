@@ -1,0 +1,51 @@
+# UCI Debug Logging Configuration
+# Specialized for debugging UCI protocol communication
+
+[general]
+level = "debug"
+environment = "uci_debug"
+
+[console]
+enabled = true
+format = "human"
+with_target = false
+with_thread_ids = false
+with_file_location = false
+with_timestamp = true
+with_colors = false
+
+[file]
+enabled = true
+path = "logs/opera-uci-debug.log"
+format = "human"
+with_target = false
+with_thread_ids = false
+with_file_location = false
+with_timestamp = true
+max_size_mb = 25
+rotate_count = 3
+
+[spans]
+events = []
+max_level = "debug"
+
+[filters]
+# Focus on UCI protocol debugging
+default = "info"
+"opera_uci::uci" = "debug"
+"opera_uci::protocol" = "trace"
+"opera_uci::commands" = "debug"
+"opera_uci::engine" = "info"
+"opera_uci::ffi" = "warn"
+"opera_uci::search" = "info"
+
+[performance]
+log_search_progress = true
+log_resource_usage = true
+log_timing = true
+
+[uci_specific]
+log_input_commands = true
+log_output_responses = true
+log_command_timing = true
+log_position_changes = true
