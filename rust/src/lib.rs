@@ -63,6 +63,8 @@ use tracing::{error, info, warn};
 pub mod error;
 #[cfg(feature = "ffi")]
 pub mod ffi;
+#[cfg(feature = "ffi")]
+pub mod bridge;
 pub mod logging;
 pub mod runtime;
 pub mod uci;
@@ -232,6 +234,10 @@ pub fn initialize_engine() -> UCIResult<()> {
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const NAME: &str = "Opera Engine";
 pub const AUTHOR: &str = "Opera Engine Team";
+
+/// Additional FFI bridge components
+#[cfg(feature = "ffi")]
+pub use bridge::Board;
 
 /// UCI options supported by the engine
 pub mod uci_options {

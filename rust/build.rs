@@ -13,18 +13,28 @@ fn main() {
         let cpp_include_path = PathBuf::from("../cpp/include");
         let cpp_lib_path = PathBuf::from("../cpp/build");
         
-        // Configure cxx build
-        cxx_build::bridge("src/ffi.rs")
-            .file("../cpp/src/UCIBridge.cpp")  // Will be created in task 1.2
+        // Configure cxx build with compatible toolchain settings
+        // Build directly from source to avoid static library compatibility issues
+        let mut bridge = cxx_build::bridge("src/ffi.rs");
+        bridge
+            .file("../cpp/src/UCIBridge.cpp")
+            .file("../cpp/src/board/Board.cpp")
+            .file("../cpp/src/board/MoveGenerator.cpp")
+            .file("../cpp/src/utils/Types.cpp")
             .include(&cpp_include_path)
             .flag("-std=c++17")
             .flag("-O3")
-            .flag("-DNDEBUG")
-            .compile("opera-uci-bridge");
+            .flag("-DNDEBUG");
+            
+        // Force use of system clang to avoid toolchain mismatch
+        #[cfg(target_os = "macos")]
+        {
+            bridge
+                .cpp(true)
+                .flag("-fno-addrsig");  // Disable address significance tables that cause compatibility issues
+        }
         
-        // Link against the Opera Engine core library
-        println!("cargo:rustc-link-search=native={}", cpp_lib_path.display());
-        println!("cargo:rustc-link-lib=static=opera_core");
+        bridge.compile("opera-uci-bridge");
         
         // Platform-specific linking
         #[cfg(target_os = "linux")]

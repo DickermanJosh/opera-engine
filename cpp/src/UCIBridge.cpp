@@ -49,18 +49,19 @@ const SearchInfo& Search::getSearchInfo() const {
 std::unique_ptr<opera::Board> create_board() {
     try {
         return std::make_unique<opera::Board>();
-    } catch (const std::exception& e) {
-        on_engine_error("Failed to create board: " + std::string(e.what()));
+    } catch (const std::exception&) {
+        // Return nullptr on failure - Rust will handle error reporting
         return nullptr;
     }
 }
 
-bool board_set_fen(opera::Board& board, const std::string& fen) {
+bool board_set_fen(opera::Board& board, rust::Str fen) {
     try {
-        board.setFromFEN(fen);
+        std::string fen_str(fen);
+        board.setFromFEN(fen_str);
         return true;
-    } catch (const std::exception& e) {
-        on_engine_error("Failed to set FEN '" + fen + "': " + std::string(e.what()));
+    } catch (const std::exception&) {
+        // Return false on failure - Rust will handle error reporting
         return false;
     }
 }
@@ -71,7 +72,6 @@ bool board_make_move(opera::Board& board, rust::Str move_str) {
     
     try {
         if (move_string.length() < 4) {
-            on_engine_error("Invalid move format: " + move_string);
             return false;
         }
         
@@ -83,7 +83,6 @@ bool board_make_move(opera::Board& board, rust::Str move_str) {
         
         if (from_file < 0 || from_file > 7 || from_rank < 0 || from_rank > 7 ||
             to_file < 0 || to_file > 7 || to_rank < 0 || to_rank > 7) {
-            on_engine_error("Invalid squares in move: " + move_string);
             return false;
         }
         
@@ -106,7 +105,6 @@ bool board_make_move(opera::Board& board, rust::Str move_str) {
                 case 'b': promotion = color == opera::WHITE ? opera::WHITE_BISHOP : opera::BLACK_BISHOP; break;
                 case 'n': promotion = color == opera::WHITE ? opera::WHITE_KNIGHT : opera::BLACK_KNIGHT; break;
                 default:
-                    on_engine_error("Invalid promotion piece: " + std::string(1, promo));
                     return false;
             }
         }
@@ -114,8 +112,7 @@ bool board_make_move(opera::Board& board, rust::Str move_str) {
         opera::MoveGen move(from, to, moveType, promotion);
         return board.makeMove(move);
         
-    } catch (const std::exception& e) {
-        on_engine_error("Failed to make move '" + move_string + "': " + std::string(e.what()));
+    } catch (const std::exception&) {
         return false;
     }
 }
@@ -123,8 +120,7 @@ bool board_make_move(opera::Board& board, rust::Str move_str) {
 rust::String board_get_fen(const opera::Board& board) {
     try {
         return rust::String(board.toFEN());
-    } catch (const std::exception& e) {
-        on_engine_error("Failed to get FEN: " + std::string(e.what()));
+    } catch (const std::exception&) {
         return rust::String("");
     }
 }
@@ -142,8 +138,8 @@ bool board_is_valid_move(const opera::Board& board, rust::Str move_str) {
 void board_reset(opera::Board& board) {
     try {
         board.setFromFEN(opera::STARTING_FEN);
-    } catch (const std::exception& e) {
-        on_engine_error("Failed to reset board: " + std::string(e.what()));
+    } catch (const std::exception&) {
+        // Ignore errors during reset - best effort
     }
 }
 
@@ -151,8 +147,7 @@ void board_reset(opera::Board& board) {
 bool board_is_in_check(const opera::Board& board) {
     try {
         return board.isInCheck(board.getSideToMove());
-    } catch (const std::exception& e) {
-        on_engine_error("Failed to check if in check: " + std::string(e.what()));
+    } catch (const std::exception&) {
         return false;
     }
 }
@@ -161,8 +156,7 @@ bool board_is_checkmate(const opera::Board& board) {
     try {
         opera::Color side = board.getSideToMove();
         return board.isInCheck(side) && board.isCheckmate(side);
-    } catch (const std::exception& e) {
-        on_engine_error("Failed to check for checkmate: " + std::string(e.what()));
+    } catch (const std::exception&) {
         return false;
     }
 }
@@ -171,8 +165,7 @@ bool board_is_stalemate(const opera::Board& board) {
     try {
         opera::Color side = board.getSideToMove();
         return !board.isInCheck(side) && board.isStalemate(side);
-    } catch (const std::exception& e) {
-        on_engine_error("Failed to check for stalemate: " + std::string(e.what()));
+    } catch (const std::exception&) {
         return false;
     }
 }
@@ -181,8 +174,7 @@ bool board_is_stalemate(const opera::Board& board) {
 std::unique_ptr<opera::Search> create_search() {
     try {
         return std::make_unique<opera::Search>();
-    } catch (const std::exception& e) {
-        on_engine_error("Failed to create search: " + std::string(e.what()));
+    } catch (const std::exception&) {
         return nullptr;
     }
 }
@@ -195,8 +187,7 @@ bool search_start(opera::Search& search, const opera::Board& board, int32_t dept
         limits.nodes = 0;
         limits.infinite = false;
         return search.startSearch(board, limits);
-    } catch (const std::exception& e) {
-        on_engine_error("Failed to start search: " + std::string(e.what()));
+    } catch (const std::exception&) {
         return false;
     }
 }
@@ -204,16 +195,15 @@ bool search_start(opera::Search& search, const opera::Board& board, int32_t dept
 void search_stop(opera::Search& search) {
     try {
         search.stop();
-    } catch (const std::exception& e) {
-        on_engine_error("Failed to stop search: " + std::string(e.what()));
+    } catch (const std::exception&) {
+        // Ignore errors during stop - best effort
     }
 }
 
 rust::String search_get_best_move(const opera::Search& search) {
     try {
         return rust::String(search.getBestMove());
-    } catch (const std::exception& e) {
-        on_engine_error("Failed to get best move: " + std::string(e.what()));
+    } catch (const std::exception&) {
         return rust::String("");
     }
 }
@@ -222,8 +212,7 @@ rust::String search_get_best_move(const opera::Search& search) {
 bool search_is_searching(const opera::Search& search) {
     try {
         return search.isSearching();
-    } catch (const std::exception& e) {
-        on_engine_error("Failed to check search status: " + std::string(e.what()));
+    } catch (const std::exception&) {
         return false;
     }
 }
