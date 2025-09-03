@@ -60,11 +60,11 @@
 use std::panic;
 use tracing::{error, info, warn};
 
+#[cfg(feature = "ffi")]
+pub mod bridge;
 pub mod error;
 #[cfg(feature = "ffi")]
 pub mod ffi;
-#[cfg(feature = "ffi")]
-pub mod bridge;
 pub mod logging;
 pub mod runtime;
 pub mod uci;
@@ -73,13 +73,13 @@ pub mod uci;
 pub mod testing;
 
 // Re-export commonly used types
-pub use error::{UCIError, UCIResult, ErrorContext, ContextualError, ContextualResult, ResultExt};
+pub use error::{ContextualError, ContextualResult, ErrorContext, ResultExt, UCIError, UCIResult};
 pub use uci::{
-    UCICommand, ZeroCopyParser, ParserStats, InputSanitizer, ChessMove, Position, TimeControl,
-    UCIEngine, EngineIdentification, BasicCommandHandler, PositionCommandHandler, NewGameHandler, 
-    UCIResponse, ResponseFormatter, InfoBuilder, BestMoveBuilder, UCIState, EngineState, 
-    EngineStatistics, SearchContext, StateChangeEvent, EngineConfig, UCIEventLoop, 
-    EventLoopConfig, EventLoopStats, run_uci_event_loop
+    run_uci_event_loop, BasicCommandHandler, BestMoveBuilder, ChessMove, EngineConfig,
+    EngineIdentification, EngineState, EngineStatistics, EventLoopConfig, EventLoopStats,
+    InfoBuilder, InputSanitizer, NewGameHandler, ParserStats, Position, PositionCommandHandler,
+    ResponseFormatter, SearchContext, StateChangeEvent, TimeControl, UCICommand, UCIEngine,
+    UCIEventLoop, UCIResponse, UCIState, ZeroCopyParser,
 };
 
 /// Global panic hook setup for never-panic operation
@@ -89,15 +89,17 @@ pub use uci::{
 pub fn setup_panic_hook() {
     // Set custom panic hook that logs and exits gracefully
     let original_hook = panic::take_hook();
-    
+
     panic::set_hook(Box::new(move |panic_info| {
         // Log the panic with maximum detail for debugging
         error!("CRITICAL: Panic occurred in UCI engine");
-        error!("Panic location: {}", 
-               panic_info.location().map_or("unknown".to_string(), |loc| {
-                   format!("{}:{}:{}", loc.file(), loc.line(), loc.column())
-               }));
-        
+        error!(
+            "Panic location: {}",
+            panic_info.location().map_or("unknown".to_string(), |loc| {
+                format!("{}:{}:{}", loc.file(), loc.line(), loc.column())
+            })
+        );
+
         if let Some(payload) = panic_info.payload().downcast_ref::<&'static str>() {
             error!("Panic message: {}", payload);
         } else if let Some(payload) = panic_info.payload().downcast_ref::<String>() {
@@ -105,18 +107,18 @@ pub fn setup_panic_hook() {
         } else {
             error!("Panic message: <unknown>");
         }
-        
+
         // Print UCI error message to stdout for GUI
         println!("info string CRITICAL ERROR: Engine panic - shutting down gracefully");
         eprintln!("CRITICAL: UCI engine panic - see logs for details");
-        
+
         // Call original hook for any additional panic handling
         original_hook(panic_info);
-        
+
         // Exit gracefully instead of aborting
         std::process::exit(1);
     }));
-    
+
     info!("Panic hook installed - UCI engine will never panic");
 }
 
@@ -126,13 +128,15 @@ pub fn setup_panic_hook() {
 /// back to the Rust coordination layer.
 pub fn report_engine_error(message: String) {
     warn!("C++ engine error reported: {}", message);
-    
+
     // Convert to structured error for handling
-    let error = UCIError::Engine { message: message.clone() };
-    
+    let error = UCIError::Engine {
+        message: message.clone(),
+    };
+
     // Apply recovery strategy
     error::recovery::recover_from_error(&error, "C++ engine");
-    
+
     // Report to GUI if needed
     println!("info string ENGINE ERROR: {}", message);
 }
@@ -144,7 +148,7 @@ pub fn report_engine_error(message: String) {
 #[cfg(feature = "ffi")]
 pub fn report_search_progress(info: &ffi::ffi::SearchInfo) {
     use tracing::debug;
-    
+
     debug!(
         depth = info.depth,
         score = info.score,
@@ -154,7 +158,7 @@ pub fn report_search_progress(info: &ffi::ffi::SearchInfo) {
         pv = %info.pv,
         "Search progress update"
     );
-    
+
     // Output UCI info string
     println!(
         "info depth {} score cp {} time {} nodes {} nps {} pv {}",
@@ -168,10 +172,10 @@ pub fn report_search_progress(info: &ffi::ffi::SearchInfo) {
 /// the UCI engine to ensure reliable operation.
 pub fn initialize_engine() -> UCIResult<()> {
     info!("Initializing Opera UCI Engine");
-    
+
     // Install panic hook first
     setup_panic_hook();
-    
+
     #[cfg(feature = "ffi")]
     {
         // Verify FFI integration
@@ -182,7 +186,7 @@ pub fn initialize_engine() -> UCIResult<()> {
             });
         }
         info!("FFI bridge to C++ engine verified");
-        
+
         // Test basic board operations
         let starting_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
         let success = ffi::ffi::board_set_fen(board.pin_mut(), starting_fen);
@@ -191,7 +195,7 @@ pub fn initialize_engine() -> UCIResult<()> {
                 message: "Failed to set starting FEN via FFI".to_string(),
             });
         }
-        
+
         let retrieved_fen = ffi::ffi::board_get_fen(&board);
         if retrieved_fen != starting_fen {
             return Err(UCIError::Ffi {
@@ -202,7 +206,7 @@ pub fn initialize_engine() -> UCIResult<()> {
             });
         }
         info!("Basic board operations verified");
-        
+
         // Test search object creation
         let search = ffi::ffi::create_search();
         if search.is_null() {
@@ -211,7 +215,7 @@ pub fn initialize_engine() -> UCIResult<()> {
             });
         }
         info!("Search engine interface verified");
-        
+
         // Verify engine configuration functions
         let hash_result = ffi::ffi::engine_set_hash_size(128);
         let thread_result = ffi::ffi::engine_set_threads(1);
@@ -221,12 +225,12 @@ pub fn initialize_engine() -> UCIResult<()> {
             info!("Engine configuration interface verified");
         }
     }
-    
+
     #[cfg(not(feature = "ffi"))]
     {
         info!("FFI disabled - skipping C++ engine verification");
     }
-    
+
     info!("Opera UCI Engine initialization complete");
     Ok(())
 }
@@ -255,39 +259,40 @@ pub mod uci_options {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_version_info() {
         assert!(!VERSION.is_empty());
         assert_eq!(NAME, "Opera Engine");
         assert_eq!(AUTHOR, "Opera Engine Team");
     }
-    
+
     #[test]
     fn test_uci_options() {
         assert_eq!(uci_options::OPTIONS.len(), 5);
-        
+
         // Check that Hash option exists
-        let hash_option = uci_options::OPTIONS.iter()
+        let hash_option = uci_options::OPTIONS
+            .iter()
             .find(|(name, _, _)| *name == "Hash")
             .expect("Hash option should exist");
         assert_eq!(hash_option.1, "spin");
         assert_eq!(hash_option.2, "128");
     }
-    
+
     #[test]
     fn test_error_reporting() {
         // Test that error reporting doesn't panic
         report_engine_error("Test error message".to_string());
     }
-    
-    #[test] 
+
+    #[test]
     fn test_panic_hook_installation() {
         // This test just verifies the function can be called
         // We can't easily test panic behavior in unit tests
         setup_panic_hook();
     }
-    
+
     #[tokio::test]
     async fn test_engine_initialization() {
         // Test initialization (may fail if C++ engine not available)
@@ -305,26 +310,44 @@ mod tests {
             }
         }
     }
-    
+
     /// Test error type coverage
     #[test]
     fn test_error_types_comprehensive() {
         use error::UCIError;
-        
+
         // Test each error variant can be created
         let errors = vec![
-            UCIError::Protocol { message: "test".to_string() },
-            UCIError::Engine { message: "test".to_string() },
-            UCIError::Position { message: "test".to_string() },
-            UCIError::Move { message: "test".to_string() },
-            UCIError::Search { message: "test".to_string() },
-            UCIError::Configuration { message: "test".to_string() },
-            UCIError::Ffi { message: "test".to_string() },
+            UCIError::Protocol {
+                message: "test".to_string(),
+            },
+            UCIError::Engine {
+                message: "test".to_string(),
+            },
+            UCIError::Position {
+                message: "test".to_string(),
+            },
+            UCIError::Move {
+                message: "test".to_string(),
+            },
+            UCIError::Search {
+                message: "test".to_string(),
+            },
+            UCIError::Configuration {
+                message: "test".to_string(),
+            },
+            UCIError::Ffi {
+                message: "test".to_string(),
+            },
             UCIError::Timeout { duration_ms: 1000 },
-            UCIError::Resource { resource: "memory".to_string() },
-            UCIError::Internal { message: "test".to_string() },
+            UCIError::Resource {
+                resource: "memory".to_string(),
+            },
+            UCIError::Internal {
+                message: "test".to_string(),
+            },
         ];
-        
+
         // Verify all errors can be displayed
         for error in errors {
             let _display = format!("{}", error);

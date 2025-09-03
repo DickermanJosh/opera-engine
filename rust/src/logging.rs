@@ -3,39 +3,36 @@
 // This module provides structured logging with tracing, supporting multiple
 // output formats and configurable log levels for development and production.
 
+use crate::error::{UCIError, UCIResult};
 use std::env;
 use std::path::PathBuf;
 use tracing::Level;
-use tracing_subscriber::{
-    fmt::{format::FmtSpan},
-    EnvFilter,
-};
-use crate::error::{UCIResult, UCIError};
+use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
 
 /// Logging configuration options
 #[derive(Debug, Clone)]
 pub struct LoggingConfig {
     /// Log level (trace, debug, info, warn, error)
     pub level: Level,
-    
+
     /// Whether to include target information in logs
     pub with_target: bool,
-    
+
     /// Whether to include thread IDs in logs
     pub with_thread_ids: bool,
-    
+
     /// Whether to include file and line information
     pub with_file_location: bool,
-    
+
     /// Whether to include timestamps
     pub with_timestamp: bool,
-    
+
     /// Span events to include (new, close, enter, exit)
     pub span_events: FmtSpan,
-    
+
     /// Optional log file path (None for stdout only)
     pub file_path: Option<PathBuf>,
-    
+
     /// Whether to use JSON format for structured logging
     pub json_format: bool,
 }
@@ -69,7 +66,7 @@ impl LoggingConfig {
             json_format: false,
         }
     }
-    
+
     /// Create production configuration with minimal logging
     pub fn production() -> Self {
         Self {
@@ -83,7 +80,7 @@ impl LoggingConfig {
             json_format: true,
         }
     }
-    
+
     /// Create testing configuration with trace-level logging
     pub fn testing() -> Self {
         Self {
@@ -97,7 +94,7 @@ impl LoggingConfig {
             json_format: false,
         }
     }
-    
+
     /// Create configuration optimized for UCI debugging
     pub fn uci_debug() -> Self {
         Self {
@@ -135,12 +132,12 @@ pub fn initialize_logging(config: LoggingConfig) -> UCIResult<()> {
     } else {
         subscriber.without_time().init();
     }
-    
+
     tracing::info!("Logging initialized with level: {}", config.level);
     if let Some(file_path) = &config.file_path {
         tracing::info!("Log file configured: {}", file_path.display());
     }
-    
+
     Ok(())
 }
 
@@ -157,25 +154,24 @@ pub fn initialize_from_env() -> UCIResult<()> {
     } else {
         LoggingConfig::default()
     };
-    
+
     initialize_logging(config)
 }
-
 
 /// Logging utilities and helper functions
 pub mod utils {
     use tracing::{debug, error, info, warn};
-    
+
     /// Log UCI command received from GUI
     pub fn log_uci_input(command: &str) {
         debug!(command = %command, "← UCI command received");
     }
-    
+
     /// Log UCI response sent to GUI
     pub fn log_uci_output(response: &str) {
         debug!(response = %response, "→ UCI response sent");
     }
-    
+
     /// Log engine operation with timing
     pub fn log_timed_operation<T>(
         operation: &str,
@@ -200,7 +196,7 @@ pub mod utils {
             }
         }
     }
-    
+
     /// Log search progress with structured data
     pub fn log_search_progress(
         depth: i32,
@@ -220,7 +216,7 @@ pub mod utils {
             "🔍 Search progress"
         );
     }
-    
+
     /// Log engine error with context
     pub fn log_engine_error(operation: &str, error: &dyn std::error::Error) {
         error!(
@@ -229,7 +225,7 @@ pub mod utils {
             "🚨 Engine error occurred"
         );
     }
-    
+
     /// Log FFI operation
     pub fn log_ffi_call(function: &str, success: bool) {
         if success {
@@ -238,7 +234,7 @@ pub mod utils {
             warn!(function = %function, "🔗 FFI call failed");
         }
     }
-    
+
     /// Log system resource usage
     pub fn log_resource_usage(memory_mb: u64, cpu_percent: f32) {
         debug!(
@@ -251,9 +247,9 @@ pub mod utils {
 
 /// Log level conversion utilities
 pub mod level_utils {
+    use crate::error::{UCIError, UCIResult};
     use tracing::Level;
-    use crate::error::{UCIResult, UCIError};
-    
+
     /// Parse log level from string
     pub fn parse_level(level_str: &str) -> UCIResult<Level> {
         match level_str.to_lowercase().as_str() {
@@ -267,7 +263,7 @@ pub mod level_utils {
             }),
         }
     }
-    
+
     /// Convert log level to string
     pub fn level_to_string(level: &Level) -> &'static str {
         match *level {
@@ -278,13 +274,13 @@ pub mod level_utils {
             Level::ERROR => "error",
         }
     }
-    
+
     /// Get log level from environment variable
     pub fn level_from_env(var_name: &str) -> UCIResult<Level> {
         let level_str = std::env::var(var_name).map_err(|_| UCIError::Configuration {
             message: format!("Environment variable {} not set", var_name),
         })?;
-        
+
         parse_level(&level_str)
     }
 }
@@ -293,7 +289,7 @@ pub mod level_utils {
 mod tests {
     use super::*;
     use tracing::Level;
-    
+
     #[test]
     fn test_default_config() {
         let config = LoggingConfig::default();
@@ -305,7 +301,7 @@ mod tests {
         assert!(config.file_path.is_none());
         assert!(!config.json_format);
     }
-    
+
     #[test]
     fn test_development_config() {
         let config = LoggingConfig::development();
@@ -315,7 +311,7 @@ mod tests {
         assert!(config.file_path.is_some());
         assert!(!config.json_format);
     }
-    
+
     #[test]
     fn test_production_config() {
         let config = LoggingConfig::production();
@@ -325,7 +321,7 @@ mod tests {
         assert!(config.file_path.is_some());
         assert!(config.json_format);
     }
-    
+
     #[test]
     fn test_testing_config() {
         let config = LoggingConfig::testing();
@@ -335,39 +331,39 @@ mod tests {
         assert!(config.file_path.is_none());
         assert!(!config.json_format);
     }
-    
+
     #[test]
     fn test_level_parsing() {
         use level_utils::*;
-        
+
         assert_eq!(parse_level("trace").unwrap(), Level::TRACE);
         assert_eq!(parse_level("DEBUG").unwrap(), Level::DEBUG);
         assert_eq!(parse_level("Info").unwrap(), Level::INFO);
         assert_eq!(parse_level("WARN").unwrap(), Level::WARN);
         assert_eq!(parse_level("error").unwrap(), Level::ERROR);
-        
+
         assert!(parse_level("invalid").is_err());
     }
-    
+
     #[test]
     fn test_level_to_string() {
         use level_utils::*;
-        
+
         assert_eq!(level_to_string(&Level::TRACE), "trace");
         assert_eq!(level_to_string(&Level::DEBUG), "debug");
         assert_eq!(level_to_string(&Level::INFO), "info");
         assert_eq!(level_to_string(&Level::WARN), "warn");
         assert_eq!(level_to_string(&Level::ERROR), "error");
     }
-    
+
     /// Integration test for logging initialization
     #[test]
     fn test_logging_initialization() {
         let config = LoggingConfig::testing();
-        
+
         // This should not fail in test environment
         let result = initialize_logging(config);
-        
+
         // We can't easily test the actual logging output,
         // but we can test that initialization doesn't panic
         if result.is_err() {

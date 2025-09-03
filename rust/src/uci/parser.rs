@@ -4,9 +4,7 @@
 // with comprehensive input validation and fuzzing resistance for production use.
 
 use crate::error::{UCIError, UCIResult};
-use crate::uci::commands::{
-    ChessMove, Position, RawCommand, SafeParse, TimeControl, UCICommand,
-};
+use crate::uci::commands::{ChessMove, Position, RawCommand, SafeParse, TimeControl, UCICommand};
 use crate::uci::sanitizer::InputSanitizer;
 
 /// High-performance zero-copy UCI command parser
@@ -54,25 +52,24 @@ impl ZeroCopyParser {
         self.stats.commands_parsed += 1;
 
         // First sanitize the input - but we need to work with the original line for lifetimes
-        let _sanitized = self.sanitizer.sanitize_command_line(line)
-            .map_err(|e| {
-                self.stats.sanitization_errors += 1;
-                e
-            })?;
+        let _sanitized = self.sanitizer.sanitize_command_line(line).map_err(|e| {
+            self.stats.sanitization_errors += 1;
+            e
+        })?;
 
         // Check for resource exhaustion patterns on original line
-        self.sanitizer.check_resource_exhaustion(line)
+        self.sanitizer
+            .check_resource_exhaustion(line)
             .map_err(|e| {
                 self.stats.validation_errors += 1;
                 e
             })?;
 
         // Parse into raw command structure using original line for zero-copy
-        let raw = RawCommand::new(line)
-            .map_err(|e| {
-                self.stats.parse_errors += 1;
-                e
-            })?;
+        let raw = RawCommand::new(line).map_err(|e| {
+            self.stats.parse_errors += 1;
+            e
+        })?;
 
         // Dispatch to specific command parser
         match raw.command.to_lowercase().as_str() {
@@ -172,7 +169,7 @@ impl ZeroCopyParser {
 
     fn parse_setoption<'a>(&mut self, raw: &RawCommand<'a>) -> UCIResult<UCICommand<'a>> {
         let pairs = raw.parse_key_value_pairs();
-        
+
         let name = pairs.get("name").ok_or_else(|| UCIError::Protocol {
             message: "setoption command missing 'name' parameter".to_string(),
         })?;
@@ -255,19 +252,19 @@ impl ZeroCopyParser {
                         message: "position fen command requires FEN string (6 parts)".to_string(),
                     });
                 }
-                
+
                 // Reconstruct FEN from tokens 1-6
                 let fen_parts = &raw.args[1..7];
                 let fen_string = fen_parts.join(" ");
-                
+
                 // Validate FEN format
                 self.sanitizer.validate_fen(&fen_string)?;
-                
+
                 // For zero-copy operation, we store the original slice
                 // This requires the FEN to be a single token, which it isn't in practice
                 // So we need to allocate here
                 self.stats.allocation_fallbacks += 1;
-                
+
                 // We'll use the first part as a representative slice
                 // In a real implementation, we'd need to store the reconstructed string
                 Position::Fen(raw.args[1])
@@ -298,7 +295,9 @@ impl ZeroCopyParser {
             }
             Position::Fen(_) => {
                 // Look for "moves" starting after FEN (index 7+)
-                raw.args[7..].iter().position(|&arg| arg == "moves")
+                raw.args[7..]
+                    .iter()
+                    .position(|&arg| arg == "moves")
                     .map(|i| i + 7)
             }
         };
@@ -306,7 +305,7 @@ impl ZeroCopyParser {
         let moves = if let Some(idx) = moves_index {
             let move_strings = &raw.args[idx + 1..];
             self.sanitizer.validate_move_list(move_strings)?;
-            
+
             let mut moves = Vec::with_capacity(move_strings.len());
             for move_str in move_strings {
                 moves.push(ChessMove::new(move_str)?);
@@ -321,7 +320,7 @@ impl ZeroCopyParser {
 
     fn parse_go<'a>(&mut self, raw: &RawCommand<'a>) -> UCIResult<UCICommand<'a>> {
         let mut time_control = TimeControl::default();
-        
+
         let mut i = 0;
         while i < raw.args.len() {
             match raw.args[i] {
@@ -402,15 +401,25 @@ impl ZeroCopyParser {
         *i += 1;
         let value = u64::safe_parse(raw.args[*i], param_name)?;
         *i += 1;
-        
+
         Ok(value)
     }
 
     fn is_go_parameter(&self, arg: &str) -> bool {
         matches!(
             arg,
-            "searchmoves" | "ponder" | "wtime" | "btime" | "winc" | "binc" 
-            | "movestogo" | "depth" | "nodes" | "mate" | "movetime" | "infinite"
+            "searchmoves"
+                | "ponder"
+                | "wtime"
+                | "btime"
+                | "winc"
+                | "binc"
+                | "movestogo"
+                | "depth"
+                | "nodes"
+                | "mate"
+                | "movetime"
+                | "infinite"
         )
     }
 
@@ -460,7 +469,9 @@ impl BatchParser {
         let mut results = Vec::with_capacity(lines.len());
 
         for line in lines {
-            let result = self.parser.parse_command(line)
+            let result = self
+                .parser
+                .parse_command(line)
                 .map(|cmd| format!("{:?}", cmd)); // Convert to debug string for now
             results.push(result);
         }
@@ -482,15 +493,15 @@ mod tests {
     #[test]
     fn test_basic_command_parsing() {
         let mut parser = ZeroCopyParser::new();
-        
+
         // Test uci command
         let cmd = parser.parse_command("uci").unwrap();
         assert!(matches!(cmd, UCICommand::Uci));
-        
+
         // Test isready command
         let cmd = parser.parse_command("isready").unwrap();
         assert!(matches!(cmd, UCICommand::IsReady));
-        
+
         // Test quit command
         let cmd = parser.parse_command("quit").unwrap();
         assert!(matches!(cmd, UCICommand::Quit));
@@ -499,13 +510,13 @@ mod tests {
     #[test]
     fn test_debug_command() {
         let mut parser = ZeroCopyParser::new();
-        
+
         let cmd = parser.parse_command("debug on").unwrap();
         assert!(matches!(cmd, UCICommand::Debug(true)));
-        
+
         let cmd = parser.parse_command("debug off").unwrap();
         assert!(matches!(cmd, UCICommand::Debug(false)));
-        
+
         // Invalid debug command
         assert!(parser.parse_command("debug").is_err());
         assert!(parser.parse_command("debug maybe").is_err());
@@ -514,7 +525,7 @@ mod tests {
     #[test]
     fn test_position_command() {
         let mut parser = ZeroCopyParser::new();
-        
+
         // Test startpos
         let cmd = parser.parse_command("position startpos").unwrap();
         if let UCICommand::Position { position, moves } = cmd {
@@ -523,9 +534,11 @@ mod tests {
         } else {
             panic!("Expected Position command");
         }
-        
+
         // Test startpos with moves
-        let cmd = parser.parse_command("position startpos moves e2e4 e7e5").unwrap();
+        let cmd = parser
+            .parse_command("position startpos moves e2e4 e7e5")
+            .unwrap();
         if let UCICommand::Position { position, moves } = cmd {
             assert!(matches!(position, Position::StartPos));
             assert_eq!(moves.len(), 2);
@@ -539,7 +552,7 @@ mod tests {
     #[test]
     fn test_go_command() {
         let mut parser = ZeroCopyParser::new();
-        
+
         // Test movetime
         let cmd = parser.parse_command("go movetime 1000").unwrap();
         if let UCICommand::Go(tc) = cmd {
@@ -547,7 +560,7 @@ mod tests {
         } else {
             panic!("Expected Go command");
         }
-        
+
         // Test depth
         let cmd = parser.parse_command("go depth 10").unwrap();
         if let UCICommand::Go(tc) = cmd {
@@ -555,7 +568,7 @@ mod tests {
         } else {
             panic!("Expected Go command");
         }
-        
+
         // Test infinite
         let cmd = parser.parse_command("go infinite").unwrap();
         if let UCICommand::Go(tc) = cmd {
@@ -563,9 +576,11 @@ mod tests {
         } else {
             panic!("Expected Go command");
         }
-        
+
         // Test complex go command
-        let cmd = parser.parse_command("go wtime 300000 btime 300000 winc 3000 binc 3000").unwrap();
+        let cmd = parser
+            .parse_command("go wtime 300000 btime 300000 winc 3000 binc 3000")
+            .unwrap();
         if let UCICommand::Go(tc) = cmd {
             assert_eq!(tc.white_time_ms, Some(300000));
             assert_eq!(tc.black_time_ms, Some(300000));
@@ -579,15 +594,17 @@ mod tests {
     #[test]
     fn test_setoption_command() {
         let mut parser = ZeroCopyParser::new();
-        
-        let cmd = parser.parse_command("setoption name Hash value 64").unwrap();
+
+        let cmd = parser
+            .parse_command("setoption name Hash value 64")
+            .unwrap();
         if let UCICommand::SetOption { name, value } = cmd {
             assert_eq!(name, "Hash");
             assert_eq!(value, Some("64"));
         } else {
             panic!("Expected SetOption command");
         }
-        
+
         // Missing name should error
         assert!(parser.parse_command("setoption value 64").is_err());
     }
@@ -595,10 +612,10 @@ mod tests {
     #[test]
     fn test_parser_stats() {
         let mut parser = ZeroCopyParser::new();
-        
+
         parser.parse_command("uci").unwrap();
         parser.parse_command("invalid_command").unwrap_err();
-        
+
         let stats = parser.stats();
         assert_eq!(stats.commands_parsed, 2);
         assert_eq!(stats.parse_errors, 1);
@@ -608,11 +625,11 @@ mod tests {
     #[test]
     fn test_input_sanitization() {
         let mut parser = ZeroCopyParser::new();
-        
+
         // Extra whitespace should be handled
         let cmd = parser.parse_command("  uci  ").unwrap();
         assert!(matches!(cmd, UCICommand::Uci));
-        
+
         // Control characters should be rejected
         assert!(parser.parse_command("uci\x00").is_err());
     }
@@ -620,7 +637,7 @@ mod tests {
     #[test]
     fn test_register_command() {
         let mut parser = ZeroCopyParser::new();
-        
+
         let cmd = parser.parse_command("register later").unwrap();
         if let UCICommand::Register { later, name, code } = cmd {
             assert!(later);
@@ -629,8 +646,10 @@ mod tests {
         } else {
             panic!("Expected Register command");
         }
-        
-        let cmd = parser.parse_command("register name John code 1234").unwrap();
+
+        let cmd = parser
+            .parse_command("register name John code 1234")
+            .unwrap();
         if let UCICommand::Register { later, name, code } = cmd {
             assert!(!later);
             assert_eq!(name, Some("John"));

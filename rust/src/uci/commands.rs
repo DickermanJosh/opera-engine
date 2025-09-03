@@ -13,7 +13,7 @@ use crate::error::{UCIError, UCIResult};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ChessMove<'a> {
     pub from_square: &'a str,
-    pub to_square: &'a str, 
+    pub to_square: &'a str,
     pub promotion: Option<&'a str>,
 }
 
@@ -135,8 +135,15 @@ impl Default for TimeControl {
 #[derive(Debug, Clone, PartialEq)]
 pub enum OptionValue<'a> {
     Check(bool),
-    Spin { value: i32, min: i32, max: i32 },
-    Combo { value: &'a str, choices: Vec<&'a str> },
+    Spin {
+        value: i32,
+        min: i32,
+        max: i32,
+    },
+    Combo {
+        value: &'a str,
+        choices: Vec<&'a str>,
+    },
     Button,
     String(&'a str),
 }
@@ -146,13 +153,13 @@ pub enum OptionValue<'a> {
 pub enum UCICommand<'a> {
     /// Initialize UCI protocol
     Uci,
-    
+
     /// Query if engine is ready
     IsReady,
-    
+
     /// Set up new game
     UciNewGame,
-    
+
     /// Set board position
     Position {
         /// Starting position: "startpos" or FEN string
@@ -160,28 +167,28 @@ pub enum UCICommand<'a> {
         /// List of moves to apply
         moves: Vec<ChessMove<'a>>,
     },
-    
+
     /// Start searching
     Go(TimeControl),
-    
+
     /// Stop current search
     Stop,
-    
+
     /// Handle ponderhit during pondering
     PonderHit,
-    
+
     /// Set engine option
     SetOption {
         name: &'a str,
         value: Option<&'a str>,
     },
-    
+
     /// Exit program
     Quit,
-    
+
     /// Debug mode toggle
     Debug(bool),
-    
+
     /// Register engine (for copy protection)
     Register {
         later: bool,
@@ -203,7 +210,7 @@ impl<'a> Position<'a> {
     /// Validate FEN string format (basic validation)
     pub fn validate_fen(fen: &str) -> UCIResult<()> {
         let parts: Vec<&str> = fen.split_whitespace().collect();
-        
+
         if parts.len() != 6 {
             return Err(UCIError::Position {
                 message: format!("Invalid FEN: expected 6 parts, got {}", parts.len()),
@@ -221,7 +228,10 @@ impl<'a> Position<'a> {
         // Active color validation
         if !matches!(parts[1], "w" | "b") {
             return Err(UCIError::Position {
-                message: format!("Invalid FEN: active color must be 'w' or 'b', got '{}'", parts[1]),
+                message: format!(
+                    "Invalid FEN: active color must be 'w' or 'b', got '{}'",
+                    parts[1]
+                ),
             });
         }
 
@@ -247,11 +257,17 @@ impl<'a> Position<'a> {
 
         // Halfmove and fullmove validation
         parts[4].parse::<u32>().map_err(|_| UCIError::Position {
-            message: format!("Invalid FEN: halfmove clock must be a number, got '{}'", parts[4]),
+            message: format!(
+                "Invalid FEN: halfmove clock must be a number, got '{}'",
+                parts[4]
+            ),
         })?;
 
         parts[5].parse::<u32>().map_err(|_| UCIError::Position {
-            message: format!("Invalid FEN: fullmove number must be a number, got '{}'", parts[5]),
+            message: format!(
+                "Invalid FEN: fullmove number must be a number, got '{}'",
+                parts[5]
+            ),
         })?;
 
         Ok(())
@@ -275,7 +291,7 @@ impl<'a> RawCommand<'a> {
     /// Create a new raw command from input line with zero-copy parsing
     pub fn new(line: &'a str) -> UCIResult<Self> {
         let trimmed = line.trim();
-        
+
         if trimmed.is_empty() {
             return Err(UCIError::Protocol {
                 message: "Empty command line".to_string(),
@@ -291,7 +307,7 @@ impl<'a> RawCommand<'a> {
 
         // Split into tokens using zero-copy string slicing
         let tokens: Vec<&str> = trimmed.split_whitespace().collect();
-        
+
         if tokens.is_empty() {
             return Err(UCIError::Protocol {
                 message: "No command tokens found".to_string(),
@@ -331,7 +347,7 @@ impl<'a> RawCommand<'a> {
     pub fn parse_key_value_pairs(&self) -> HashMap<&'a str, &'a str> {
         let mut pairs = HashMap::new();
         let mut i = 0;
-        
+
         while i < self.args.len() {
             if i + 4 <= self.args.len() && self.args[i] == "name" && self.args[i + 2] == "value" {
                 // UCI setoption pattern: "name <key> value <value>"
@@ -354,7 +370,7 @@ impl<'a> RawCommand<'a> {
                 i += 1;
             }
         }
-        
+
         pairs
     }
 }
@@ -422,13 +438,13 @@ mod tests {
         // Valid moves
         assert!(ChessMove::new("a1h8").is_ok());
         assert!(ChessMove::new("e7e8Q").is_ok());
-        
+
         // Invalid moves
-        assert!(ChessMove::new("e2").is_err());  // Too short
-        assert!(ChessMove::new("e2e4e5").is_err());  // Too long
-        assert!(ChessMove::new("i2e4").is_err());  // Invalid file
-        assert!(ChessMove::new("e9e4").is_err());  // Invalid rank
-        assert!(ChessMove::new("e2e4x").is_err());  // Invalid promotion
+        assert!(ChessMove::new("e2").is_err()); // Too short
+        assert!(ChessMove::new("e2e4e5").is_err()); // Too long
+        assert!(ChessMove::new("i2e4").is_err()); // Invalid file
+        assert!(ChessMove::new("e9e4").is_err()); // Invalid rank
+        assert!(ChessMove::new("e2e4x").is_err()); // Invalid promotion
     }
 
     #[test]
@@ -436,7 +452,7 @@ mod tests {
         let cmd = RawCommand::new("go movetime 1000").unwrap();
         assert_eq!(cmd.command, "go");
         assert_eq!(cmd.args, vec!["movetime", "1000"]);
-        
+
         let cmd = RawCommand::new("  position startpos moves e2e4 e7e5  ").unwrap();
         assert_eq!(cmd.command, "position");
         assert_eq!(cmd.args, vec!["startpos", "moves", "e2e4", "e7e5"]);
@@ -447,7 +463,7 @@ mod tests {
         // Empty command
         assert!(RawCommand::new("").is_err());
         assert!(RawCommand::new("   ").is_err());
-        
+
         // Command too long
         let long_cmd = "go ".repeat(2000);
         assert!(RawCommand::new(&long_cmd).is_err());
@@ -466,10 +482,10 @@ mod tests {
         // Valid FEN
         let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
         assert!(Position::validate_fen(fen).is_ok());
-        
+
         // Invalid FEN - wrong number of parts
         assert!(Position::validate_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR").is_err());
-        
+
         // Invalid FEN - wrong active color
         let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR x KQkq - 0 1";
         assert!(Position::validate_fen(fen).is_err());
@@ -479,7 +495,7 @@ mod tests {
     fn test_safe_parsing() {
         assert_eq!(u32::safe_parse("123", "test").unwrap(), 123);
         assert!(u32::safe_parse("abc", "test").is_err());
-        
+
         assert_eq!(bool::safe_parse("true", "test").unwrap(), true);
         assert_eq!(bool::safe_parse("false", "test").unwrap(), false);
         assert!(bool::safe_parse("maybe", "test").is_err());

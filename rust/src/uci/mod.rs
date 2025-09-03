@@ -14,12 +14,14 @@ pub mod state;
 
 pub use commands::{ChessMove, Position, TimeControl, UCICommand};
 pub use engine::{EngineCommand, EngineIdentification, SearchResult, UCIEngine};
-pub use event_loop::{UCIEventLoop, EventLoopConfig, EventLoopStats, run_uci_event_loop};
-pub use handlers::{BasicCommandHandler, PositionCommandHandler, NewGameHandler};
+pub use event_loop::{run_uci_event_loop, EventLoopConfig, EventLoopStats, UCIEventLoop};
+pub use handlers::{BasicCommandHandler, NewGameHandler, PositionCommandHandler};
 pub use parser::{BatchParser, ParserStats, ZeroCopyParser};
-pub use response::{UCIResponse, ResponseFormatter, InfoBuilder, BestMoveBuilder};
+pub use response::{BestMoveBuilder, InfoBuilder, ResponseFormatter, UCIResponse};
 pub use sanitizer::{InputLimits, InputSanitizer};
-pub use state::{EngineConfig, EngineState, EngineStatistics, SearchContext, StateChangeEvent, UCIState};
+pub use state::{
+    EngineConfig, EngineState, EngineStatistics, SearchContext, StateChangeEvent, UCIState,
+};
 
 // Re-export commonly used error types
 pub use crate::error::{UCIError, UCIResult};

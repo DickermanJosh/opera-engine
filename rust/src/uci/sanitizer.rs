@@ -21,13 +21,13 @@ pub struct InputLimits {
 impl Default for InputLimits {
     fn default() -> Self {
         Self {
-            max_command_length: 4096,      // Reasonable command line limit
-            max_fen_length: 256,           // FEN strings are typically < 100 chars
-            max_move_list_length: 2048,    // Support long games
-            max_option_name_length: 64,    // UCI option names are short
-            max_option_value_length: 256,  // Option values can be paths
-            max_moves_per_command: 512,    // Support very long games
-            max_tokens_per_command: 1024,  // Prevent token explosion
+            max_command_length: 4096,     // Reasonable command line limit
+            max_fen_length: 256,          // FEN strings are typically < 100 chars
+            max_move_list_length: 2048,   // Support long games
+            max_option_name_length: 64,   // UCI option names are short
+            max_option_value_length: 256, // Option values can be paths
+            max_moves_per_command: 512,   // Support very long games
+            max_tokens_per_command: 1024, // Prevent token explosion
         }
     }
 }
@@ -46,19 +46,17 @@ impl Default for InputSanitizer {
 impl InputSanitizer {
     /// Create new sanitizer with specified limits
     pub fn new(limits: InputLimits) -> Self {
-        Self {
-            limits,
-        }
+        Self { limits }
     }
 
     /// Sanitize and validate a complete UCI command line
     pub fn sanitize_command_line(&self, line: &str) -> UCIResult<String> {
         // Remove dangerous characters and normalize whitespace
         let sanitized = self.sanitize_string(line)?;
-        
+
         // Validate overall command structure
         self.validate_command_structure(&sanitized)?;
-        
+
         Ok(sanitized)
     }
 
@@ -78,10 +76,7 @@ impl InputSanitizer {
             .collect();
 
         // Normalize and trim whitespace
-        let normalized = cleaned
-            .split_whitespace()
-            .collect::<Vec<_>>()
-            .join(" ");
+        let normalized = cleaned.split_whitespace().collect::<Vec<_>>().join(" ");
 
         if normalized.is_empty() && !input.trim().is_empty() {
             return Err(UCIError::Protocol {
@@ -142,9 +137,10 @@ impl InputSanitizer {
         }
 
         // Check for dangerous characters in FEN
-        if !fen.chars().all(|c| {
-            c.is_ascii_alphanumeric() || " /-KQRBNPkqrbnp".contains(c)
-        }) {
+        if !fen
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || " /-KQRBNPkqrbnp".contains(c))
+        {
             return Err(UCIError::Position {
                 message: "FEN contains invalid characters".to_string(),
             });
@@ -160,19 +156,19 @@ impl InputSanitizer {
 
         // Validate piece placement
         self.validate_piece_placement(parts[0])?;
-        
+
         // Validate active color
         self.validate_active_color(parts[1])?;
-        
+
         // Validate castling rights
         self.validate_castling_rights(parts[2])?;
-        
+
         // Validate en passant square
         self.validate_en_passant_square(parts[3])?;
-        
+
         // Validate halfmove clock
         self.validate_halfmove_clock(parts[4])?;
-        
+
         // Validate fullmove number
         self.validate_fullmove_number(parts[5])?;
 
@@ -183,7 +179,10 @@ impl InputSanitizer {
         let ranks: Vec<&str> = placement.split('/').collect();
         if ranks.len() != 8 {
             return Err(UCIError::Position {
-                message: format!("Invalid piece placement: {} ranks (expected 8)", ranks.len()),
+                message: format!(
+                    "Invalid piece placement: {} ranks (expected 8)",
+                    ranks.len()
+                ),
             });
         }
 
@@ -307,7 +306,10 @@ impl InputSanitizer {
 
         // Only allow valid chess notation characters (files: a-h, ranks: 1-8, promotions: qrbn)
         // Note: 'b' for bishop is included in 'a'..='h' range
-        if !move_str.chars().all(|c| matches!(c, 'a'..='h' | '1'..='8' | 'q' | 'r' | 'n')) {
+        if !move_str
+            .chars()
+            .all(|c| matches!(c, 'a'..='h' | '1'..='8' | 'q' | 'r' | 'n'))
+        {
             return Err(UCIError::Move {
                 message: format!("Move contains invalid characters: '{}'", move_str),
             });
@@ -360,7 +362,10 @@ impl InputSanitizer {
         }
 
         // Option names should be alphanumeric with spaces and underscores
-        if !name.chars().all(|c| c.is_alphanumeric() || c == ' ' || c == '_') {
+        if !name
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == ' ' || c == '_')
+        {
             return Err(UCIError::Configuration {
                 message: format!("Invalid characters in option name: '{}'", name),
             });
@@ -406,19 +411,21 @@ mod tests {
     #[test]
     fn test_string_sanitization() {
         let sanitizer = InputSanitizer::default();
-        
+
         // Normal input
         assert_eq!(
             sanitizer.sanitize_string("go movetime 1000").unwrap(),
             "go movetime 1000"
         );
-        
+
         // Input with extra whitespace
         assert_eq!(
-            sanitizer.sanitize_string("  go   movetime   1000  ").unwrap(),
+            sanitizer
+                .sanitize_string("  go   movetime   1000  ")
+                .unwrap(),
             "go movetime 1000"
         );
-        
+
         // Input with control characters
         assert!(sanitizer.sanitize_string("go\x00movetime").is_err());
     }
@@ -426,27 +433,31 @@ mod tests {
     #[test]
     fn test_command_validation() {
         let sanitizer = InputSanitizer::default();
-        
+
         // Valid commands
         assert!(sanitizer.validate_command_structure("uci").is_ok());
-        assert!(sanitizer.validate_command_structure("go movetime 1000").is_ok());
-        
+        assert!(sanitizer
+            .validate_command_structure("go movetime 1000")
+            .is_ok());
+
         // Commands are allowed through - validation happens in parser
-        assert!(sanitizer.validate_command_structure("invalid_command").is_ok());
+        assert!(sanitizer
+            .validate_command_structure("invalid_command")
+            .is_ok());
         assert!(sanitizer.validate_command_structure("").is_err());
     }
 
     #[test]
     fn test_fen_validation() {
         let sanitizer = InputSanitizer::default();
-        
+
         // Valid FEN
         let valid_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
         assert!(sanitizer.validate_fen(valid_fen).is_ok());
-        
+
         // Invalid FEN - wrong structure
         assert!(sanitizer.validate_fen("invalid fen").is_err());
-        
+
         // FEN too long
         let long_fen = "a".repeat(1000);
         assert!(sanitizer.validate_fen(&long_fen).is_err());
@@ -455,23 +466,23 @@ mod tests {
     #[test]
     fn test_move_validation() {
         let sanitizer = InputSanitizer::default();
-        
+
         // Valid moves
         assert!(sanitizer.validate_move("e2e4").is_ok());
         assert!(sanitizer.validate_move("e7e8q").is_ok());
-        
+
         // Invalid moves
-        assert!(sanitizer.validate_move("e2").is_err());  // Too short
+        assert!(sanitizer.validate_move("e2").is_err()); // Too short
         assert!(sanitizer.validate_move("e2e4x").is_err()); // Invalid character
     }
 
     #[test]
     fn test_move_list_validation() {
         let sanitizer = InputSanitizer::default();
-        
+
         let moves = vec!["e2e4", "e7e5", "g1f3"];
         assert!(sanitizer.validate_move_list(&moves).is_ok());
-        
+
         // Too many moves
         let many_moves: Vec<&str> = (0..1000).map(|_| "e2e4").collect();
         assert!(sanitizer.validate_move_list(&many_moves).is_err());
@@ -480,14 +491,16 @@ mod tests {
     #[test]
     fn test_option_validation() {
         let sanitizer = InputSanitizer::default();
-        
+
         // Valid option
         assert!(sanitizer.validate_option("Hash", Some("64")).is_ok());
-        
+
         // Option name too long
         let long_name = "a".repeat(100);
-        assert!(sanitizer.validate_option(&long_name, Some("value")).is_err());
-        
+        assert!(sanitizer
+            .validate_option(&long_name, Some("value"))
+            .is_err());
+
         // Invalid characters in option name
         assert!(sanitizer.validate_option("Hash@Value", Some("64")).is_err());
     }
@@ -495,10 +508,12 @@ mod tests {
     #[test]
     fn test_resource_exhaustion_detection() {
         let sanitizer = InputSanitizer::default();
-        
+
         // Normal input
-        assert!(sanitizer.check_resource_exhaustion("go movetime 1000").is_ok());
-        
+        assert!(sanitizer
+            .check_resource_exhaustion("go movetime 1000")
+            .is_ok());
+
         // Excessive repetition
         let repetitive = "a".repeat(200);
         assert!(sanitizer.check_resource_exhaustion(&repetitive).is_err());

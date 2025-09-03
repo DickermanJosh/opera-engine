@@ -1,5 +1,5 @@
 // Performance benchmarks for UCI protocol implementation
-// 
+//
 // This file contains criterion benchmarks for performance-critical
 // UCI operations to ensure optimal response times.
 
@@ -9,14 +9,14 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 fn bench_command_parsing(c: &mut Criterion) {
     let test_commands = vec![
         "uci",
-        "isready", 
+        "isready",
         "position startpos moves e2e4 e7e5 g1f3 b8c6",
         "go wtime 300000 btime 300000 winc 5000 binc 5000",
         "setoption name Hash value 128",
         "stop",
         "quit",
     ];
-    
+
     c.bench_function("command_parsing", |b| {
         b.iter(|| {
             for cmd in &test_commands {
@@ -47,5 +47,10 @@ fn bench_async_io(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_command_parsing, bench_ffi_overhead, bench_async_io);
+criterion_group!(
+    benches,
+    bench_command_parsing,
+    bench_ffi_overhead,
+    bench_async_io
+);
 criterion_main!(benches);

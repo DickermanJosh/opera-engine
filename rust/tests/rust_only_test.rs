@@ -39,15 +39,17 @@ mod tests {
         // Test timeout functionality
         let result = tokio::time::timeout(
             Duration::from_millis(50),
-            tokio::time::sleep(Duration::from_millis(100))
-        ).await;
+            tokio::time::sleep(Duration::from_millis(100)),
+        )
+        .await;
 
         assert!(result.is_err()); // Should timeout
 
         let result = tokio::time::timeout(
             Duration::from_millis(100),
-            tokio::time::sleep(Duration::from_millis(10))
-        ).await;
+            tokio::time::sleep(Duration::from_millis(10)),
+        )
+        .await;
 
         assert!(result.is_ok()); // Should succeed
     }
@@ -64,7 +66,7 @@ mod tests {
         assert!(display.contains("UCI protocol error"));
     }
 
-    #[test] 
+    #[test]
     fn test_never_panic_utilities() {
         use opera_uci::error::never_panic;
 
@@ -120,7 +122,7 @@ mod tests {
 
     #[test]
     fn test_error_context() {
-        use opera_uci::error::{ErrorContext, UCIError, ResultExt};
+        use opera_uci::error::{ErrorContext, ResultExt, UCIError};
 
         let context = ErrorContext::new("test operation")
             .detail("test detail 1")

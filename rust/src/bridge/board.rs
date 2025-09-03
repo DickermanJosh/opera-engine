@@ -12,7 +12,7 @@ use std::fmt;
 use tracing::{debug, error, instrument, warn};
 
 /// Safe wrapper around the C++ Board with RAII memory management
-/// 
+///
 /// This wrapper ensures that the C++ Board is properly initialized,
 /// provides ergonomic Rust APIs, and implements safety guarantees
 /// including proper error propagation and resource cleanup.
@@ -23,24 +23,24 @@ pub struct Board {
 
 impl Board {
     /// Create a new chess board in the starting position
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// - `Ok(Board)` - Successfully created board in starting position
     /// - `Err(UCIError::Ffi)` - Failed to create C++ Board instance
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use opera_uci::bridge::board::Board;
-    /// 
+    ///
     /// let board = Board::new()?;
     /// assert_eq!(board.get_fen()?, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     /// ```
     #[instrument(level = "debug")]
     pub fn new() -> UCIResult<Self> {
         debug!("Creating new chess board");
-        
+
         let inner = ffi::create_board();
         if inner.is_null() {
             error!("Failed to create C++ Board instance - null pointer returned");
@@ -55,28 +55,28 @@ impl Board {
     }
 
     /// Set the board position from a FEN string
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `fen` - A valid FEN (Forsyth-Edwards Notation) string
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// - `Ok(())` - Board position set successfully
     /// - `Err(UCIError::Position)` - Invalid FEN string or position
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use opera_uci::bridge::board::Board;
-    /// 
+    ///
     /// let mut board = Board::new()?;
     /// board.set_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")?;
     /// ```
     #[instrument(level = "debug", skip(self))]
     pub fn set_from_fen(&mut self, fen: &str) -> UCIResult<()> {
         debug!(fen = %fen, "Setting board position from FEN");
-        
+
         if fen.is_empty() {
             warn!("Attempted to set FEN with empty string");
             return Err(UCIError::Position {
@@ -105,17 +105,17 @@ impl Board {
     }
 
     /// Get the current board position as a FEN string
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// - `Ok(String)` - Current position as FEN string
     /// - `Err(UCIError::Ffi)` - Failed to get FEN from C++ board
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use opera_uci::bridge::board::Board;
-    /// 
+    ///
     /// let board = Board::new()?;
     /// let fen = board.get_fen()?;
     /// assert!(fen.contains("rnbqkbnr/pppppppp"));
@@ -123,7 +123,7 @@ impl Board {
     #[instrument(level = "debug", skip(self))]
     pub fn get_fen(&self) -> UCIResult<String> {
         debug!("Getting current board position as FEN");
-        
+
         let fen = ffi::board_get_fen(&*self.inner);
         if fen.is_empty() {
             error!("C++ board returned empty FEN string");
@@ -137,21 +137,21 @@ impl Board {
     }
 
     /// Make a move on the board
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `move_str` - Move in UCI algebraic notation (e.g., "e2e4", "e7e8q")
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// - `Ok(())` - Move made successfully
     /// - `Err(UCIError::Move)` - Invalid or illegal move
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use opera_uci::bridge::board::Board;
-    /// 
+    ///
     /// let mut board = Board::new()?;
     /// board.make_move("e2e4")?;  // King's pawn opening
     /// board.make_move("e7e5")?;  // King's pawn defense
@@ -159,7 +159,7 @@ impl Board {
     #[instrument(level = "debug", skip(self))]
     pub fn make_move(&mut self, move_str: &str) -> UCIResult<()> {
         debug!(move_str = %move_str, "Making move on board");
-        
+
         if move_str.is_empty() {
             warn!("Attempted to make move with empty string");
             return Err(UCIError::Move {
@@ -188,22 +188,22 @@ impl Board {
     }
 
     /// Check if a move is valid without making it
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `move_str` - Move in UCI algebraic notation
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// - `Ok(true)` - Move is legal
     /// - `Ok(false)` - Move is illegal
     /// - `Err(UCIError::Move)` - Invalid move format
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use opera_uci::bridge::board::Board;
-    /// 
+    ///
     /// let board = Board::new()?;
     /// assert!(board.is_valid_move("e2e4")?);
     /// assert!(!board.is_valid_move("e2e5")?);  // Invalid pawn move
@@ -211,7 +211,7 @@ impl Board {
     #[instrument(level = "debug", skip(self))]
     pub fn is_valid_move(&self, move_str: &str) -> UCIResult<bool> {
         debug!(move_str = %move_str, "Checking move validity");
-        
+
         if move_str.is_empty() {
             return Err(UCIError::Move {
                 message: "Move string cannot be empty".to_string(),
@@ -230,12 +230,12 @@ impl Board {
     }
 
     /// Reset the board to the starting position
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use opera_uci::bridge::board::Board;
-    /// 
+    ///
     /// let mut board = Board::new()?;
     /// board.make_move("e2e4")?;
     /// board.reset();
@@ -249,87 +249,87 @@ impl Board {
     }
 
     /// Check if the current side to move is in check
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// - `Ok(true)` - King is in check
     /// - `Ok(false)` - King is not in check
     /// - `Err(UCIError::Ffi)` - Error querying board state
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use opera_uci::bridge::board::Board;
-    /// 
+    ///
     /// let board = Board::new()?;
     /// assert!(!board.is_in_check()?);  // Starting position is not check
     /// ```
     #[instrument(level = "debug", skip(self))]
     pub fn is_in_check(&self) -> UCIResult<bool> {
         debug!("Checking if king is in check");
-        
+
         let in_check = ffi::board_is_in_check(&*self.inner);
         debug!(in_check = in_check, "Check status determined");
         Ok(in_check)
     }
 
     /// Check if the current position is checkmate
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// - `Ok(true)` - Position is checkmate
     /// - `Ok(false)` - Position is not checkmate
     /// - `Err(UCIError::Ffi)` - Error querying board state
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use opera_uci::bridge::board::Board;
-    /// 
+    ///
     /// let board = Board::new()?;
     /// assert!(!board.is_checkmate()?);  // Starting position is not mate
     /// ```
     #[instrument(level = "debug", skip(self))]
     pub fn is_checkmate(&self) -> UCIResult<bool> {
         debug!("Checking for checkmate");
-        
+
         let is_mate = ffi::board_is_checkmate(&*self.inner);
         debug!(is_mate = is_mate, "Checkmate status determined");
         Ok(is_mate)
     }
 
     /// Check if the current position is stalemate
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// - `Ok(true)` - Position is stalemate
     /// - `Ok(false)` - Position is not stalemate  
     /// - `Err(UCIError::Ffi)` - Error querying board state
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use opera_uci::bridge::board::Board;
-    /// 
+    ///
     /// let board = Board::new()?;
     /// assert!(!board.is_stalemate()?);  // Starting position is not stalemate
     /// ```
     #[instrument(level = "debug", skip(self))]
     pub fn is_stalemate(&self) -> UCIResult<bool> {
         debug!("Checking for stalemate");
-        
+
         let is_stale = ffi::board_is_stalemate(&*self.inner);
         debug!(is_stale = is_stale, "Stalemate status determined");
         Ok(is_stale)
     }
 
     /// Get a reference to the underlying C++ Board for advanced operations
-    /// 
+    ///
     /// This method provides safe access to the C++ Board for interfacing with
     /// other components that need direct Board access.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// Reference to the C++ Board instance
     pub fn inner(&self) -> &ffi::Board {
         &self.inner
@@ -418,13 +418,13 @@ impl Board {
         }
 
         let chars: Vec<char> = move_str.chars().collect();
-        
+
         // Validate from square (e.g., "e2")
         if chars[0] < 'a' || chars[0] > 'h' || chars[1] < '1' || chars[1] > '8' {
             return false;
         }
 
-        // Validate to square (e.g., "e4") 
+        // Validate to square (e.g., "e4")
         if chars[2] < 'a' || chars[2] > 'h' || chars[3] < '1' || chars[3] > '8' {
             return false;
         }
@@ -432,7 +432,7 @@ impl Board {
         // Validate promotion piece if present
         if len == 5 {
             match chars[4] {
-                'q' | 'r' | 'b' | 'n' => {}  // Valid promotion pieces
+                'q' | 'r' | 'b' | 'n' => {} // Valid promotion pieces
                 _ => return false,
             }
         }
@@ -473,7 +473,7 @@ mod tests {
         assert!(board.is_ok());
     }
 
-    #[test] 
+    #[test]
     fn test_starting_position() {
         let board = Board::new().unwrap();
         let fen = board.get_fen().unwrap();
@@ -487,7 +487,7 @@ mod tests {
         let mut board = Board::new().unwrap();
         let custom_fen = "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 4 4";
         assert!(board.set_from_fen(custom_fen).is_ok());
-        
+
         let retrieved_fen = board.get_fen().unwrap();
         assert_eq!(custom_fen, retrieved_fen);
     }
@@ -495,10 +495,10 @@ mod tests {
     #[test]
     fn test_invalid_fen() {
         let mut board = Board::new().unwrap();
-        
+
         // Empty FEN
         assert!(board.set_from_fen("").is_err());
-        
+
         // Invalid FEN format
         assert!(board.set_from_fen("invalid fen").is_err());
         assert!(board.set_from_fen("rnbqkbnr/pppppppp").is_err()); // Too few fields
@@ -507,7 +507,7 @@ mod tests {
     #[test]
     fn test_basic_moves() {
         let mut board = Board::new().unwrap();
-        
+
         // Test valid opening moves
         assert!(board.make_move("e2e4").is_ok());
         assert!(board.make_move("e7e5").is_ok());
@@ -518,14 +518,14 @@ mod tests {
     #[test]
     fn test_invalid_moves() {
         let mut board = Board::new().unwrap();
-        
+
         // Empty move
         assert!(board.make_move("").is_err());
-        
+
         // Invalid format
         assert!(board.make_move("e2").is_err());
         assert!(board.make_move("e2e2e4").is_err());
-        
+
         // Invalid squares
         assert!(board.make_move("z1a1").is_err());
         assert!(board.make_move("a0a1").is_err());
@@ -534,12 +534,12 @@ mod tests {
     #[test]
     fn test_move_validation() {
         let board = Board::new().unwrap();
-        
+
         // Valid opening moves
         assert!(board.is_valid_move("e2e4").unwrap());
         assert!(board.is_valid_move("d2d4").unwrap());
         assert!(board.is_valid_move("g1f3").unwrap());
-        
+
         // Test that format validation catches invalid moves
         // (We'll rely on format validation rather than chess rule validation
         // since the C++ implementation may have different validation logic)
@@ -550,11 +550,11 @@ mod tests {
     fn test_board_reset() {
         let mut board = Board::new().unwrap();
         let starting_fen = board.get_fen().unwrap();
-        
+
         // Make some moves
         board.make_move("e2e4").unwrap();
         board.make_move("e7e5").unwrap();
-        
+
         // Reset and verify
         board.reset();
         let reset_fen = board.get_fen().unwrap();
@@ -564,7 +564,7 @@ mod tests {
     #[test]
     fn test_game_status_checks() {
         let board = Board::new().unwrap();
-        
+
         // Starting position should not be check, mate, or stalemate
         assert!(!board.is_in_check().unwrap());
         assert!(!board.is_checkmate().unwrap());
@@ -574,26 +574,29 @@ mod tests {
     #[test]
     fn test_fen_validation() {
         let board = Board::new().unwrap();
-        
+
         // Valid FEN
-        assert!(board.is_valid_fen_format("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
-        
+        assert!(
+            board.is_valid_fen_format("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        );
+
         // Invalid FEN formats
         assert!(!board.is_valid_fen_format(""));
         assert!(!board.is_valid_fen_format("invalid"));
         assert!(!board.is_valid_fen_format("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")); // Missing fields
-        assert!(!board.is_valid_fen_format("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP w KQkq - 0 1")); // 7 ranks instead of 8
+        assert!(!board.is_valid_fen_format("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP w KQkq - 0 1"));
+        // 7 ranks instead of 8
     }
 
-    #[test] 
+    #[test]
     fn test_move_format_validation() {
         let board = Board::new().unwrap();
-        
+
         // Valid move formats
         assert!(board.is_valid_move_format("e2e4"));
         assert!(board.is_valid_move_format("a1h8"));
         assert!(board.is_valid_move_format("e7e8q")); // Promotion
-        
+
         // Invalid move formats
         assert!(!board.is_valid_move_format(""));
         assert!(!board.is_valid_move_format("e2"));
@@ -609,7 +612,7 @@ mod tests {
         let debug_str = format!("{:?}", board);
         assert!(debug_str.contains("Board"));
         assert!(debug_str.contains("rnbqkbnr"));
-        
+
         let display_str = format!("{}", board);
         assert!(display_str.contains("rnbqkbnr/pppppppp"));
     }

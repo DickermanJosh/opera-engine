@@ -7,9 +7,9 @@
 use std::sync::Arc;
 use tracing::{debug, info, instrument, warn};
 
-use crate::error::{UCIResult, UCIError, ErrorContext, ResultExt};
-use crate::uci::state::{UCIState, EngineState};
+use crate::error::{ErrorContext, ResultExt, UCIError, UCIResult};
 use crate::ffi::ffi;
+use crate::uci::state::{EngineState, UCIState};
 
 /// Handler for UCI new game command with comprehensive state management
 pub struct NewGameHandler {
@@ -30,7 +30,7 @@ impl NewGameHandler {
     /// 2. Reset engine internal state to initial values
     /// 3. Prepare for a completely fresh game
     /// 4. Not change engine options that were set previously
-    /// 
+    ///
     /// This is different from just setting a new position - it's a complete
     /// state reset that assumes the previous game is over.
     #[instrument(skip(self))]
@@ -42,7 +42,7 @@ impl NewGameHandler {
         if current_state != EngineState::Ready {
             return Err(UCIError::Protocol {
                 message: format!(
-                    "ucinewgame command invalid in state {:?}, expected Ready", 
+                    "ucinewgame command invalid in state {:?}, expected Ready",
                     current_state
                 ),
             });
@@ -167,7 +167,7 @@ mod tests {
     fn test_newgame_handler_creation() {
         let state = Arc::new(UCIState::new());
         let handler = NewGameHandler::new(Arc::clone(&state));
-        
+
         // State starts as Initializing, need to transition to Ready
         let _ = state.transition_to(EngineState::Ready, "test setup");
         assert_eq!(handler.get_state(), EngineState::Ready);
@@ -179,7 +179,9 @@ mod tests {
     fn test_default_handler() {
         let handler = NewGameHandler::default();
         // Transition to ready for testing
-        let _ = handler.state.transition_to(EngineState::Ready, "test setup");
+        let _ = handler
+            .state
+            .transition_to(EngineState::Ready, "test setup");
         assert_eq!(handler.get_state(), EngineState::Ready);
     }
 
@@ -194,7 +196,11 @@ mod tests {
 
         // Execute new game command (should succeed in Ready state)
         let result = handler.handle_ucinewgame_command();
-        assert!(result.is_ok(), "New game command should succeed: {:?}", result);
+        assert!(
+            result.is_ok(),
+            "New game command should succeed: {:?}",
+            result
+        );
     }
 
     /// Test new game command with invalid state (Searching)
@@ -209,7 +215,10 @@ mod tests {
 
         // New game command should fail
         let result = handler.handle_ucinewgame_command();
-        assert!(result.is_err(), "New game command should fail when searching");
+        assert!(
+            result.is_err(),
+            "New game command should fail when searching"
+        );
 
         if let Err(UCIError::Protocol { message }) = result {
             assert!(message.contains("Searching"));
@@ -241,7 +250,7 @@ mod tests {
 
         // Transition to Ready first
         let _ = state.transition_to(EngineState::Ready, "test setup");
-        
+
         // Should be ready initially
         assert!(handler.is_ready_for_newgame());
 
@@ -261,7 +270,10 @@ mod tests {
         let handler = NewGameHandler::new(Arc::clone(&state));
 
         let result = handler.clear_cpp_engine_state();
-        assert!(result.is_ok(), "C++ engine clearing should succeed with stub implementation");
+        assert!(
+            result.is_ok(),
+            "C++ engine clearing should succeed with stub implementation"
+        );
     }
 
     /// Test game history clearing
@@ -308,7 +320,11 @@ mod tests {
             assert!(result.is_ok(), "New game command {} should succeed", i);
 
             // Verify handler still works
-            assert!(handler.is_ready_for_newgame(), "Handler should be ready after command {}", i);
+            assert!(
+                handler.is_ready_for_newgame(),
+                "Handler should be ready after command {}",
+                i
+            );
         }
     }
 }

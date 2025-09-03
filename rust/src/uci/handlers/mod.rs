@@ -4,9 +4,9 @@
 // organized by functionality and complexity level.
 
 pub mod basic;
-pub mod position;
 pub mod newgame;
+pub mod position;
 
 pub use basic::BasicCommandHandler;
-pub use position::PositionCommandHandler;
 pub use newgame::NewGameHandler;
+pub use position::PositionCommandHandler;
