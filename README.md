@@ -1,6 +1,6 @@
 # Opera Chess Engine
 
-A UCI compliant chess engine designed to emulate Paul Morphy's sacrifical, fast paced playing style.
+A UCI compliant chess engine designed to emulate Paul Morphy's sacrifical, fast paced playing style. **Currently in active development**.
 
 ## Quick Start with Docker
 
