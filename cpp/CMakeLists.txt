@@ -23,6 +23,7 @@ set(CORE_SOURCES
     src/board/Board.cpp
     src/board/MoveGenerator.cpp
     src/utils/Types.cpp
+    src/search/search_engine.cpp
 )
 
 add_library(opera_core STATIC ${CORE_SOURCES})

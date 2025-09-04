@@ -19,6 +19,7 @@ set(TEST_SOURCES
     PerformanceTest.cpp
     BoardPerformanceTest.cpp
     MemoryAuditTest.cpp
+    SearchEngineTest.cpp
 )
 
 # Create test executable
