@@ -48,6 +48,7 @@ private:
     
     // Update occupancy bitboards
     void updateOccupancy();
+    void updateOccupancyAndZobrist();  // Combined for FEN parsing optimization
     
     // Zobrist key management
     void updateZobristKey();
@@ -55,9 +56,15 @@ private:
     
     // FEN parsing helpers
     void parsePiecePlacement(const std::string& placement);
+    void parsePiecePlacementOptimized(const char* placement, int length);
     void parseGameState(const std::string& sideToMove, const std::string& castling, 
                        const std::string& enPassant, const std::string& halfmove, 
                        const std::string& fullmove);
+    void parseGameStateOptimized(const char* side, int sideLen,
+                                const char* castlingStr, int castlingLen,
+                                const char* enPassantStr, int enPassantLen,
+                                const char* halfmoveStr, int halfmoveLen,
+                                const char* fullmoveStr, int fullmoveLen);
     
     // FEN generation helpers
     std::string generatePiecePlacement() const;
