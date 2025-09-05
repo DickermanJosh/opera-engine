@@ -26,6 +26,7 @@ set(CORE_SOURCES
     src/search/search_engine.cpp
     src/search/transposition_table.cpp
     src/search/move_ordering.cpp
+    src/search/see.cpp
 )
 
 add_library(opera_core STATIC ${CORE_SOURCES})

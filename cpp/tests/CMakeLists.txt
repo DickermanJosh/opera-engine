@@ -22,6 +22,7 @@ set(TEST_SOURCES
     SearchEngineTest.cpp
     TranspositionTableTest.cpp
     MoveOrderingTest.cpp
+    StaticExchangeTest.cpp
 )
 
 # Create test executable

@@ -115,3 +115,6 @@ rust/fuzz/artifacts/
 # Configuration overrides
 local_config.yaml
 user_config.yaml
+
+
+Stockfish/
