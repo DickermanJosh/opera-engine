@@ -21,6 +21,7 @@ set(TEST_SOURCES
     MemoryAuditTest.cpp
     SearchEngineTest.cpp
     TranspositionTableTest.cpp
+    MoveOrderingTest.cpp
 )
 
 # Create test executable
