@@ -8,6 +8,10 @@
 #include "Board.h"
 #include "MoveGen.h"
 #include "Types.h"
+#include "search/alphabeta.h"
+#include "search/transposition_table.h"
+#include "search/move_ordering.h"
+#include "search/see.h"
 
 namespace opera {
 
@@ -69,13 +73,19 @@ private:
     Board& board;                          // Reference to game board
     std::atomic<bool>& stop_flag;          // Atomic stop flag for async cancellation
     
+    // Search components
+    std::unique_ptr<TranspositionTable> tt;          // Transposition table
+    std::unique_ptr<MoveOrdering> move_ordering;     // Move ordering system
+    std::unique_ptr<StaticExchangeEvaluator> see;    // Static exchange evaluator
+    std::unique_ptr<AlphaBetaSearch> alphabeta;      // Alpha-beta search engine
+    
     // Search state
     bool searching = false;                // Currently searching flag
     SearchLimits current_limits;           // Current search limits
     SearchInfo current_info;               // Current search information
     std::chrono::high_resolution_clock::time_point search_start_time;
     
-    // Search statistics
+    // Search statistics (now delegated to AlphaBetaSearch)
     uint64_t nodes_searched = 0;           // Total nodes searched this session
     std::vector<Move> pv_line;             // Current principal variation
     
@@ -146,23 +156,13 @@ private:
     SearchResult iterative_deepening();
     
     /**
-     * Single depth search with aspiration windows
+     * Single depth search with aspiration windows using AlphaBetaSearch
      * 
      * @param depth Target search depth
      * @param prev_score Previous iteration score for aspiration window
      * @return Score from search
      */
     int aspiration_search(int depth, int prev_score);
-    
-    /**
-     * Basic alpha-beta search (placeholder for now)
-     * 
-     * @param depth Remaining depth
-     * @param alpha Alpha bound
-     * @param beta Beta bound
-     * @return Position evaluation
-     */
-    int alpha_beta(int depth, int alpha, int beta);
     
     /**
      * Update search info for progress reporting

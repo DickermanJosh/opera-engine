@@ -30,6 +30,13 @@ bool SearchLimits::should_stop(int current_depth, uint64_t nodes, uint64_t elaps
 // SearchEngine implementation
 SearchEngine::SearchEngine(Board& board, std::atomic<bool>& stop_flag)
     : board(board), stop_flag(stop_flag), searching(false), nodes_searched(0) {
+    
+    // Initialize search components
+    tt = std::make_unique<TranspositionTable>(16); // 16MB default size
+    move_ordering = std::make_unique<MoveOrdering>(board, *tt);
+    see = std::make_unique<StaticExchangeEvaluator>(board);
+    alphabeta = std::make_unique<AlphaBetaSearch>(board, stop_flag, *tt, *move_ordering, *see);
+    
     pv_line.reserve(64);  // Reserve space for principal variation
 }
 
@@ -102,6 +109,10 @@ const SearchInfo& SearchEngine::get_search_info() const {
 void SearchEngine::reset_statistics() {
     nodes_searched = 0;
     current_info = SearchInfo{};
+    if (alphabeta) {
+        alphabeta->reset();
+    }
+    pv_line.clear();
 }
 
 SearchResult SearchEngine::iterative_deepening() {
@@ -150,17 +161,27 @@ SearchResult SearchEngine::iterative_deepening() {
         // Update best result with completed depth
         best_result.depth = depth;
         best_result.score = score;
-        best_result.nodes = nodes_searched;
         
-        // Find best move from current search (simplified - just pick first legal move for now)
-        if (legal_moves.size() > 0) {
-            // Convert MoveGen to Move for the result
+        // Get statistics from AlphaBetaSearch
+        const SearchStats& ab_stats = alphabeta->get_stats();
+        best_result.nodes = ab_stats.nodes;
+        nodes_searched = ab_stats.nodes;  // Update our tracked count
+        
+        // Get principal variation from AlphaBetaSearch
+        const std::vector<Move>& ab_pv = alphabeta->get_principal_variation();
+        best_result.principal_variation = ab_pv;
+        pv_line = ab_pv;  // Update our cached PV
+        
+        // Set best move from PV if available, otherwise use first legal move
+        if (!ab_pv.empty()) {
+            best_result.best_move = ab_pv[0];
+        } else if (legal_moves.size() > 0) {
             const MoveGen& mg = legal_moves[0];
             best_result.best_move = Move(mg.from(), mg.to());
         }
         
         // Update search info
-        update_search_info(depth, score, nodes_searched);
+        update_search_info(depth, score, ab_stats.nodes);
         
         prev_score = score;
         
@@ -172,7 +193,7 @@ SearchResult SearchEngine::iterative_deepening() {
         
         // Check time and node limits after completing depth
         uint64_t elapsed = get_elapsed_time_ms();
-        if (current_limits.should_stop(depth, nodes_searched, elapsed)) {
+        if (current_limits.should_stop(depth, ab_stats.nodes, elapsed)) {
             break;
         }
     }
@@ -195,95 +216,20 @@ int SearchEngine::aspiration_search(int depth, int prev_score) {
         beta = prev_score + ASPIRATION_WINDOW;
     }
     
-    int score = alpha_beta(depth, alpha, beta);
+    int score = alphabeta->search(depth, alpha, beta);
     
     // Handle aspiration window failures
     if (score <= alpha) {
         // Fail low - research with lower bound
-        score = alpha_beta(depth, -30000, beta);
+        score = alphabeta->search(depth, -30000, beta);
     } else if (score >= beta) {
         // Fail high - research with upper bound
-        score = alpha_beta(depth, alpha, 30000);
+        score = alphabeta->search(depth, alpha, 30000);
     }
     
     return score;
 }
 
-int SearchEngine::alpha_beta(int depth, int alpha, int beta) {
-    nodes_searched++;
-    
-    // Check for stop conditions periodically
-    if ((nodes_searched & 1023) == 0) {  // Check every 1024 nodes
-        if (should_stop_search()) {
-            return alpha;  // Return quickly on stop
-        }
-    }
-    
-    // Terminal node (simplified evaluation)
-    if (depth <= 0) {
-        // Very basic evaluation - just return material count
-        // This will be replaced with proper evaluation later
-        int material = 0;
-        
-        // Count material for both sides
-        Color us = board.getSideToMove();
-        for (int pieceType = PAWN; pieceType <= QUEEN; ++pieceType) {
-            material += __builtin_popcountll(board.getPieceBitboard(us, static_cast<PieceType>(pieceType))) * 
-                       (pieceType == PAWN ? 100 : pieceType == KNIGHT ? 320 : pieceType == BISHOP ? 330 : 
-                        pieceType == ROOK ? 500 : 900);
-            material -= __builtin_popcountll(board.getPieceBitboard(~us, static_cast<PieceType>(pieceType))) * 
-                       (pieceType == PAWN ? 100 : pieceType == KNIGHT ? 320 : pieceType == BISHOP ? 330 : 
-                        pieceType == ROOK ? 500 : 900);
-        }
-        
-        return material;
-    }
-    
-    // Generate moves
-    MoveGenList<256> moves;
-    generateAllMoves(board, moves, board.getSideToMove());
-    
-    // No legal moves - checkmate or stalemate
-    if (moves.size() == 0) {
-        Color us = board.getSideToMove();
-        Square our_king = board.getKingSquare(us);
-        bool in_check = board.isSquareAttacked(our_king, ~us);
-        
-        return in_check ? -30000 + (64 - depth) : 0;  // Checkmate vs Stalemate
-    }
-    
-    int best_score = alpha;
-    
-    // Search all moves
-    for (size_t i = 0; i < moves.size(); ++i) {
-        const MoveGen& move = moves[i];
-        
-        if (should_stop_search()) {
-            break;
-        }
-        
-        // Make move
-        if (!board.makeMove(move)) {
-            continue;  // Illegal move, skip
-        }
-        
-        // Recursive search
-        int score = -alpha_beta(depth - 1, -beta, -best_score);
-        
-        // Unmake move
-        board.unmakeMove(move);
-        
-        if (score > best_score) {
-            best_score = score;
-            
-            if (best_score >= beta) {
-                return beta;  // Beta cutoff
-            }
-        }
-    }
-    
-    return best_score;
-}
 
 void SearchEngine::update_search_info(int depth, int score, uint64_t nodes) {
     current_info.depth = depth;
@@ -304,7 +250,8 @@ bool SearchEngine::should_stop_search() {
     }
     
     uint64_t elapsed = get_elapsed_time_ms();
-    return current_limits.should_stop(current_info.depth, nodes_searched, elapsed);
+    uint64_t current_nodes = alphabeta ? alphabeta->get_stats().nodes : nodes_searched;
+    return current_limits.should_stop(current_info.depth, current_nodes, elapsed);
 }
 
 uint64_t SearchEngine::get_elapsed_time_ms() const {
