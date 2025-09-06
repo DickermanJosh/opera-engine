@@ -22,6 +22,17 @@ constexpr int CHECK_EXTENSION = 1;
 constexpr int SINGULAR_EXTENSION = 1;
 constexpr int PASSED_PAWN_EXTENSION = 1;
 
+// Search optimization constants
+constexpr int NULL_MOVE_REDUCTION = 3;          // R=3 for null move pruning
+constexpr int LMR_FULL_DEPTH_MOVES = 4;        // First N moves get full depth
+constexpr int LMR_REDUCTION_LIMIT = 3;         // Maximum LMR reduction
+constexpr int FUTILITY_MARGIN = 200;           // Futility pruning margin
+constexpr int RAZORING_MARGIN = 300;           // Razoring margin
+constexpr int MIN_DEPTH_FOR_NMP = 3;           // Minimum depth for null move pruning
+constexpr int MIN_DEPTH_FOR_LMR = 3;           // Minimum depth for late move reductions
+constexpr int MIN_DEPTH_FOR_FUTILITY = 1;     // Minimum depth for futility pruning
+constexpr int MIN_DEPTH_FOR_RAZORING = 2;     // Minimum depth for razoring
+
 /**
  * Search statistics for performance analysis
  */
@@ -34,10 +45,17 @@ struct SearchStats {
     uint64_t extensions = 0;               // Total extensions applied
     uint64_t reductions = 0;               // Total reductions applied
     
+    // Search optimization statistics
+    uint64_t null_move_cutoffs = 0;        // Null move pruning cutoffs
+    uint64_t lmr_reductions = 0;           // Late move reductions applied
+    uint64_t futility_prunes = 0;          // Futility pruning cutoffs
+    uint64_t razoring_prunes = 0;          // Razoring pruning cutoffs
+    
     // Reset all statistics
     void reset() {
         nodes = beta_cutoffs = first_move_cutoffs = 0;
         tt_hits = tt_cutoffs = extensions = reductions = 0;
+        null_move_cutoffs = lmr_reductions = futility_prunes = razoring_prunes = 0;
     }
     
     // Get move ordering effectiveness (first move cutoff rate)
@@ -142,6 +160,11 @@ public:
      * Clear killer moves and history tables
      */
     void clear_history();
+    
+    // Testing methods (public for validation)
+    int get_lmr_reduction(int depth, int move_number, bool is_pv_node, const MoveGen& move) const;
+    bool can_futility_prune(int depth, int alpha, int static_eval) const;
+    bool can_razor(int depth, int alpha, int static_eval) const;
 
 private:
     /**
@@ -213,6 +236,25 @@ private:
      * @param ply Starting ply
      */
     void extract_pv(int ply);
+    
+    /**
+     * Check if null move pruning is allowed in current position
+     * 
+     * @param in_check True if current position is in check
+     * @return True if null move is allowed
+     */
+    bool can_do_null_move(bool in_check) const;
+    
+    /**
+     * Make a null move (pass the turn to opponent)
+     */
+    void make_null_move();
+    
+    /**
+     * Unmake the null move
+     */
+    void unmake_null_move();
+    
 };
 
 } // namespace opera

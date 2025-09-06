@@ -103,6 +103,39 @@ int AlphaBetaSearch::pvs(int depth, int ply, int alpha, int beta, bool is_pv_nod
         }
     }
     
+    // Get static evaluation for pruning decisions
+    int static_eval = evaluate();
+    
+    // Null Move Pruning (before move generation to save time)
+    if (depth >= MIN_DEPTH_FOR_NMP && !is_pv_node && 
+        can_do_null_move(in_check_flag) && static_eval >= beta) {
+        
+        // Make null move
+        make_null_move();
+        
+        // Search with reduced depth
+        int null_score = -pvs(depth - 1 - NULL_MOVE_REDUCTION, ply + 1, -beta, -beta + 1, false);
+        
+        // Unmake null move  
+        unmake_null_move();
+        
+        if (null_score >= beta) {
+            stats.null_move_cutoffs++;
+            return beta;  // Null move cutoff
+        }
+    }
+    
+    // Razoring - if position looks very bad, verify with qsearch
+    if (depth >= MIN_DEPTH_FOR_RAZORING && !is_pv_node && !in_check_flag &&
+        can_razor(depth, alpha, static_eval)) {
+        
+        int razor_score = quiescence(ply, alpha, beta);
+        if (razor_score < alpha) {
+            stats.razoring_prunes++;
+            return razor_score;
+        }
+    }
+    
     // Score and sort moves using move ordering system
     move_ordering.score_moves(moves, ply);
     move_ordering.sort_moves(moves);
@@ -133,19 +166,44 @@ int AlphaBetaSearch::pvs(int depth, int ply, int alpha, int beta, bool is_pv_nod
         int extension = get_extensions(move_gen, in_check_flag, gives_check);
         stats.extensions += extension;
         
+        // Futility Pruning - skip quiet moves that can't improve alpha
+        if (depth <= MIN_DEPTH_FOR_FUTILITY && !in_check_flag && !gives_check &&
+            !move_gen.isCapture() && !move_gen.isPromotion() &&
+            legal_moves > 1 && can_futility_prune(depth, alpha, static_eval)) {
+            
+            board.unmakeMove(move_gen);  // Unmake before continuing
+            stats.futility_prunes++;
+            continue;  // Skip this move
+        }
+        
         int score;
+        int reduction = 0;
+        
+        // Late Move Reductions - reduce depth for later moves
+        if (depth >= MIN_DEPTH_FOR_LMR && !in_check_flag && !gives_check && extension == 0) {
+            reduction = get_lmr_reduction(depth, legal_moves - 1, is_pv_node, move_gen);
+            if (reduction > 0) {
+                stats.lmr_reductions++;
+                stats.reductions += reduction;
+            }
+        }
         
         if (legal_moves == 1 || !is_pv_node) {
             // First move or non-PV node - full window search
-            score = -pvs(depth - 1 + extension, ply + 1, -beta, -alpha, is_pv_node && legal_moves == 1);
+            score = -pvs(depth - 1 + extension - reduction, ply + 1, -beta, -alpha, is_pv_node && legal_moves == 1);
         } else {
             // PVS: Search with null window first
-            score = -pvs(depth - 1 + extension, ply + 1, -alpha - 1, -alpha, false);
+            score = -pvs(depth - 1 + extension - reduction, ply + 1, -alpha - 1, -alpha, false);
             
             // If it beats alpha, re-search with full window
             if (score > alpha && score < beta) {
-                score = -pvs(depth - 1 + extension, ply + 1, -beta, -alpha, true);
+                score = -pvs(depth - 1 + extension, ply + 1, -beta, -alpha, true);  // Full depth re-search
             }
+        }
+        
+        // If LMR failed high, re-search at full depth
+        if (reduction > 0 && score > alpha) {
+            score = -pvs(depth - 1 + extension, ply + 1, -beta, -alpha, is_pv_node);
         }
         
         // Unmake move
@@ -415,6 +473,83 @@ void AlphaBetaSearch::extract_pv(int ply) {
     if (ply < static_cast<int>(pv_table.size())) {
         pv_line = pv_table[ply];
     }
+}
+
+bool AlphaBetaSearch::can_do_null_move(bool in_check) const {
+    // TODO: Implement proper null move pruning
+    // For now, disabled until we have proper board state management
+    return false;
+    
+    // Future implementation:
+    /*
+    if (in_check) {
+        return false;
+    }
+    
+    Color us = board.getSideToMove();
+    
+    // Count non-pawn, non-king pieces
+    int non_pawn_pieces = 0;
+    for (PieceType pt = KNIGHT; pt <= QUEEN; ++pt) {
+        non_pawn_pieces += popcount(board.getPieceBitboard(us, pt));
+    }
+    
+    // Need at least one non-pawn piece to safely do null move
+    return non_pawn_pieces > 0;
+    */
+}
+
+void AlphaBetaSearch::make_null_move() {
+    // Simple null move - just switch sides
+    // This is a simplified implementation
+    // In practice, we need to handle en passant and other state
+    
+    // For now, disable null move pruning by making it a no-op
+    // TODO: Implement proper null move with board state management
+}
+
+void AlphaBetaSearch::unmake_null_move() {
+    // Companion to make_null_move()
+    // For now, this is a no-op matching make_null_move()
+}
+
+int AlphaBetaSearch::get_lmr_reduction(int depth, int move_number, bool is_pv_node, const MoveGen& move) const {
+    // Don't reduce:
+    // - PV nodes
+    // - First few moves
+    // - Tactical moves (captures, promotions, checks)
+    if (is_pv_node || move_number < LMR_FULL_DEPTH_MOVES) {
+        return 0;
+    }
+    
+    if (move.isCapture() || move.isPromotion()) {
+        return 0;
+    }
+    
+    // Calculate reduction based on depth and move number
+    int reduction = 1;  // Base reduction
+    
+    if (depth >= 6 && move_number >= 8) {
+        reduction = 2;
+    }
+    
+    if (depth >= 8 && move_number >= 12) {
+        reduction = 3;
+    }
+    
+    return std::min(reduction, LMR_REDUCTION_LIMIT);
+}
+
+bool AlphaBetaSearch::can_futility_prune(int depth, int alpha, int static_eval) const {
+    // Futility pruning: if static eval + margin is still below alpha,
+    // remaining moves are unlikely to raise alpha
+    return static_eval + FUTILITY_MARGIN * depth < alpha;
+}
+
+bool AlphaBetaSearch::can_razor(int depth, int alpha, int static_eval) const {
+    // Razoring: if static eval + margin is below alpha,
+    // do a qsearch to verify the position is really bad
+    return static_eval + RAZORING_MARGIN < alpha;
 }
 
 } // namespace opera
