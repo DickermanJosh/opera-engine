@@ -24,6 +24,7 @@ set(TEST_SOURCES
     MoveOrderingTest.cpp
     StaticExchangeTest.cpp
     UCIOptionsTest.cpp
+    SearchControlTest.cpp
 )
 
 # Create test executable

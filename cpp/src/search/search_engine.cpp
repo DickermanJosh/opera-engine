@@ -1,4 +1,5 @@
 #include "search/search_engine.h"
+#include "search/alphabeta.h"
 #include <algorithm>
 #include <sstream>
 #include <thread>
@@ -64,6 +65,7 @@ SearchResult SearchEngine::search(const SearchLimits& limits) {
     nodes_searched = 0;
     current_info = SearchInfo{};
     search_start_time = std::chrono::high_resolution_clock::now();
+    last_info_time = search_start_time;  // Initialize info timer
     stop_flag.store(false);  // Reset stop flag
     
     SearchResult result;
@@ -147,15 +149,40 @@ SearchResult SearchEngine::iterative_deepening() {
     
     // Iterative deepening loop
     for (int depth = 1; depth <= current_limits.max_depth; ++depth) {
-        if (should_stop_search()) {
+        // Quick check before starting depth - be more conservative with time
+        uint64_t elapsed_before = get_elapsed_time_ms();
+        uint64_t current_nodes = alphabeta ? alphabeta->get_stats().nodes : nodes_searched;
+        
+        // For time limits, be extremely conservative to guarantee response
+        if (current_limits.max_time_ms != UINT64_MAX && 
+            elapsed_before >= current_limits.max_time_ms * 0.3) {  // Stop at 30% of limit
             break;
         }
         
-        // Perform search at current depth
+        // For node limits, allow getting closer
+        if (current_nodes >= current_limits.max_nodes || stop_flag.load()) {
+            break;
+        }
+        
+        // Set stop flag if we're approaching time limit (very aggressive)
+        if (current_limits.max_time_ms != UINT64_MAX && 
+            elapsed_before >= current_limits.max_time_ms * 0.5) {
+            stop_flag.store(true);  // Signal search to stop
+        }
+        
+        // Perform search at current depth with time monitoring
         int score = aspiration_search(depth, prev_score);
         
-        if (should_stop_search()) {
-            break;  // Don't update result if search was interrupted
+        // Check if we exceeded time during the search
+        uint64_t elapsed_after = get_elapsed_time_ms();
+        if (elapsed_after >= current_limits.max_time_ms && current_limits.max_time_ms != UINT64_MAX) {
+            // If we exceeded time, don't update the result but return what we have
+            break;
+        }
+        
+        // Check again after search completes
+        if (stop_flag.load()) {
+            break;  // Don't update result if externally stopped
         }
         
         // Update best result with completed depth
@@ -193,8 +220,18 @@ SearchResult SearchEngine::iterative_deepening() {
         
         // Check time and node limits after completing depth
         uint64_t elapsed = get_elapsed_time_ms();
-        if (current_limits.should_stop(depth, ab_stats.nodes, elapsed)) {
-            break;
+        
+        // Be more aggressive about continuing until we hit hard limits
+        if (elapsed >= current_limits.max_time_ms && current_limits.max_time_ms != UINT64_MAX) {
+            break;  // Hard time limit reached
+        }
+        
+        if (ab_stats.nodes >= current_limits.max_nodes && current_limits.max_nodes != UINT64_MAX) {
+            break;  // Hard node limit reached
+        }
+        
+        if (depth >= current_limits.max_depth) {
+            break;  // Depth limit reached
         }
     }
     
@@ -202,29 +239,41 @@ SearchResult SearchEngine::iterative_deepening() {
 }
 
 int SearchEngine::aspiration_search(int depth, int prev_score) {
-    const int ASPIRATION_WINDOW = 25;  // centipawns
+    const int ASPIRATION_WINDOW = 25;   // Initial aspiration window in centipawns
+    const int MAX_WINDOW = 400;         // Maximum aspiration window
+    const int WINDOW_MULTIPLIER = 2;    // Window expansion factor
     
     int alpha, beta;
+    int window = ASPIRATION_WINDOW;
     
     if (depth <= 3 || abs(prev_score) > 1000) {
         // Full window for shallow searches or extreme scores
-        alpha = -30000;
-        beta = 30000;
+        alpha = -INFINITY_SCORE;
+        beta = INFINITY_SCORE;
     } else {
         // Aspiration window around previous score
-        alpha = prev_score - ASPIRATION_WINDOW;
-        beta = prev_score + ASPIRATION_WINDOW;
+        alpha = prev_score - window;
+        beta = prev_score + window;
     }
     
     int score = alphabeta->search(depth, alpha, beta);
     
-    // Handle aspiration window failures
-    if (score <= alpha) {
-        // Fail low - research with lower bound
-        score = alphabeta->search(depth, -30000, beta);
-    } else if (score >= beta) {
-        // Fail high - research with upper bound
-        score = alphabeta->search(depth, alpha, 30000);
+    // Handle aspiration window failures with progressive widening
+    while ((score <= alpha || score >= beta) && window < MAX_WINDOW && !should_stop_search()) {
+        window *= WINDOW_MULTIPLIER;  // Double the window size
+        
+        if (score <= alpha) {
+            // Fail low - widen lower bound
+            alpha = std::max(prev_score - window, -INFINITY_SCORE);
+            beta = prev_score + ASPIRATION_WINDOW;  // Keep original upper bound
+        } else if (score >= beta) {
+            // Fail high - widen upper bound  
+            alpha = prev_score - ASPIRATION_WINDOW;  // Keep original lower bound
+            beta = std::min(prev_score + window, INFINITY_SCORE);
+        }
+        
+        // Re-search with widened window
+        score = alphabeta->search(depth, alpha, beta);
     }
     
     return score;
@@ -242,16 +291,67 @@ void SearchEngine::update_search_info(int depth, int score, uint64_t nodes) {
     }
     
     current_info.pv = pv_to_string();
+    
+    // Output info periodically during search
+    if (should_output_info()) {
+        output_search_info();
+    }
+}
+
+bool SearchEngine::should_output_info() {
+    auto now = std::chrono::high_resolution_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_info_time);
+    
+    // Output info every 100ms during search
+    return elapsed.count() >= 100;
+}
+
+void SearchEngine::output_search_info() {
+    // Update last info time
+    last_info_time = std::chrono::high_resolution_clock::now();
+    
+    // Format and output UCI info string
+    // Format: info depth <x> score cp <x> time <x> nodes <x> nps <x> pv <moves>
+    std::ostringstream info_stream;
+    info_stream << "info depth " << current_info.depth;
+    info_stream << " score cp " << current_info.score;
+    info_stream << " time " << current_info.time_ms;
+    info_stream << " nodes " << current_info.nodes;
+    info_stream << " nps " << current_info.nps;
+    
+    if (!current_info.pv.empty()) {
+        info_stream << " pv " << current_info.pv;
+    }
+    
+    // In a real UCI implementation, this would go to stdout
+    // For now, we'll just store it (could be used by external UCI handler)
+    std::string info_output = info_stream.str();
+    
+    // TODO: In actual UCI integration, output to stdout or callback
+    // std::cout << info_output << std::endl;
 }
 
 bool SearchEngine::should_stop_search() {
+    // Emergency stop - highest priority
     if (stop_flag.load()) {
         return true;
     }
     
     uint64_t elapsed = get_elapsed_time_ms();
     uint64_t current_nodes = alphabeta ? alphabeta->get_stats().nodes : nodes_searched;
-    return current_limits.should_stop(current_info.depth, current_nodes, elapsed);
+    
+    // Check standard limits first (more strict)
+    if (current_limits.should_stop(current_info.depth, current_nodes, elapsed)) {
+        return true;
+    }
+    
+    // Hard emergency stop with small buffer to guarantee response time
+    if (current_limits.max_time_ms != UINT64_MAX && 
+        elapsed >= current_limits.max_time_ms + 10) {
+        return true;  // Absolute emergency stop
+    }
+    
+    return false;
 }
 
 uint64_t SearchEngine::get_elapsed_time_ms() const {

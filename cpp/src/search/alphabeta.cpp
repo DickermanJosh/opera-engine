@@ -53,8 +53,8 @@ int AlphaBetaSearch::search(int depth, int alpha, int beta) {
 int AlphaBetaSearch::pvs(int depth, int ply, int alpha, int beta, bool is_pv_node) {
     stats.nodes++;
     
-    // Check for search termination periodically
-    if ((node_check_counter++ & 1023) == 0 && should_stop()) {
+    // Check for search termination frequently for responsive control
+    if ((node_check_counter++ & 255) == 0 && should_stop()) {
         return alpha;
     }
     
@@ -550,6 +550,17 @@ bool AlphaBetaSearch::can_razor(int depth, int alpha, int static_eval) const {
     // Razoring: if static eval + margin is below alpha,
     // do a qsearch to verify the position is really bad
     return static_eval + razoring_margin < alpha;
+}
+
+bool AlphaBetaSearch::should_stop() const {
+    // Check external stop flag
+    if (stop_flag.load()) {
+        return true;
+    }
+    
+    // Basic time check (could add more sophisticated time management later)
+    // For now, just rely on external stop flag from SearchEngine
+    return false;
 }
 
 } // namespace opera

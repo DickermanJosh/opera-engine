@@ -283,6 +283,13 @@ private:
     bool can_do_null_move(bool in_check) const;
     
     /**
+     * Check if search should stop (time/external signal)
+     * 
+     * @return True if search should terminate
+     */
+    bool should_stop() const;
+    
+    /**
      * Make a null move (pass the turn to opponent)
      */
     void make_null_move();

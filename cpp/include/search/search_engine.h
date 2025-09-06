@@ -84,6 +84,7 @@ private:
     SearchLimits current_limits;           // Current search limits
     SearchInfo current_info;               // Current search information
     std::chrono::high_resolution_clock::time_point search_start_time;
+    std::chrono::high_resolution_clock::time_point last_info_time;  // Last info output time
     
     // Search statistics (now delegated to AlphaBetaSearch)
     uint64_t nodes_searched = 0;           // Total nodes searched this session
@@ -198,6 +199,20 @@ private:
      * @param nodes Current node count
      */
     void update_search_info(int depth, int score, uint64_t nodes);
+    
+    /**
+     * Check if we should output search information
+     * Output info every 100ms during search
+     * 
+     * @return true if info should be output
+     */
+    bool should_output_info();
+    
+    /**
+     * Output current search information
+     * For UCI info command reporting during search
+     */
+    void output_search_info();
     
     /**
      * Check if search should stop based on limits and stop flag
