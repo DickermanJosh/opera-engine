@@ -24,6 +24,7 @@ set(CORE_SOURCES
     src/board/MoveGenerator.cpp
     src/utils/Types.cpp
     src/search/search_engine.cpp
+    src/search/alphabeta.cpp
     src/search/transposition_table.cpp
     src/search/move_ordering.cpp
     src/search/see.cpp

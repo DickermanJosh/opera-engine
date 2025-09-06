@@ -276,4 +276,96 @@ std::string SearchEngine::pv_to_string() const {
     return ss.str();
 }
 
+// UCI option configuration methods
+void SearchEngine::set_null_move_reduction(int reduction) {
+    if (alphabeta) {
+        alphabeta->set_null_move_reduction(reduction);
+    }
+}
+
+void SearchEngine::set_lmr_full_depth_moves(int moves) {
+    if (alphabeta) {
+        alphabeta->set_lmr_full_depth_moves(moves);
+    }
+}
+
+void SearchEngine::set_lmr_reduction_limit(int limit) {
+    if (alphabeta) {
+        alphabeta->set_lmr_reduction_limit(limit);
+    }
+}
+
+void SearchEngine::set_futility_margin(int margin) {
+    if (alphabeta) {
+        alphabeta->set_futility_margin(margin);
+    }
+}
+
+void SearchEngine::set_razoring_margin(int margin) {
+    if (alphabeta) {
+        alphabeta->set_razoring_margin(margin);
+    }
+}
+
+void SearchEngine::set_min_depth_for_nmp(int depth) {
+    if (alphabeta) {
+        alphabeta->set_min_depth_for_nmp(depth);
+    }
+}
+
+void SearchEngine::set_min_depth_for_lmr(int depth) {
+    if (alphabeta) {
+        alphabeta->set_min_depth_for_lmr(depth);
+    }
+}
+
+void SearchEngine::set_min_depth_for_futility(int depth) {
+    if (alphabeta) {
+        alphabeta->set_min_depth_for_futility(depth);
+    }
+}
+
+void SearchEngine::set_min_depth_for_razoring(int depth) {
+    if (alphabeta) {
+        alphabeta->set_min_depth_for_razoring(depth);
+    }
+}
+
+// UCI option getter methods
+int SearchEngine::get_null_move_reduction() const {
+    return alphabeta ? alphabeta->get_null_move_reduction() : DEFAULT_NULL_MOVE_REDUCTION;
+}
+
+int SearchEngine::get_lmr_full_depth_moves() const {
+    return alphabeta ? alphabeta->get_lmr_full_depth_moves() : DEFAULT_LMR_FULL_DEPTH_MOVES;
+}
+
+int SearchEngine::get_lmr_reduction_limit() const {
+    return alphabeta ? alphabeta->get_lmr_reduction_limit() : DEFAULT_LMR_REDUCTION_LIMIT;
+}
+
+int SearchEngine::get_futility_margin() const {
+    return alphabeta ? alphabeta->get_futility_margin() : DEFAULT_FUTILITY_MARGIN;
+}
+
+int SearchEngine::get_razoring_margin() const {
+    return alphabeta ? alphabeta->get_razoring_margin() : DEFAULT_RAZORING_MARGIN;
+}
+
+int SearchEngine::get_min_depth_for_nmp() const {
+    return alphabeta ? alphabeta->get_min_depth_for_nmp() : DEFAULT_MIN_DEPTH_FOR_NMP;
+}
+
+int SearchEngine::get_min_depth_for_lmr() const {
+    return alphabeta ? alphabeta->get_min_depth_for_lmr() : DEFAULT_MIN_DEPTH_FOR_LMR;
+}
+
+int SearchEngine::get_min_depth_for_futility() const {
+    return alphabeta ? alphabeta->get_min_depth_for_futility() : DEFAULT_MIN_DEPTH_FOR_FUTILITY;
+}
+
+int SearchEngine::get_min_depth_for_razoring() const {
+    return alphabeta ? alphabeta->get_min_depth_for_razoring() : DEFAULT_MIN_DEPTH_FOR_RAZORING;
+}
+
 } // namespace opera

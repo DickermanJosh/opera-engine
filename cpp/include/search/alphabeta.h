@@ -22,16 +22,16 @@ constexpr int CHECK_EXTENSION = 1;
 constexpr int SINGULAR_EXTENSION = 1;
 constexpr int PASSED_PAWN_EXTENSION = 1;
 
-// Search optimization constants
-constexpr int NULL_MOVE_REDUCTION = 3;          // R=3 for null move pruning
-constexpr int LMR_FULL_DEPTH_MOVES = 4;        // First N moves get full depth
-constexpr int LMR_REDUCTION_LIMIT = 3;         // Maximum LMR reduction
-constexpr int FUTILITY_MARGIN = 200;           // Futility pruning margin
-constexpr int RAZORING_MARGIN = 300;           // Razoring margin
-constexpr int MIN_DEPTH_FOR_NMP = 3;           // Minimum depth for null move pruning
-constexpr int MIN_DEPTH_FOR_LMR = 3;           // Minimum depth for late move reductions
-constexpr int MIN_DEPTH_FOR_FUTILITY = 1;     // Minimum depth for futility pruning
-constexpr int MIN_DEPTH_FOR_RAZORING = 2;     // Minimum depth for razoring
+// Default search optimization constants  
+constexpr int DEFAULT_NULL_MOVE_REDUCTION = 3;          // R=3 for null move pruning
+constexpr int DEFAULT_LMR_FULL_DEPTH_MOVES = 4;        // First N moves get full depth
+constexpr int DEFAULT_LMR_REDUCTION_LIMIT = 3;         // Maximum LMR reduction
+constexpr int DEFAULT_FUTILITY_MARGIN = 200;           // Futility pruning margin
+constexpr int DEFAULT_RAZORING_MARGIN = 300;           // Razoring margin
+constexpr int DEFAULT_MIN_DEPTH_FOR_NMP = 3;           // Minimum depth for null move pruning
+constexpr int DEFAULT_MIN_DEPTH_FOR_LMR = 2;           // Minimum depth for late move reductions
+constexpr int DEFAULT_MIN_DEPTH_FOR_FUTILITY = 1;     // Minimum depth for futility pruning
+constexpr int DEFAULT_MIN_DEPTH_FOR_RAZORING = 2;     // Minimum depth for razoring
 
 /**
  * Search statistics for performance analysis
@@ -90,6 +90,17 @@ private:
     // Search control
     std::chrono::high_resolution_clock::time_point search_start_time;
     uint64_t node_check_counter = 0;        // Counter for periodic stop checks
+    
+    // Configurable search optimization parameters
+    int null_move_reduction = DEFAULT_NULL_MOVE_REDUCTION;
+    int lmr_full_depth_moves = DEFAULT_LMR_FULL_DEPTH_MOVES;
+    int lmr_reduction_limit = DEFAULT_LMR_REDUCTION_LIMIT;
+    int futility_margin = DEFAULT_FUTILITY_MARGIN;
+    int razoring_margin = DEFAULT_RAZORING_MARGIN;
+    int min_depth_for_nmp = DEFAULT_MIN_DEPTH_FOR_NMP;
+    int min_depth_for_lmr = DEFAULT_MIN_DEPTH_FOR_LMR;
+    int min_depth_for_futility = DEFAULT_MIN_DEPTH_FOR_FUTILITY;
+    int min_depth_for_razoring = DEFAULT_MIN_DEPTH_FOR_RAZORING;
     
 public:
     /**
@@ -160,6 +171,32 @@ public:
      * Clear killer moves and history tables
      */
     void clear_history();
+    
+    /**
+     * Configure search optimization parameters
+     */
+    void set_null_move_reduction(int reduction) { null_move_reduction = reduction; }
+    void set_lmr_full_depth_moves(int moves) { lmr_full_depth_moves = moves; }
+    void set_lmr_reduction_limit(int limit) { lmr_reduction_limit = limit; }
+    void set_futility_margin(int margin) { futility_margin = margin; }
+    void set_razoring_margin(int margin) { razoring_margin = margin; }
+    void set_min_depth_for_nmp(int depth) { min_depth_for_nmp = depth; }
+    void set_min_depth_for_lmr(int depth) { min_depth_for_lmr = depth; }
+    void set_min_depth_for_futility(int depth) { min_depth_for_futility = depth; }
+    void set_min_depth_for_razoring(int depth) { min_depth_for_razoring = depth; }
+    
+    /**
+     * Get current search optimization parameters
+     */
+    int get_null_move_reduction() const { return null_move_reduction; }
+    int get_lmr_full_depth_moves() const { return lmr_full_depth_moves; }
+    int get_lmr_reduction_limit() const { return lmr_reduction_limit; }
+    int get_futility_margin() const { return futility_margin; }
+    int get_razoring_margin() const { return razoring_margin; }
+    int get_min_depth_for_nmp() const { return min_depth_for_nmp; }
+    int get_min_depth_for_lmr() const { return min_depth_for_lmr; }
+    int get_min_depth_for_futility() const { return min_depth_for_futility; }
+    int get_min_depth_for_razoring() const { return min_depth_for_razoring; }
     
     // Testing methods (public for validation)
     int get_lmr_reduction(int depth, int move_number, bool is_pv_node, const MoveGen& move) const;

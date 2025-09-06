@@ -146,6 +146,32 @@ public:
      * Reset search statistics (for new game)
      */
     void reset_statistics();
+    
+    /**
+     * Configure AlphaBetaSearch optimization parameters (UCI options)
+     */
+    void set_null_move_reduction(int reduction);
+    void set_lmr_full_depth_moves(int moves);
+    void set_lmr_reduction_limit(int limit);
+    void set_futility_margin(int margin);
+    void set_razoring_margin(int margin);
+    void set_min_depth_for_nmp(int depth);
+    void set_min_depth_for_lmr(int depth);
+    void set_min_depth_for_futility(int depth);
+    void set_min_depth_for_razoring(int depth);
+    
+    /**
+     * Get current AlphaBetaSearch optimization parameters
+     */
+    int get_null_move_reduction() const;
+    int get_lmr_full_depth_moves() const;
+    int get_lmr_reduction_limit() const;
+    int get_futility_margin() const;
+    int get_razoring_margin() const;
+    int get_min_depth_for_nmp() const;
+    int get_min_depth_for_lmr() const;
+    int get_min_depth_for_futility() const;
+    int get_min_depth_for_razoring() const;
 
 private:
     /**

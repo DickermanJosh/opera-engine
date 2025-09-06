@@ -23,6 +23,7 @@ set(TEST_SOURCES
     TranspositionTableTest.cpp
     MoveOrderingTest.cpp
     StaticExchangeTest.cpp
+    UCIOptionsTest.cpp
 )
 
 # Create test executable

@@ -107,14 +107,14 @@ int AlphaBetaSearch::pvs(int depth, int ply, int alpha, int beta, bool is_pv_nod
     int static_eval = evaluate();
     
     // Null Move Pruning (before move generation to save time)
-    if (depth >= MIN_DEPTH_FOR_NMP && !is_pv_node && 
+    if (depth >= min_depth_for_nmp && !is_pv_node && 
         can_do_null_move(in_check_flag) && static_eval >= beta) {
         
         // Make null move
         make_null_move();
         
         // Search with reduced depth
-        int null_score = -pvs(depth - 1 - NULL_MOVE_REDUCTION, ply + 1, -beta, -beta + 1, false);
+        int null_score = -pvs(depth - 1 - null_move_reduction, ply + 1, -beta, -beta + 1, false);
         
         // Unmake null move  
         unmake_null_move();
@@ -126,7 +126,7 @@ int AlphaBetaSearch::pvs(int depth, int ply, int alpha, int beta, bool is_pv_nod
     }
     
     // Razoring - if position looks very bad, verify with qsearch
-    if (depth >= MIN_DEPTH_FOR_RAZORING && !is_pv_node && !in_check_flag &&
+    if (depth >= min_depth_for_razoring && !is_pv_node && !in_check_flag &&
         can_razor(depth, alpha, static_eval)) {
         
         int razor_score = quiescence(ply, alpha, beta);
@@ -167,7 +167,7 @@ int AlphaBetaSearch::pvs(int depth, int ply, int alpha, int beta, bool is_pv_nod
         stats.extensions += extension;
         
         // Futility Pruning - skip quiet moves that can't improve alpha
-        if (depth <= MIN_DEPTH_FOR_FUTILITY && !in_check_flag && !gives_check &&
+        if (depth <= min_depth_for_futility && !in_check_flag && !gives_check &&
             !move_gen.isCapture() && !move_gen.isPromotion() &&
             legal_moves > 1 && can_futility_prune(depth, alpha, static_eval)) {
             
@@ -180,7 +180,7 @@ int AlphaBetaSearch::pvs(int depth, int ply, int alpha, int beta, bool is_pv_nod
         int reduction = 0;
         
         // Late Move Reductions - reduce depth for later moves
-        if (depth >= MIN_DEPTH_FOR_LMR && !in_check_flag && !gives_check && extension == 0) {
+        if (depth >= min_depth_for_lmr && !in_check_flag && !gives_check && extension == 0) {
             reduction = get_lmr_reduction(depth, legal_moves - 1, is_pv_node, move_gen);
             if (reduction > 0) {
                 stats.lmr_reductions++;
@@ -518,7 +518,7 @@ int AlphaBetaSearch::get_lmr_reduction(int depth, int move_number, bool is_pv_no
     // - PV nodes
     // - First few moves
     // - Tactical moves (captures, promotions, checks)
-    if (is_pv_node || move_number < LMR_FULL_DEPTH_MOVES) {
+    if (is_pv_node || move_number < lmr_full_depth_moves) {
         return 0;
     }
     
@@ -537,19 +537,19 @@ int AlphaBetaSearch::get_lmr_reduction(int depth, int move_number, bool is_pv_no
         reduction = 3;
     }
     
-    return std::min(reduction, LMR_REDUCTION_LIMIT);
+    return std::min(reduction, lmr_reduction_limit);
 }
 
 bool AlphaBetaSearch::can_futility_prune(int depth, int alpha, int static_eval) const {
     // Futility pruning: if static eval + margin is still below alpha,
     // remaining moves are unlikely to raise alpha
-    return static_eval + FUTILITY_MARGIN * depth < alpha;
+    return static_eval + futility_margin * depth < alpha;
 }
 
 bool AlphaBetaSearch::can_razor(int depth, int alpha, int static_eval) const {
     // Razoring: if static eval + margin is below alpha,
     // do a qsearch to verify the position is really bad
-    return static_eval + RAZORING_MARGIN < alpha;
+    return static_eval + razoring_margin < alpha;
 }
 
 } // namespace opera
