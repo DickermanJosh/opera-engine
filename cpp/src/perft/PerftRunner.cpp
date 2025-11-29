@@ -61,7 +61,7 @@ public:
         
         addTestCase("Endgame Position",
                    "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
-                   5, 681673, "Endgame with multiple piece types");
+                   5, 674624, "Endgame with multiple piece types (Stockfish-verified)");
         
         addTestCase("Kiwipete Position", 
                    "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
@@ -74,11 +74,11 @@ public:
         // TalkChess PERFT Tests by Martin Sedlak
         addTestCase("Illegal EP Move #1",
                    "3k4/3p4/8/K1P4r/8/8/8/8 b - - 0 1",
-                   5, 186770, "Tests en passant edge cases");
+                   5, 185429, "Tests en passant edge cases (Stockfish-verified)");
         
-        addTestCase("Illegal EP Move #2", 
+        addTestCase("Illegal EP Move #2",
                    "8/8/4k3/8/2p5/8/B2P2K1/8 w - - 0 1",
-                   5, 135530, "Tests en passant validation");
+                   5, 135655, "Tests en passant validation (Stockfish-verified)");
         
         addTestCase("EP Capture Checks Opponent",
                    "8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1",

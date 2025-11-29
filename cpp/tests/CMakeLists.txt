@@ -1,8 +1,8 @@
 # Test configuration for Opera Engine
 cmake_minimum_required(VERSION 3.16)
 
-# Find Google Test
-find_package(GTest REQUIRED)
+# Google Test is already found/fetched by parent CMakeLists.txt
+# No need to find it again here
 
 # Include directories
 include_directories(../include)
@@ -23,6 +23,8 @@ set(TEST_SOURCES
     TranspositionTableTest.cpp
     MoveOrderingTest.cpp
     StaticExchangeTest.cpp
+    AlphaBetaTest.cpp
+    SearchOptimizationTest.cpp
     UCIOptionsTest.cpp
     SearchControlTest.cpp
 )

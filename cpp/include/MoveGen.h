@@ -23,28 +23,29 @@ private:
     uint32_t data;  // Packed representation
     
     // Bit layout (32 bits total):
-    // Bits 0-5:   From square (6 bits, 0-63)
-    // Bits 6-11:  To square (6 bits, 0-63)  
-    // Bits 12-14: Move type (3 bits)
-    // Bits 15-18: Promotion piece (4 bits, 0-12 for pieces)
-    // Bits 19-22: Captured piece (4 bits, 0-12 for pieces)  
-    // Bits 23-31: Reserved/flags (9 bits)
-    
-    static constexpr uint32_t FROM_MASK       = 0x0000003F;  // Bits 0-5 (6 bits)
-    static constexpr uint32_t TO_MASK         = 0x00000FC0;  // Bits 6-11 (6 bits)
-    static constexpr uint32_t TYPE_MASK       = 0x00007000;  // Bits 12-14 (3 bits)
-    static constexpr uint32_t PROMOTION_MASK  = 0x00078000;  // Bits 15-18 (4 bits)
-    static constexpr uint32_t CAPTURED_MASK   = 0x00780000;  // Bits 19-22 (4 bits)
+    // Bits 0-6:   From square (7 bits, 0-64)
+    // Bits 7-13:  To square (7 bits, 0-64)
+    // Bits 14-16: Move type (3 bits)
+    // Bits 17-20: Promotion piece (4 bits, 0-12 for pieces)
+    // Bits 21-24: Captured piece (4 bits, 0-12 for pieces)
+    // Bits 25-31: Reserved/flags (7 bits)
+
+    static constexpr uint32_t FROM_MASK       = 0x0000007F;  // Bits 0-6 (7 bits)
+    static constexpr uint32_t TO_MASK         = 0x00003F80;  // Bits 7-13 (7 bits)
+    static constexpr uint32_t TYPE_MASK       = 0x0001C000;  // Bits 14-16 (3 bits)
+    static constexpr uint32_t PROMOTION_MASK  = 0x001E0000;  // Bits 17-20 (4 bits)
+    static constexpr uint32_t CAPTURED_MASK   = 0x01E00000;  // Bits 21-24 (4 bits)
     
     static constexpr int FROM_SHIFT       = 0;
-    static constexpr int TO_SHIFT         = 6;
-    static constexpr int TYPE_SHIFT       = 12;
-    static constexpr int PROMOTION_SHIFT  = 15;
-    static constexpr int CAPTURED_SHIFT   = 19;
+    static constexpr int TO_SHIFT         = 7;
+    static constexpr int TYPE_SHIFT       = 14;
+    static constexpr int PROMOTION_SHIFT  = 17;
+    static constexpr int CAPTURED_SHIFT   = 21;
 
 public:
-    // Use a special null value that fits in 6 bits for squares
-    static constexpr Square NULL_SQUARE_VALUE = 63;  // Repurpose H8 as null for bit packing
+    // Use NO_SQUARE (64) from Types.h for consistency
+    // Note: This requires 7 bits instead of 6, but ensures H8 (63) works correctly
+    static constexpr Square NULL_SQUARE_VALUE = 64;  // Match NO_SQUARE from Types.h
     
     // Constructors
     MoveGen() : data(0) {

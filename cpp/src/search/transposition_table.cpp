@@ -1,6 +1,7 @@
 #include "search/transposition_table.h"
 #include <algorithm>
 #include <cstring>
+#include <climits>
 
 // Platform-specific prefetch support
 #ifdef __GNUC__

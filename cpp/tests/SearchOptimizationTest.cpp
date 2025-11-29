@@ -190,7 +190,7 @@ TEST_F(SearchOptimizationTest, OptimizationMethods) {
     // Should reduce later quiet moves
     int reduction_late = alphabeta->get_lmr_reduction(6, 10, false, dummy_move);
     EXPECT_GT(reduction_late, 0);
-    EXPECT_LE(reduction_late, LMR_REDUCTION_LIMIT);
+    EXPECT_LE(reduction_late, DEFAULT_LMR_REDUCTION_LIMIT);
     
     // Test futility pruning conditions
     bool can_prune = alphabeta->can_futility_prune(1, 100, -100);
