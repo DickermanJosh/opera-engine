@@ -27,6 +27,7 @@ set(TEST_SOURCES
     SearchOptimizationTest.cpp
     UCIOptionsTest.cpp
     SearchControlTest.cpp
+    EvaluatorInterfaceTest.cpp
 )
 
 # Create test executable
