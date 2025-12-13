@@ -28,6 +28,7 @@ set(TEST_SOURCES
     UCIOptionsTest.cpp
     SearchControlTest.cpp
     EvaluatorInterfaceTest.cpp
+    HandcraftedEvalTest.cpp
 )
 
 # Create test executable

@@ -28,6 +28,7 @@ set(CORE_SOURCES
     src/search/transposition_table.cpp
     src/search/move_ordering.cpp
     src/search/see.cpp
+    src/eval/handcrafted_eval.cpp
 )
 
 add_library(opera_core STATIC ${CORE_SOURCES})
