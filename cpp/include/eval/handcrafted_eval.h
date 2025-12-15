@@ -482,6 +482,93 @@ protected:
     static constexpr Square flip_square(Square square) {
         return static_cast<Square>(square ^ 56);  // XOR with 56 flips ranks
     }
+
+    // ========================================================================
+    // Pawn Hash Table (Task 3.6 - Evaluation Caching)
+    // ========================================================================
+
+public:
+    /**
+     * @brief Pawn hash entry structure
+     *
+     * Stores precomputed pawn structure evaluation to avoid recalculation
+     * when the same pawn structure appears multiple times (common in search).
+     */
+    struct PawnHashEntry {
+        uint64_t key;           ///< Zobrist key for pawn positions only
+        int16_t score_mg;       ///< Pawn structure score in middlegame (centipawns)
+        int16_t score_eg;       ///< Pawn structure score in endgame (centipawns)
+        uint8_t white_passers; ///< Bitfield of white passed pawn files
+        uint8_t black_passers; ///< Bitfield of black passed pawn files
+        uint16_t flags;         ///< Various pawn structure flags (isolated, doubled, etc.)
+    };
+
+    /**
+     * @brief Statistics for pawn hash table performance
+     */
+    struct PawnHashStats {
+        uint64_t hits = 0;      ///< Number of cache hits
+        uint64_t misses = 0;    ///< Number of cache misses
+        uint64_t collisions = 0; ///< Number of hash collisions (different structure, same index)
+    };
+
+    /**
+     * @brief Clear pawn hash table
+     */
+    void clear_pawn_hash();
+
+    /**
+     * @brief Get pawn hash table statistics
+     *
+     * @return Cache performance statistics
+     */
+    PawnHashStats get_pawn_hash_stats() const { return pawn_hash_stats_; }
+
+    /**
+     * @brief Get pawn hash table memory usage in bytes
+     *
+     * @return Memory usage of pawn hash table
+     */
+    size_t get_pawn_hash_memory_usage() const;
+
+private:
+    /**
+     * @brief Calculate pawn-only Zobrist key
+     *
+     * @param board The board position
+     * @return Zobrist key based only on pawn positions
+     */
+    uint64_t calculate_pawn_key(const Board& board) const;
+
+    /**
+     * @brief Probe pawn hash table
+     *
+     * @param key Pawn-only Zobrist key
+     * @param entry Output parameter for hash entry (if found)
+     * @return true if entry found and valid
+     */
+    bool probe_pawn_hash(uint64_t key, PawnHashEntry& entry) const;
+
+    /**
+     * @brief Store pawn evaluation in hash table
+     *
+     * @param key Pawn-only Zobrist key
+     * @param score_mg Middlegame pawn structure score
+     * @param score_eg Endgame pawn structure score
+     * @param white_passers Bitfield of white passed pawn files
+     * @param black_passers Bitfield of black passed pawn files
+     * @param flags Pawn structure flags
+     */
+    void store_pawn_hash(uint64_t key, int score_mg, int score_eg,
+                        uint8_t white_passers, uint8_t black_passers, uint16_t flags);
+
+    // Pawn hash table data
+    static constexpr size_t DEFAULT_PAWN_HASH_SIZE_MB = 4;
+    static constexpr size_t PAWN_HASH_ENTRY_SIZE = sizeof(PawnHashEntry);
+
+    std::vector<PawnHashEntry> pawn_hash_table_;
+    mutable PawnHashStats pawn_hash_stats_;
+    size_t pawn_hash_size_mb_ = DEFAULT_PAWN_HASH_SIZE_MB;
 };
 
 } // namespace eval

@@ -25,9 +25,12 @@ namespace eval {
 // ============================================================================
 
 HandcraftedEvaluator::HandcraftedEvaluator()
-    : weights_()
+    : weights_(), pawn_hash_stats_()
 {
-    // Default weights initialized in struct definition
+    // Initialize pawn hash table
+    size_t num_entries = (pawn_hash_size_mb_ * 1024 * 1024) / PAWN_HASH_ENTRY_SIZE;
+    pawn_hash_table_.resize(num_entries);
+    clear_pawn_hash();
 }
 
 // ============================================================================
@@ -47,8 +50,29 @@ int HandcraftedEvaluator::evaluate(const Board& board, Color side_to_move) {
     int black_pst = evaluate_pst(board, Color::BLACK, phase);
 
     // Advanced positional evaluation (Task 3.3)
-    int white_pawn_structure = evaluate_pawn_structure(board, Color::WHITE);
-    int black_pawn_structure = evaluate_pawn_structure(board, Color::BLACK);
+    // Pawn structure with caching (Task 3.6)
+    int white_pawn_structure = 0;
+    int black_pawn_structure = 0;
+
+    uint64_t pawn_key = calculate_pawn_key(board);
+    PawnHashEntry pawn_entry;
+
+    if (probe_pawn_hash(pawn_key, pawn_entry)) {
+        // Cache hit - use stored pawn structure evaluation
+        // Taper between middlegame and endgame scores
+        white_pawn_structure = (pawn_entry.score_mg * phase + pawn_entry.score_eg * (256 - phase)) / 256;
+        // For now, assume symmetric storage (white - black in single score)
+        // TODO: Store white and black separately if needed
+        black_pawn_structure = 0;  // Already included in white_pawn_structure as differential
+    } else {
+        // Cache miss - compute pawn structure
+        white_pawn_structure = evaluate_pawn_structure(board, Color::WHITE);
+        black_pawn_structure = evaluate_pawn_structure(board, Color::BLACK);
+
+        // Store in pawn hash (using differential score for now)
+        int pawn_score_diff = white_pawn_structure - black_pawn_structure;
+        store_pawn_hash(pawn_key, pawn_score_diff, pawn_score_diff, 0, 0, 0);
+    }
 
     int white_king_safety = evaluate_king_safety(board, Color::WHITE, phase);
     int black_king_safety = evaluate_king_safety(board, Color::BLACK, phase);
@@ -111,6 +135,18 @@ void HandcraftedEvaluator::configure_options(
     it = options.find("TempoBonus");
     if (it != options.end()) {
         weights_.tempo_bonus = std::atoi(it->second.c_str());
+    }
+
+    // Pawn hash table size configuration (Task 3.6)
+    it = options.find("PawnHashSize");
+    if (it != options.end()) {
+        size_t new_size_mb = std::atoi(it->second.c_str());
+        if (new_size_mb != pawn_hash_size_mb_ && new_size_mb > 0 && new_size_mb <= 256) {
+            pawn_hash_size_mb_ = new_size_mb;
+            size_t num_entries = (pawn_hash_size_mb_ * 1024 * 1024) / PAWN_HASH_ENTRY_SIZE;
+            pawn_hash_table_.resize(num_entries);
+            clear_pawn_hash();
+        }
     }
 }
 
@@ -615,6 +651,74 @@ int HandcraftedEvaluator::evaluate_development(const Board& board, Color color, 
     score = (score * phase) / 256;
 
     return score;
+}
+
+// ============================================================================
+// Pawn Hash Table Implementation (Task 3.6)
+// ============================================================================
+
+void HandcraftedEvaluator::clear_pawn_hash() {
+    std::fill(pawn_hash_table_.begin(), pawn_hash_table_.end(), PawnHashEntry{});
+    pawn_hash_stats_ = PawnHashStats{};
+}
+
+size_t HandcraftedEvaluator::get_pawn_hash_memory_usage() const {
+    return pawn_hash_table_.size() * PAWN_HASH_ENTRY_SIZE;
+}
+
+uint64_t HandcraftedEvaluator::calculate_pawn_key(const Board& board) const {
+    uint64_t key = 0ULL;
+
+    // XOR in white pawns (WHITE_PAWN = 0)
+    uint64_t white_pawns = board.getPieceBitboard(Color::WHITE, PAWN);
+    while (white_pawns) {
+        Square sq = static_cast<Square>(__builtin_ctzll(white_pawns));
+        key ^= board.zobristPieces[sq][WHITE_PAWN];
+        white_pawns &= white_pawns - 1;
+    }
+
+    // XOR in black pawns (BLACK_PAWN = 6)
+    uint64_t black_pawns = board.getPieceBitboard(Color::BLACK, PAWN);
+    while (black_pawns) {
+        Square sq = static_cast<Square>(__builtin_ctzll(black_pawns));
+        key ^= board.zobristPieces[sq][BLACK_PAWN];
+        black_pawns &= black_pawns - 1;
+    }
+
+    return key;
+}
+
+bool HandcraftedEvaluator::probe_pawn_hash(uint64_t key, PawnHashEntry& entry) const {
+    size_t index = key % pawn_hash_table_.size();
+    const PawnHashEntry& stored = pawn_hash_table_[index];
+
+    if (stored.key == key) {
+        pawn_hash_stats_.hits++;
+        entry = stored;
+        return true;
+    }
+
+    if (stored.key != 0) {
+        pawn_hash_stats_.collisions++;
+    }
+
+    pawn_hash_stats_.misses++;
+    return false;
+}
+
+void HandcraftedEvaluator::store_pawn_hash(uint64_t key, int score_mg, int score_eg,
+                                          uint8_t white_passers, uint8_t black_passers,
+                                          uint16_t flags) {
+    size_t index = key % pawn_hash_table_.size();
+
+    pawn_hash_table_[index] = PawnHashEntry{
+        key,
+        static_cast<int16_t>(score_mg),
+        static_cast<int16_t>(score_eg),
+        white_passers,
+        black_passers,
+        flags
+    };
 }
 
 } // namespace eval

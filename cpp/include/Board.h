@@ -11,32 +11,33 @@ namespace opera {
 class MoveGen;
 
 class Board {
+public:
+    // Static zobrist keys (public for pawn hash table in evaluator - Task 3.6)
+    static uint64_t zobristPieces[64][12];
+    static uint64_t zobristSideToMove;
+    static uint64_t zobristCastling[16];
+    static uint64_t zobristEnPassant[64];
+    static bool zobristInitialized;
+
 private:
     // Bitboard representation - 12 bitboards for each piece type/color combination
     Bitboard pieces[12];
-    
+
     // Occupancy bitboards for fast lookups
     Bitboard occupied[3]; // [WHITE_PIECES, BLACK_PIECES, ALL_PIECES]
-    
+
     // Game state
     CastlingRights castling;
     Square enPassant;
     int halfmoveClock;
     int fullmoveNumber;
     Color sideToMove;
-    
+
     // Zobrist hashing for transposition tables
     uint64_t zobristKey;
-    
+
     // Move history for undo operations
     std::vector<BoardState> history;
-    
-    // Static zobrist keys (initialized once)
-    static uint64_t zobristPieces[64][12];
-    static uint64_t zobristSideToMove;
-    static uint64_t zobristCastling[16];
-    static uint64_t zobristEnPassant[64];
-    static bool zobristInitialized;
     
     // Initialize zobrist keys
     static void initializeZobrist();

@@ -31,6 +31,7 @@ set(TEST_SOURCES
     HandcraftedEvalTest.cpp
     AdvancedEvalTest.cpp
     MorphyEvalTest.cpp
+    EvalCachingTest.cpp
 )
 
 # Create test executable
