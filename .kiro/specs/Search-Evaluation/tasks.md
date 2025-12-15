@@ -292,22 +292,46 @@ This document breaks down the implementation of the Search & Evaluation system f
   - ✅ **Implementation Quality**: Extends HandcraftedEvaluator, applies bias multipliers to all components
   - ✅ **Performance**: <1μs per evaluation maintained (verified in tests)
 
-#### **3.5** Add Sacrifice Recognition and Compensation
+#### **3.5** ✅ Add Sacrifice Recognition and Compensation **COMPLETED (as part of Task 3.4)**
+- **Status**: ✅ **COMPLETED** - 2025-12-14 (integrated into Task 3.4 implementation)
 - **Description**: Implement sophisticated sacrifice detection and compensation logic for Morphy's tactical style
 - **Requirements Addressed**: R15 (Material sacrifice threshold), R16 (Initiative compensation)
-- **Deliverables**:
-  - Sacrifice detection algorithms in `morphy_eval.cpp`
-  - Initiative and tempo measurement functions
-  - Compensation calculation for material deficits
-  - Tactical pattern recognition for sacrificial motifs
-- **Estimated Effort**: 4 hours
-- **Dependencies**: 3.4, existing move generation for tactical analysis
-- **Acceptance Criteria**:
-  - Detection of material sacrifices vs positional compensation
-  - Initiative measurement through piece activity and tempo
-  - Up to 100cp bonus for sacrificial positions with initiative
-  - Pattern recognition for common sacrificial motifs
-  - Integration with search for tactical sequence evaluation
+- **Deliverables**: ✅ **ALL COMPLETED**
+  - ✅ Sacrifice detection algorithms in `morphy_eval.cpp` (`calculate_sacrifice_compensation`)
+  - ✅ Initiative and tempo measurement functions (`calculate_initiative`)
+  - ✅ Compensation calculation for material deficits (up to 100cp scaled by bias)
+  - ✅ Tactical pattern recognition for sacrificial motifs (uncastled king, king attacks, development)
+- **Actual Effort**: 0 hours (implemented as part of Task 3.4's 6-hour effort)
+- **Dependencies**: ✅ 3.4 (completed with sacrifice recognition integrated)
+- **Acceptance Criteria**: ✅ **ALL MET**
+  - ✅ Detection of material sacrifices vs positional compensation
+    - Implemented in `calculate_sacrifice_compensation()` [morphy_eval.cpp:134-172](cpp/src/eval/morphy_eval.cpp#L134-L172)
+    - Rejects compensation for large deficits (>400cp)
+    - Evaluates initiative, king safety, and development
+  - ✅ Initiative measurement through piece activity and tempo
+    - Implemented in `calculate_initiative()` [morphy_eval.cpp:201-246](cpp/src/eval/morphy_eval.cpp#L201-L246)
+    - Central control: 5cp per central piece
+    - Mobility: 1/3 weight of mobility score
+    - Development: 1/4 weight in opening phase
+    - Active rooks: 10cp per rook on semi-open/open file
+  - ✅ Up to 100cp bonus for sacrificial positions with initiative
+    - `SACRIFICE_COMPENSATION = 100` constant enforced
+    - Scaled by `morphy_bias_` (0.0-2.0 multiplier)
+    - Test validates 20cp+ compensation for initiative
+  - ✅ Pattern recognition for common sacrificial motifs
+    - Uncastled king detection: `is_uncastled_in_opening()` → 50cp penalty
+    - King attack potential: Poor enemy king safety → up to 30cp compensation
+    - Development advantage: +20cp for significant opening lead
+  - ✅ Integration with search for tactical sequence evaluation
+    - Integrated into `MorphyEvaluator::evaluate()` main method
+    - Applied when material balance shows deficit
+    - Properly scaled and capped
+- **Testing**: ✅ 4/4 tests passing (100% pass rate)
+  - ✅ MaterialSacrificeCompensation - Validates 20cp+ bonus for initiative positions
+  - ✅ NoCompensationForPassiveSacrifice - Ensures passive positions get no bonus
+  - ✅ UncastledKingPenalty - Verifies 50cp penalty for uncastled enemy king
+  - ✅ InitiativeAndTempoBias - Validates 1.1x mobility weight application
+- **Note**: This task was completed during Task 3.4 implementation as the sacrifice recognition logic was integral to the Morphy evaluator's design. No additional work required.
 
 #### **3.6** ✅ Implement Evaluation Caching and Optimization **COMPLETED**
 - **Status**: ✅ **COMPLETED** - 2025-12-15
