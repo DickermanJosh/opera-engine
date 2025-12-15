@@ -101,6 +101,33 @@ protected:
         double material_weight = 1.0;
         double pst_weight = 1.0;
         int tempo_bonus = 15;  // Bonus for side to move
+
+        // Advanced positional evaluation weights (Task 3.3)
+        double pawn_structure_weight = 1.0;
+        double king_safety_weight = 1.0;
+        double mobility_weight = 1.0;
+        double development_weight = 1.0;
+
+        // Pawn structure penalties/bonuses
+        int isolated_pawn_penalty = 20;
+        int doubled_pawn_penalty = 10;
+        static constexpr int PASSED_PAWN_BONUS[8] = {0, 10, 20, 35, 60, 100, 150, 0};  // By rank
+
+        // King safety bonuses/penalties
+        int pawn_shield_bonus = 10;  // Per pawn in front of king
+        int open_file_near_king_penalty = 15;  // Per open file near king
+        int broken_pawn_shield_penalty = 20;  // Pawn moved in front of king
+
+        // Mobility bonuses (per square)
+        int knight_mobility_bonus = 4;
+        int bishop_mobility_bonus = 3;
+        int rook_mobility_bonus = 2;
+        int queen_mobility_bonus = 1;
+
+        // Development bonuses
+        int minor_piece_development = 10;  // Knight/Bishop off back rank
+        int rook_open_file = 15;  // Rook on open file
+        int early_queen_penalty = 10;  // Queen out before minor pieces
     };
 
     EvalWeights weights_;
@@ -123,6 +150,70 @@ protected:
      * @return PST score in centipawns
      */
     int evaluate_pst(const Board& board, Color color, int phase) const;
+
+    // ========================================================================
+    // Advanced Positional Evaluation (Task 3.3)
+    // ========================================================================
+
+    /**
+     * @brief Evaluate pawn structure for a color
+     *
+     * Analyzes:
+     * - Isolated pawns (no friendly pawns on adjacent files): -20cp
+     * - Doubled pawns (multiple pawns on same file): -10cp per doubled pawn
+     * - Passed pawns (no enemy pawns blocking): bonus scaling with rank
+     *
+     * @param board The board position
+     * @param color The color to evaluate for
+     * @return Pawn structure score in centipawns
+     */
+    int evaluate_pawn_structure(const Board& board, Color color) const;
+
+    /**
+     * @brief Evaluate king safety for a color
+     *
+     * Considers:
+     * - Pawn shield in front of king (f2/g2/h2 for white kingside castle)
+     * - Open files near king (dangerous for rook attacks)
+     * - King centralization in endgame vs safety in opening (phase-dependent)
+     *
+     * @param board The board position
+     * @param color The color to evaluate for
+     * @param phase Game phase (opening=high weight, endgame=low weight)
+     * @return King safety score in centipawns
+     */
+    int evaluate_king_safety(const Board& board, Color color, int phase) const;
+
+    /**
+     * @brief Evaluate piece mobility for a color
+     *
+     * Mobility bonuses for:
+     * - Knights: number of legal squares (central > rim)
+     * - Bishops: diagonal mobility (open diagonals preferred)
+     * - Rooks: file/rank mobility (open files valued)
+     * - Queens: combined mobility bonus
+     *
+     * @param board The board position
+     * @param color The color to evaluate for
+     * @return Mobility score in centipawns
+     */
+    int evaluate_mobility(const Board& board, Color color) const;
+
+    /**
+     * @brief Evaluate piece development for a color
+     *
+     * Development bonuses (primarily in opening phase):
+     * - Minor pieces (N/B) off back rank
+     * - Castling completed
+     * - Rooks connected
+     * - Early queen development penalty
+     *
+     * @param board The board position
+     * @param color The color to evaluate for
+     * @param phase Game phase (high weight in opening, fades in endgame)
+     * @return Development score in centipawns
+     */
+    int evaluate_development(const Board& board, Color color, int phase) const;
 
     /**
      * @brief Calculate game phase based on material
@@ -275,14 +366,14 @@ protected:
      * - Avoid center
      */
     static constexpr std::array<int, 64> KING_PST_OPENING = {
-        -30,-40,-40,-50,-50,-40,-40,-30,  // Rank 1
-        -30,-40,-40,-50,-50,-40,-40,-30,  // Rank 2
-        -30,-40,-40,-50,-50,-40,-40,-30,  // Rank 3
-        -30,-40,-40,-50,-50,-40,-40,-30,  // Rank 4
-        -20,-30,-30,-40,-40,-30,-30,-20,  // Rank 5
-        -10,-20,-20,-20,-20,-20,-20,-10,  // Rank 6
-         20, 20,  0,  0,  0,  0, 20, 20,  // Rank 7 - castled
-         20, 30, 10,  0,  0, 10, 30, 20   // Rank 8 - castled
+         20, 30, 10,  0,  0, 10, 30, 20,  // Rank 1 - white's back rank (castled)
+         20, 20,  0,  0,  0,  0, 20, 20,  // Rank 2 - white's 2nd rank
+        -10,-20,-20,-20,-20,-20,-20,-10,  // Rank 3 - leaving safety
+        -20,-30,-30,-40,-40,-30,-30,-20,  // Rank 4 - center (dangerous)
+        -30,-40,-40,-50,-50,-40,-40,-30,  // Rank 5 - center (very dangerous)
+        -30,-40,-40,-50,-50,-40,-40,-30,  // Rank 6 - exposed
+        -30,-40,-40,-50,-50,-40,-40,-30,  // Rank 7 - far from safety
+        -30,-40,-40,-50,-50,-40,-40,-30   // Rank 8 - black's back rank
     };
 
     /**
@@ -314,6 +405,70 @@ protected:
      * @return PST bonus in centipawns
      */
     int get_pst_value(PieceType piece_type, Square square, Color color, int phase) const;
+
+    // ========================================================================
+    // Helper Methods for Advanced Positional Evaluation
+    // ========================================================================
+
+    /**
+     * @brief Check if a pawn is isolated (no friendly pawns on adjacent files)
+     *
+     * @param pawns Bitboard of friendly pawns
+     * @param square Pawn square to check
+     * @return true if pawn is isolated
+     */
+    bool is_isolated_pawn(uint64_t pawns, Square square) const;
+
+    /**
+     * @brief Check if a pawn is passed (no enemy pawns blocking on same/adjacent files)
+     *
+     * @param enemy_pawns Bitboard of enemy pawns
+     * @param square Pawn square to check
+     * @param color Pawn color
+     * @return true if pawn is passed
+     */
+    bool is_passed_pawn(uint64_t enemy_pawns, Square square, Color color) const;
+
+    /**
+     * @brief Count pawns on a file
+     *
+     * @param pawns Bitboard of pawns
+     * @param file File to check (0-7)
+     * @return Number of pawns on the file
+     */
+    int count_pawns_on_file(uint64_t pawns, int file) const;
+
+    /**
+     * @brief Get file mask for a given file
+     *
+     * @param file File number (0-7)
+     * @return Bitboard mask for the file
+     */
+    static constexpr uint64_t file_mask(int file) {
+        return 0x0101010101010101ULL << file;
+    }
+
+    /**
+     * @brief Get adjacent files mask
+     *
+     * @param file File number (0-7)
+     * @return Bitboard mask for adjacent files
+     */
+    static constexpr uint64_t adjacent_files_mask(int file) {
+        uint64_t mask = 0;
+        if (file > 0) mask |= file_mask(file - 1);
+        if (file < 7) mask |= file_mask(file + 1);
+        return mask;
+    }
+
+    /**
+     * @brief Get forward span mask for passed pawn detection
+     *
+     * @param square Pawn square
+     * @param color Pawn color
+     * @return Bitboard mask of squares ahead (same + adjacent files)
+     */
+    uint64_t forward_span_mask(Square square, Color color) const;
 
     /**
      * @brief Flip square for black piece-square table lookup

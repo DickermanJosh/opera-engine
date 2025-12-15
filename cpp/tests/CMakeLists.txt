@@ -29,6 +29,7 @@ set(TEST_SOURCES
     SearchControlTest.cpp
     EvaluatorInterfaceTest.cpp
     HandcraftedEvalTest.cpp
+    AdvancedEvalTest.cpp
 )
 
 # Create test executable
