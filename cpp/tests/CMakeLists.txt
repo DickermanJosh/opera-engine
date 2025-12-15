@@ -30,6 +30,7 @@ set(TEST_SOURCES
     EvaluatorInterfaceTest.cpp
     HandcraftedEvalTest.cpp
     AdvancedEvalTest.cpp
+    MorphyEvalTest.cpp
 )
 
 # Create test executable
