@@ -33,6 +33,8 @@ set(TEST_SOURCES
     MorphyEvalTest.cpp
     EvalCachingTest.cpp
     SearchEvalIntegrationTest.cpp
+    PerformanceBenchmarkTest.cpp
+    TacticalEPDTest.cpp
 )
 
 # Create test executable

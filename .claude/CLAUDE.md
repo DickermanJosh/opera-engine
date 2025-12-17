@@ -58,6 +58,9 @@ This project uses an adaptation of Amazon's **Kiro System** for structured featu
 - **Enforce the approval process** - don't skip phases
 - **Maintain traceability** from requirements to code
 
+## Claude / Codex Collaboration
+
+You MUST use Codex as a code review agent during task development. Read .claude/CLAUDE_CODEX.md for further instructions on how to utilize CODEX.
 
 ## C++ Core Requirements
 
