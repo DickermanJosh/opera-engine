@@ -76,21 +76,38 @@ Board& Board::operator=(const Board& other) {
 void Board::setFromFEN(const std::string& fen) {
     clear();
     
-    std::istringstream iss(fen);
-    std::string placement, side, castlingStr, enPassantStr, halfmoveStr, fullmoveStr;
+    // Fast string parsing without streams - find space positions
+    const char* str = fen.c_str();
+    const char* end = str + fen.length();
     
-    iss >> placement >> side >> castlingStr >> enPassantStr >> halfmoveStr >> fullmoveStr;
+    // Find the 6 FEN components by scanning for spaces
+    const char* parts[6];
+    int partLengths[6];
+    int partCount = 0;
     
-    if (iss.fail() || placement.empty() || side.empty() || castlingStr.empty() || 
-        enPassantStr.empty() || halfmoveStr.empty() || fullmoveStr.empty()) {
+    const char* start = str;
+    for (const char* p = str; p <= end && partCount < 6; ++p) {
+        if (*p == ' ' || p == end) {
+            if (p > start) {
+                parts[partCount] = start;
+                partLengths[partCount] = static_cast<int>(p - start);
+                partCount++;
+            }
+            start = p + 1;
+        }
+    }
+    
+    if (partCount != 6) {
         throw std::invalid_argument("Invalid FEN string");
     }
     
-    parsePiecePlacement(placement);
-    parseGameState(side, castlingStr, enPassantStr, halfmoveStr, fullmoveStr);
+    // Parse components directly from char arrays (much faster)
+    parsePiecePlacementOptimized(parts[0], partLengths[0]);
+    parseGameStateOptimized(parts[1], partLengths[1], parts[2], partLengths[2], 
+                           parts[3], partLengths[3], parts[4], partLengths[4], 
+                           parts[5], partLengths[5]);
     
-    updateOccupancy();
-    zobristKey = computeZobristKey();
+    updateOccupancyAndZobrist();  // Combined operation
 }
 
 std::string Board::toFEN() const {
@@ -152,6 +169,49 @@ void Board::updateOccupancy() {
     occupied[2] = occupied[WHITE] | occupied[BLACK];
 }
 
+// Combined occupancy and zobrist update for FEN parsing optimization
+void Board::updateOccupancyAndZobrist() {
+    occupied[WHITE] = EMPTY_BB;
+    occupied[BLACK] = EMPTY_BB;
+    zobristKey = 0;
+    
+    // Single loop to update both occupancy and zobrist
+    for (int piece = WHITE_PAWN; piece <= WHITE_KING; ++piece) {
+        Bitboard pieceBB = pieces[piece];
+        occupied[WHITE] |= pieceBB;
+        
+        // Update zobrist for each piece of this type
+        while (pieceBB) {
+            Square sq = static_cast<Square>(__builtin_ctzll(pieceBB));
+            pieceBB &= pieceBB - 1; // Clear the least significant bit
+            zobristKey ^= zobristPieces[sq][piece];
+        }
+    }
+    
+    for (int piece = BLACK_PAWN; piece <= BLACK_KING; ++piece) {
+        Bitboard pieceBB = pieces[piece];
+        occupied[BLACK] |= pieceBB;
+        
+        // Update zobrist for each piece of this type
+        while (pieceBB) {
+            Square sq = static_cast<Square>(__builtin_ctzll(pieceBB));
+            pieceBB &= pieceBB - 1; // Clear the least significant bit
+            zobristKey ^= zobristPieces[sq][piece];
+        }
+    }
+    
+    occupied[2] = occupied[WHITE] | occupied[BLACK];
+    
+    // Add remaining zobrist components
+    if (sideToMove == BLACK) {
+        zobristKey ^= zobristSideToMove;
+    }
+    zobristKey ^= zobristCastling[castling];
+    if (enPassant != NO_SQUARE) {
+        zobristKey ^= zobristEnPassant[fileOf(enPassant)];
+    }
+}
+
 // Zobrist key management
 uint64_t Board::computeZobristKey() const {
     uint64_t key = 0;
@@ -203,31 +263,40 @@ void Board::toggleEnPassantFile(File file) {
     }
 }
 
-// FEN parsing helpers
-void Board::parsePiecePlacement(const std::string& placement) {
+// Optimized FEN parsing helpers
+void Board::parsePiecePlacementOptimized(const char* placement, int length) {
     int rank = 7; // Start from rank 8 (index 7)
     int file = 0;
     
-    for (char c : placement) {
+    // Fast piece lookup with explicit initialization to avoid warnings
+    static Piece PIECE_LOOKUP[128];
+    static bool initialized = false;
+    if (!initialized) {
+        // Initialize all to NO_PIECE
+        std::fill_n(PIECE_LOOKUP, 128, NO_PIECE);
+        // Set valid pieces
+        PIECE_LOOKUP['P'] = WHITE_PAWN; PIECE_LOOKUP['N'] = WHITE_KNIGHT; PIECE_LOOKUP['B'] = WHITE_BISHOP;
+        PIECE_LOOKUP['R'] = WHITE_ROOK; PIECE_LOOKUP['Q'] = WHITE_QUEEN; PIECE_LOOKUP['K'] = WHITE_KING;
+        PIECE_LOOKUP['p'] = BLACK_PAWN; PIECE_LOOKUP['n'] = BLACK_KNIGHT; PIECE_LOOKUP['b'] = BLACK_BISHOP;
+        PIECE_LOOKUP['r'] = BLACK_ROOK; PIECE_LOOKUP['q'] = BLACK_QUEEN; PIECE_LOOKUP['k'] = BLACK_KING;
+        initialized = true;
+    }
+    
+    for (int i = 0; i < length; ++i) {
+        char c = placement[i];
         if (c == '/') {
             rank--;
             file = 0;
-        } else if (std::isdigit(c)) {
+        } else if (c >= '1' && c <= '8') {
             file += c - '0'; // Skip empty squares
         } else {
-            // Parse piece
-            Piece piece = NO_PIECE;
-            switch (std::tolower(c)) {
-                case 'p': piece = makePiece(std::isupper(c) ? WHITE : BLACK, PAWN); break;
-                case 'n': piece = makePiece(std::isupper(c) ? WHITE : BLACK, KNIGHT); break;
-                case 'b': piece = makePiece(std::isupper(c) ? WHITE : BLACK, BISHOP); break;
-                case 'r': piece = makePiece(std::isupper(c) ? WHITE : BLACK, ROOK); break;
-                case 'q': piece = makePiece(std::isupper(c) ? WHITE : BLACK, QUEEN); break;
-                case 'k': piece = makePiece(std::isupper(c) ? WHITE : BLACK, KING); break;
-                default: throw std::invalid_argument("Invalid piece character in FEN");
+            Piece piece = PIECE_LOOKUP[static_cast<unsigned char>(c)];
+            if (piece == NO_PIECE) {
+                throw std::invalid_argument("Invalid piece character in FEN");
             }
             
-            if (rank < 0 || rank > 7 || file < 0 || file > 7) {
+            // Bounds check only once
+            if (rank < 0 || rank > 7 || file >= 8) {
                 throw std::invalid_argument("Invalid square in FEN");
             }
             
@@ -237,23 +306,44 @@ void Board::parsePiecePlacement(const std::string& placement) {
     }
 }
 
-void Board::parseGameState(const std::string& side, const std::string& castlingStr,
-                          const std::string& enPassantStr, const std::string& halfmoveStr,
-                          const std::string& fullmoveStr) {
-    // Parse side to move
-    if (side == "w") {
-        sideToMove = WHITE;
-    } else if (side == "b") {
-        sideToMove = BLACK;
+// Keep original for compatibility
+void Board::parsePiecePlacement(const std::string& placement) {
+    parsePiecePlacementOptimized(placement.c_str(), static_cast<int>(placement.length()));
+}
+
+// Fast integer parsing without exceptions
+inline int fastParseInt(const char* str, int length) {
+    int result = 0;
+    for (int i = 0; i < length; ++i) {
+        if (str[i] < '0' || str[i] > '9') return -1; // Invalid
+        result = result * 10 + (str[i] - '0');
+    }
+    return result;
+}
+
+void Board::parseGameStateOptimized(const char* side, int sideLen,
+                                   const char* castlingStr, int castlingLen,
+                                   const char* enPassantStr, int enPassantLen,
+                                   const char* halfmoveStr, int halfmoveLen,
+                                   const char* fullmoveStr, int fullmoveLen) {
+    // Parse side to move - single character comparison
+    if (sideLen == 1) {
+        if (side[0] == 'w') {
+            sideToMove = WHITE;
+        } else if (side[0] == 'b') {
+            sideToMove = BLACK;
+        } else {
+            throw std::invalid_argument("Invalid side to move in FEN");
+        }
     } else {
         throw std::invalid_argument("Invalid side to move in FEN");
     }
     
-    // Parse castling rights
+    // Parse castling rights - optimized switch
     castling = NO_CASTLING;
-    if (castlingStr != "-") {
-        for (char c : castlingStr) {
-            switch (c) {
+    if (castlingLen != 1 || castlingStr[0] != '-') {
+        for (int i = 0; i < castlingLen; ++i) {
+            switch (castlingStr[i]) {
                 case 'K': castling |= WHITE_KING_SIDE; break;
                 case 'Q': castling |= WHITE_QUEEN_SIDE; break;
                 case 'k': castling |= BLACK_KING_SIDE; break;
@@ -263,30 +353,39 @@ void Board::parseGameState(const std::string& side, const std::string& castlingS
         }
     }
     
-    // Parse en passant square
-    if (enPassantStr == "-") {
+    // Parse en passant square - avoid string comparison
+    if (enPassantLen == 1 && enPassantStr[0] == '-') {
         enPassant = NO_SQUARE;
-    } else {
-        if (enPassantStr.length() != 2 || enPassantStr[0] < 'a' || enPassantStr[0] > 'h' ||
-            enPassantStr[1] < '1' || enPassantStr[1] > '8') {
-            throw std::invalid_argument("Invalid en passant square in FEN");
-        }
+    } else if (enPassantLen == 2 && 
+               enPassantStr[0] >= 'a' && enPassantStr[0] <= 'h' &&
+               enPassantStr[1] >= '1' && enPassantStr[1] <= '8') {
         enPassant = makeSquare(enPassantStr[0] - 'a', enPassantStr[1] - '1');
+    } else {
+        throw std::invalid_argument("Invalid en passant square in FEN");
     }
     
-    // Parse halfmove clock
-    try {
-        halfmoveClock = std::stoi(halfmoveStr);
-    } catch (const std::exception&) {
+    // Parse halfmove clock - fast integer parsing
+    halfmoveClock = fastParseInt(halfmoveStr, halfmoveLen);
+    if (halfmoveClock < 0) {
         throw std::invalid_argument("Invalid halfmove clock in FEN");
     }
     
-    // Parse fullmove number
-    try {
-        fullmoveNumber = std::stoi(fullmoveStr);
-    } catch (const std::exception&) {
+    // Parse fullmove number - fast integer parsing
+    fullmoveNumber = fastParseInt(fullmoveStr, fullmoveLen);
+    if (fullmoveNumber < 0) {
         throw std::invalid_argument("Invalid fullmove number in FEN");
     }
+}
+
+// Keep original for compatibility
+void Board::parseGameState(const std::string& side, const std::string& castlingStr,
+                          const std::string& enPassantStr, const std::string& halfmoveStr,
+                          const std::string& fullmoveStr) {
+    parseGameStateOptimized(side.c_str(), static_cast<int>(side.length()),
+                           castlingStr.c_str(), static_cast<int>(castlingStr.length()),
+                           enPassantStr.c_str(), static_cast<int>(enPassantStr.length()),
+                           halfmoveStr.c_str(), static_cast<int>(halfmoveStr.length()),
+                           fullmoveStr.c_str(), static_cast<int>(fullmoveStr.length()));
 }
 
 // FEN generation helpers

@@ -23,6 +23,13 @@ set(CORE_SOURCES
     src/board/Board.cpp
     src/board/MoveGenerator.cpp
     src/utils/Types.cpp
+    src/search/search_engine.cpp
+    src/search/alphabeta.cpp
+    src/search/transposition_table.cpp
+    src/search/move_ordering.cpp
+    src/search/see.cpp
+    src/eval/handcrafted_eval.cpp
+    src/eval/morphy_eval.cpp
 )
 
 add_library(opera_core STATIC ${CORE_SOURCES})
@@ -49,13 +56,38 @@ endif()
 # Testing
 option(BUILD_TESTS "Build tests" ON)
 if(BUILD_TESTS)
+    # Try to find system-installed Google Test first
     find_package(GTest QUIET)
-    if(GTest_FOUND)
-        enable_testing()
-        add_subdirectory(tests)
+
+    if(NOT GTest_FOUND)
+        # If not found, download and build it automatically (cross-platform)
+        message(STATUS "Google Test not found on system. Fetching from GitHub...")
+        include(FetchContent)
+
+        FetchContent_Declare(
+            googletest
+            GIT_REPOSITORY https://github.com/google/googletest.git
+            GIT_TAG v1.14.0  # Latest stable release
+            GIT_SHALLOW TRUE
+        )
+
+        # Prevent overriding parent project's compiler/linker settings on Windows
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+        # Make available
+        FetchContent_MakeAvailable(googletest)
+
+        # Create aliases for consistency
+        add_library(GTest::gtest ALIAS gtest)
+        add_library(GTest::gtest_main ALIAS gtest_main)
+
+        message(STATUS "Google Test successfully downloaded and configured.")
     else()
-        message(WARNING "Google Test not found. Tests will not be built.")
+        message(STATUS "Using system-installed Google Test.")
     endif()
+
+    enable_testing()
+    add_subdirectory(tests)
 endif()
 
 # Install targets

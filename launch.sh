@@ -17,6 +17,8 @@ BUILD_TYPE="Release"
 RUN_TESTS=false
 RUN_PERFORMANCE_TESTS=false
 RUN_PERFT=false
+RUN_SEARCH_EVAL=false
+RUN_SEARCH_BENCH=false
 PERFT_FEN=""
 PERFT_DEPTH=0
 BUILD_FIRST=false
@@ -38,6 +40,12 @@ while [ $i -le $# ]; do
             ;;
         --performance)
             RUN_PERFORMANCE_TESTS=true
+            ;;
+        --search-eval)
+            RUN_SEARCH_EVAL=true
+            ;;
+        --search-bench)
+            RUN_SEARCH_BENCH=true
             ;;
         --perft)
             RUN_PERFT=true
@@ -92,6 +100,8 @@ if [ "$SHOW_HELP" = true ]; then
     echo "  --test          Run test suite instead of normal application"
     echo "  --ci            Run core tests only (excludes performance tests, ideal for CI)"
     echo "  --performance   Run comprehensive performance test suite"
+    echo "  --search-eval   Run search and evaluation test suite"
+    echo "  --search-bench  Run search and evaluation performance benchmarks"
     echo "  --perft         Run Perft validation suite"
     echo "  --perft \"FEN\" D   Run Perft on specific position to depth D"
     echo "  --build         Force rebuild before running"
@@ -103,6 +113,8 @@ if [ "$SHOW_HELP" = true ]; then
     echo "  ./launch.sh --test             # Run all tests"
     echo "  ./launch.sh --ci               # Run core tests only (for CI/CD)"
     echo "  ./launch.sh --performance      # Run performance tests"
+    echo "  ./launch.sh --search-eval      # Run search/eval tests"
+    echo "  ./launch.sh --search-bench     # Run search/eval benchmarks"
     echo "  ./launch.sh --perft            # Run Perft validation suite"
     echo "  ./launch.sh --perft \"FEN\" 5     # Test specific position to depth 5"
     echo "  ./launch.sh --build --test     # Rebuild and run tests"
@@ -126,11 +138,11 @@ fi
 cd build
 
 # Build if requested or if executables don't exist
-if [ "$BUILD_FIRST" = true ] || [ ! -f "opera-engine" ] || ([ "$RUN_TESTS" = true ] && [ ! -f "tests/opera_tests" ]) || ([ "$RUN_PERFORMANCE_TESTS" = true ] && [ ! -f "tests/opera_tests" ]) || ([ "$RUN_PERFT" = true ] && [ ! -f "perft-runner" ]); then
+if [ "$BUILD_FIRST" = true ] || [ ! -f "opera-engine" ] || ([ "$RUN_TESTS" = true ] && [ ! -f "tests/opera_tests" ]) || ([ "$RUN_PERFORMANCE_TESTS" = true ] && [ ! -f "tests/opera_tests" ]) || ([ "$RUN_SEARCH_EVAL" = true ] && [ ! -f "tests/opera_tests" ]) || ([ "$RUN_SEARCH_BENCH" = true ] && [ ! -f "tests/opera_tests" ]) || ([ "$RUN_PERFT" = true ] && [ ! -f "perft-runner" ]); then
     echo -e "${YELLOW}Building Opera Engine ($BUILD_TYPE mode)...${NC}"
-    
+
     # Configure with CMake
-    if [ "$RUN_TESTS" = true ] || [ "$RUN_PERFORMANCE_TESTS" = true ]; then
+    if [ "$RUN_TESTS" = true ] || [ "$RUN_PERFORMANCE_TESTS" = true ] || [ "$RUN_SEARCH_EVAL" = true ] || [ "$RUN_SEARCH_BENCH" = true ]; then
         cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTS=ON
     else
         cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTS=OFF
@@ -200,6 +212,48 @@ elif [ "$RUN_PERFORMANCE_TESTS" = true ]; then
         else
             echo -e "${RED}💥 Some performance tests failed. Exit code: $PERF_RESULT${NC}"
             exit $PERF_RESULT
+        fi
+    else
+        echo -e "${RED}❌ Test executable not found! Try running with --build flag.${NC}"
+        exit 1
+    fi
+elif [ "$RUN_SEARCH_EVAL" = true ]; then
+    echo -e "${BLUE}🔍 Running Search and Evaluation Test Suite...${NC}"
+    echo "==============================================="
+
+    if [ -f "tests/opera_tests" ]; then
+        echo -e "${YELLOW}Running search and evaluation tests...${NC}"
+        # Run all search, evaluation, and integration tests
+        ./tests/opera_tests --gtest_filter="SearchEngineTest.*:AlphaBetaTest.*:TranspositionTableTest.*:MoveOrderingTest.*:StaticExchangeTest.*:SearchOptimizationTest.*:UCIOptionsTest.*:SearchControlTest.*:EvaluatorInterfaceTest.*:HandcraftedEvalTest.*:AdvancedEvalTest.*:MorphyEvalTest.*:EvalCachingTest.*:SearchEvalIntegrationTest.*:TacticalEPDTest.*:MorphyStyleValidationTest.*" --gtest_color=yes
+        SEARCH_EVAL_RESULT=$?
+
+        echo ""
+        if [ $SEARCH_EVAL_RESULT -eq 0 ]; then
+            echo -e "${GREEN}🎉 All search and evaluation tests passed successfully!${NC}"
+        else
+            echo -e "${RED}💥 Some search/eval tests failed. Exit code: $SEARCH_EVAL_RESULT${NC}"
+            exit $SEARCH_EVAL_RESULT
+        fi
+    else
+        echo -e "${RED}❌ Test executable not found! Try running with --build flag.${NC}"
+        exit 1
+    fi
+elif [ "$RUN_SEARCH_BENCH" = true ]; then
+    echo -e "${BLUE}⚡ Running Search and Evaluation Performance Benchmarks...${NC}"
+    echo "=========================================================="
+
+    if [ -f "tests/opera_tests" ]; then
+        echo -e "${YELLOW}Running performance benchmarks...${NC}"
+        # Run performance benchmark tests
+        ./tests/opera_tests --gtest_filter="PerformanceBenchmarkTest.*" --gtest_color=yes
+        SEARCH_BENCH_RESULT=$?
+
+        echo ""
+        if [ $SEARCH_BENCH_RESULT -eq 0 ]; then
+            echo -e "${GREEN}🎉 All benchmarks completed successfully!${NC}"
+        else
+            echo -e "${RED}💥 Some benchmarks failed. Exit code: $SEARCH_BENCH_RESULT${NC}"
+            exit $SEARCH_BENCH_RESULT
         fi
     else
         echo -e "${RED}❌ Test executable not found! Try running with --build flag.${NC}"

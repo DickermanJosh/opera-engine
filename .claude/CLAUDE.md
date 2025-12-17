@@ -58,6 +58,9 @@ This project uses an adaptation of Amazon's **Kiro System** for structured featu
 - **Enforce the approval process** - don't skip phases
 - **Maintain traceability** from requirements to code
 
+## Claude / Codex Collaboration
+
+You MUST use Codex as a code review agent during task development. Read .claude/CLAUDE_CODEX.md for further instructions on how to utilize CODEX.
 
 ## C++ Core Requirements
 
@@ -74,44 +77,9 @@ This project uses an adaptation of Amazon's **Kiro System** for structured featu
 - **Factory Pattern**: For creating different board configurations
 - **Singleton Pattern**: For global resources (hash tables, magic numbers)
 
-### Essential Components
-```cpp
-class Board {
-    // Bitboard representation
-    uint64_t pieces[12];  // 6 piece types × 2 colors
-    uint64_t occupied[3]; // white, black, both
-    
-    // Game state
-    CastlingRights castling;
-    Square enPassant;
-    int halfmoveClock;
-    int fullmoveNumber;
-    Color sideToMove;
-    
-    // Zobrist key for hashing
-    uint64_t zobristKey;
-};
-
-class MoveGenerator {
-    // Magic bitboard tables
-    static uint64_t rookMagics[64];
-    static uint64_t bishopMagics[64];
-    
-public:
-    MoveList generateMoves(const Board& board, MoveType type = ALL);
-    bool isLegal(const Board& board, Move move);
-};
-
-class Search {
-    TranspositionTable tt;
-    KillerMoves killers;
-    HistoryTable history;
-    
-public:
-    Move search(Board& board, int depth, int timeMs);
-    int alphaBeta(Board& board, int depth, int alpha, int beta);
-};
-```
+### Code Review Practice
+- **READ AND FOLLOW**: .claude/CLAUDE_CODEX.md
+    - Codex is ALWAYS available to you to use as an assistant and code reviewer.
 
 ### Performance Requirements
 - **Move Generation**: < 1ms for complex positions

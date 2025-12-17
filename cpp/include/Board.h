@@ -11,32 +11,33 @@ namespace opera {
 class MoveGen;
 
 class Board {
+public:
+    // Static zobrist keys (public for pawn hash table in evaluator - Task 3.6)
+    static uint64_t zobristPieces[64][12];
+    static uint64_t zobristSideToMove;
+    static uint64_t zobristCastling[16];
+    static uint64_t zobristEnPassant[64];
+    static bool zobristInitialized;
+
 private:
     // Bitboard representation - 12 bitboards for each piece type/color combination
     Bitboard pieces[12];
-    
+
     // Occupancy bitboards for fast lookups
     Bitboard occupied[3]; // [WHITE_PIECES, BLACK_PIECES, ALL_PIECES]
-    
+
     // Game state
     CastlingRights castling;
     Square enPassant;
     int halfmoveClock;
     int fullmoveNumber;
     Color sideToMove;
-    
+
     // Zobrist hashing for transposition tables
     uint64_t zobristKey;
-    
+
     // Move history for undo operations
     std::vector<BoardState> history;
-    
-    // Static zobrist keys (initialized once)
-    static uint64_t zobristPieces[64][12];
-    static uint64_t zobristSideToMove;
-    static uint64_t zobristCastling[16];
-    static uint64_t zobristEnPassant[64];
-    static bool zobristInitialized;
     
     // Initialize zobrist keys
     static void initializeZobrist();
@@ -48,6 +49,7 @@ private:
     
     // Update occupancy bitboards
     void updateOccupancy();
+    void updateOccupancyAndZobrist();  // Combined for FEN parsing optimization
     
     // Zobrist key management
     void updateZobristKey();
@@ -55,9 +57,15 @@ private:
     
     // FEN parsing helpers
     void parsePiecePlacement(const std::string& placement);
+    void parsePiecePlacementOptimized(const char* placement, int length);
     void parseGameState(const std::string& sideToMove, const std::string& castling, 
                        const std::string& enPassant, const std::string& halfmove, 
                        const std::string& fullmove);
+    void parseGameStateOptimized(const char* side, int sideLen,
+                                const char* castlingStr, int castlingLen,
+                                const char* enPassantStr, int enPassantLen,
+                                const char* halfmoveStr, int halfmoveLen,
+                                const char* fullmoveStr, int fullmoveLen);
     
     // FEN generation helpers
     std::string generatePiecePlacement() const;

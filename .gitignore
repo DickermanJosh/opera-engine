@@ -19,6 +19,24 @@ CMakeFiles/
 cmake_install.cmake
 Makefile
 *.cbp
+CTestTestfile.cmake
+*.cmake
+
+# Google Test dependencies
+cpp/tests/_deps/
+cpp/tests/tests/
+
+# Test executables and debug artifacts
+cpp/tests/morphy_diagnostic
+cpp/tests/MorphyCompensationDebug.cpp
+cpp/tests/MorphyEvalDiagnostic.cpp
+
+# Coverage files
+*.gcno
+*.gcda
+*.gcov
+coverage/
+test_reports/
 
 # Python
 __pycache__/
@@ -115,3 +133,6 @@ rust/fuzz/artifacts/
 # Configuration overrides
 local_config.yaml
 user_config.yaml
+
+
+Stockfish/
