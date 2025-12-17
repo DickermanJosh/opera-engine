@@ -326,13 +326,36 @@ impl Board {
     /// Get a reference to the underlying C++ Board for advanced operations
     ///
     /// This method provides safe access to the C++ Board for interfacing with
-    /// other components that need direct Board access.
+    /// other components that need direct Board access (e.g., SearchEngine).
     ///
     /// # Returns
     ///
     /// Reference to the C++ Board instance
+    ///
+    /// # Safety
+    ///
+    /// The returned reference is only valid as long as the Board wrapper exists.
+    /// Callers must ensure they don't outlive the Board.
     pub fn inner(&self) -> &ffi::Board {
         &self.inner
+    }
+
+    /// Get a mutable reference to the underlying C++ Board for advanced operations
+    ///
+    /// This is needed for operations like creating a SearchEngine that requires
+    /// a mutable reference to the board.
+    ///
+    /// # Returns
+    ///
+    /// Mutable reference to the C++ Board instance
+    ///
+    /// # Safety
+    ///
+    /// The returned reference is only valid as long as the Board wrapper exists.
+    /// Callers must ensure they don't outlive the Board or modify the board
+    /// while other components (like SearchEngine) are using it.
+    pub(crate) fn inner_mut(&mut self) -> std::pin::Pin<&mut ffi::Board> {
+        self.inner.pin_mut()
     }
 
     // Private helper methods

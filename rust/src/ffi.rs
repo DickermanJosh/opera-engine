@@ -27,6 +27,26 @@ pub mod ffi {
         pub pv: String,
     }
 
+    // C++ side structs (FFI-safe, defined in UCIBridge.h)
+    #[namespace = "opera"]
+    struct FFISearchLimits {
+        max_depth: i32,
+        max_nodes: u64,
+        max_time_ms: u64,
+        infinite: bool,
+    }
+
+    #[namespace = "opera"]
+    struct FFISearchResult {
+        best_move: String,
+        ponder_move: String,
+        score: i32,
+        depth: i32,
+        nodes: u64,
+        time_ms: u64,
+        pv: String,
+    }
+
     // C++ side structs and enums
     unsafe extern "C++" {
         include!("UCIBridge.h");
@@ -39,6 +59,14 @@ pub mod ffi {
         #[namespace = "opera"]
         type Search;
 
+        // Real SearchEngine types
+        #[namespace = "opera"]
+        type SearchEngineWrapper;
+        #[namespace = "opera"]
+        type FFISearchLimits;
+        #[namespace = "opera"]
+        type FFISearchResult;
+
         // Board operations - simplified for initial FFI
         fn create_board() -> UniquePtr<Board>;
         fn board_set_fen(board: Pin<&mut Board>, fen: &str) -> bool;
@@ -50,12 +78,26 @@ pub mod ffi {
         fn board_is_checkmate(board: &Board) -> bool;
         fn board_is_stalemate(board: &Board) -> bool;
 
-        // Search operations - simplified interface
+        // Search operations - simplified interface (stub, will be deprecated)
         fn create_search() -> UniquePtr<Search>;
         fn search_start(search: Pin<&mut Search>, board: &Board, depth: i32, time_ms: u64) -> bool;
         fn search_stop(search: Pin<&mut Search>);
         fn search_get_best_move(search: &Search) -> String;
         fn search_is_searching(search: &Search) -> bool;
+
+        // Real SearchEngine FFI operations
+        #[namespace = "opera"]
+        fn create_search_engine(board: Pin<&mut Board>) -> UniquePtr<SearchEngineWrapper>;
+        #[namespace = "opera"]
+        fn search_engine_search(engine: Pin<&mut SearchEngineWrapper>, limits: &FFISearchLimits) -> FFISearchResult;
+        #[namespace = "opera"]
+        fn search_engine_stop(engine: Pin<&mut SearchEngineWrapper>);
+        #[namespace = "opera"]
+        fn search_engine_is_searching(engine: &SearchEngineWrapper) -> bool;
+        #[namespace = "opera"]
+        fn search_engine_get_result(engine: &SearchEngineWrapper) -> FFISearchResult;
+        #[namespace = "opera"]
+        fn search_engine_reset(engine: Pin<&mut SearchEngineWrapper>);
 
         // Engine configuration
         fn engine_set_hash_size(size_mb: u32) -> bool;

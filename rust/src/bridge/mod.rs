@@ -6,7 +6,9 @@
 #![allow(clippy::missing_docs_in_private_items)]
 
 pub mod board;
+pub mod search;
 pub mod safety_tests;
 
 // Re-export main bridge components
 pub use board::Board;
+pub use search::{SearchEngine, SearchLimits, SearchResult};

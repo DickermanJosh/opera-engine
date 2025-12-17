@@ -17,9 +17,21 @@ fn main() {
         // Build directly from source to avoid static library compatibility issues
         let mut bridge = cxx_build::bridge("src/ffi.rs");
         bridge
+            // UCI Bridge FFI
             .file("../cpp/src/UCIBridge.cpp")
+            // Board representation
             .file("../cpp/src/board/Board.cpp")
             .file("../cpp/src/board/MoveGenerator.cpp")
+            // Search engine
+            .file("../cpp/src/search/search_engine.cpp")
+            .file("../cpp/src/search/alphabeta.cpp")
+            .file("../cpp/src/search/transposition_table.cpp")
+            .file("../cpp/src/search/move_ordering.cpp")
+            .file("../cpp/src/search/see.cpp")
+            // Evaluation
+            .file("../cpp/src/eval/handcrafted_eval.cpp")
+            .file("../cpp/src/eval/morphy_eval.cpp")
+            // Utilities
             .file("../cpp/src/utils/Types.cpp")
             .include(&cpp_include_path)
             .flag("-std=c++17")

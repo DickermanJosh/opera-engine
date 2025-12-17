@@ -1,44 +1,85 @@
 #include "UCIBridge.h"
 #include "Board.h"
 #include "MoveGen.h"
+#include "search/search_engine.h"
 #include <iostream>
 #include <sstream>
 #include "rust/cxx.h"
 
 namespace opera {
 
-// Search class implementation
-Search::Search() : searching(false), bestMove("e2e4") {
-    // Initialize with some default values
-    info.depth = 1;
-    info.score = 0;
-    info.time_ms = 0;
-    info.nodes = 0;
-    info.nps = 0;
-    info.pv = "e2e4";
+// ============================================================================
+// SearchEngineWrapper Implementation
+// ============================================================================
+
+SearchEngineWrapper::SearchEngineWrapper(Board& board)
+    : stop_flag(false) {
+    engine = std::make_unique<SearchEngine>(board, stop_flag);
 }
 
-bool Search::startSearch(const Board& /*board*/, const SearchLimits& searchLimits) {
-    limits = searchLimits;
-    searching = true;
-    info.depth = limits.depth > 0 ? limits.depth : 1;
-    return true;
+SearchEngineWrapper::~SearchEngineWrapper() {
+    if (engine && engine->is_searching()) {
+        stop();
+    }
 }
 
-void Search::stop() {
-    searching = false;
+FFISearchResult SearchEngineWrapper::search(const FFISearchLimits& limits) {
+    // Convert FFI limits to SearchEngine limits
+    opera::SearchLimits search_limits;
+    search_limits.max_depth = limits.max_depth;
+    search_limits.max_nodes = limits.max_nodes;
+    search_limits.max_time_ms = limits.max_time_ms;
+    search_limits.infinite = limits.infinite;
+
+    // Reset stop flag before search
+    stop_flag.store(false);
+
+    // Execute search (blocking call)
+    SearchResult result = engine->search(search_limits);
+
+    // Convert SearchResult to FFISearchResult
+    FFISearchResult ffi_result;
+    ffi_result.best_move = result.best_move.toString();
+    ffi_result.ponder_move = result.ponder_move.toString();
+    ffi_result.score = result.score;
+    ffi_result.depth = result.depth;
+    ffi_result.nodes = result.nodes;
+    ffi_result.time_ms = result.time_ms;
+
+    // Convert PV to string
+    std::ostringstream pv_stream;
+    for (size_t i = 0; i < result.principal_variation.size(); ++i) {
+        if (i > 0) pv_stream << " ";
+        pv_stream << result.principal_variation[i].toString();
+    }
+    ffi_result.pv = pv_stream.str();
+
+    // Store result
+    last_result = ffi_result;
+
+    return ffi_result;
 }
 
-bool Search::isSearching() const {
-    return searching;
+void SearchEngineWrapper::stop() {
+    stop_flag.store(true);
+    if (engine) {
+        engine->stop();
+    }
 }
 
-const std::string& Search::getBestMove() const {
-    return bestMove;
+bool SearchEngineWrapper::is_searching() const {
+    return engine && engine->is_searching();
 }
 
-const SearchInfo& Search::getSearchInfo() const {
-    return info;
+const FFISearchResult& SearchEngineWrapper::get_last_result() const {
+    return last_result;
+}
+
+void SearchEngineWrapper::reset() {
+    if (engine) {
+        engine->reset_statistics();
+    }
+    stop_flag.store(false);
 }
 
 } // namespace opera
@@ -236,3 +277,64 @@ bool engine_clear_hash() {
     return true;
 }
 
+
+// ============================================================================
+// Search FFI Operations - Real SearchEngine Integration  
+// ============================================================================
+
+std::unique_ptr<opera::SearchEngineWrapper> create_search_engine(opera::Board& board) {
+    try {
+        return std::make_unique<opera::SearchEngineWrapper>(board);
+    } catch (const std::exception&) {
+        return nullptr;
+    }
+}
+
+opera::FFISearchResult search_engine_search(opera::SearchEngineWrapper& engine, const opera::FFISearchLimits& limits) {
+    try {
+        return engine.search(limits);
+    } catch (const std::exception& e) {
+        // Return empty result on error
+        opera::FFISearchResult error_result;
+        error_result.best_move = "0000";  // Null move indicator
+        error_result.score = 0;
+        error_result.depth = 0;
+        error_result.nodes = 0;
+        error_result.time_ms = 0;
+        return error_result;
+    }
+}
+
+void search_engine_stop(opera::SearchEngineWrapper& engine) {
+    try {
+        engine.stop();
+    } catch (const std::exception&) {
+        // Ignore errors during stop - best effort
+    }
+}
+
+bool search_engine_is_searching(const opera::SearchEngineWrapper& engine) {
+    try {
+        return engine.is_searching();
+    } catch (const std::exception&) {
+        return false;
+    }
+}
+
+opera::FFISearchResult search_engine_get_result(const opera::SearchEngineWrapper& engine) {
+    try {
+        return engine.get_last_result();
+    } catch (const std::exception&) {
+        opera::FFISearchResult error_result;
+        error_result.best_move = "0000";
+        return error_result;
+    }
+}
+
+void search_engine_reset(opera::SearchEngineWrapper& engine) {
+    try {
+        engine.reset();
+    } catch (const std::exception&) {
+        // Ignore errors during reset
+    }
+}

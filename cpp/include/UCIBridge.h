@@ -6,45 +6,81 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <atomic>
+
+// Forward declare SearchEngine to avoid circular dependencies
+namespace opera {
+    class SearchEngine;
+    struct SearchResult;
+}
 
 namespace opera {
 
-// C++ struct definitions that match Rust FFI interface (forward declared)
-struct SearchLimits {
-    int32_t depth;
-    uint64_t nodes;
-    uint64_t time_ms;
-    bool infinite;
-    
-    SearchLimits() : depth(0), nodes(0), time_ms(0), infinite(false) {}
+// FFI-compatible search result struct (no std::vector)
+struct FFISearchResult {
+    std::string best_move;      // UCI move string (e.g., "e2e4")
+    std::string ponder_move;    // UCI ponder move string
+    int32_t score;              // Centipawn score
+    int32_t depth;              // Depth searched
+    uint64_t nodes;             // Nodes searched
+    uint64_t time_ms;           // Time taken in milliseconds
+    std::string pv;             // Principal variation as UCI string
+
+    FFISearchResult() : score(0), depth(0), nodes(0), time_ms(0) {}
 };
 
-struct SearchInfo {
+// FFI-compatible search limits (matches Rust side)
+struct FFISearchLimits {
+    int32_t max_depth;
+    uint64_t max_nodes;
+    uint64_t max_time_ms;
+    bool infinite;
+
+    FFISearchLimits() : max_depth(64), max_nodes(UINT64_MAX), max_time_ms(UINT64_MAX), infinite(false) {}
+};
+
+// FFI-compatible search info for progress reporting
+struct FFISearchInfo {
     int32_t depth;
     int32_t score;
     uint64_t time_ms;
     uint64_t nodes;
     uint64_t nps;
     std::string pv;
-    
-    SearchInfo() : depth(0), score(0), time_ms(0), nodes(0), nps(0) {}
+
+    FFISearchInfo() : depth(0), score(0), time_ms(0), nodes(0), nps(0) {}
 };
 
-// Search class (stub implementation for FFI integration)
-class Search {
+// SearchEngineWrapper manages SearchEngine lifecycle for FFI
+// Owns the stop flag and search engine instance
+class SearchEngineWrapper {
 private:
-    bool searching;
-    SearchLimits limits;
-    std::string bestMove;
-    SearchInfo info;
-    
+    std::unique_ptr<SearchEngine> engine;
+    std::atomic<bool> stop_flag;
+    FFISearchResult last_result;
+
 public:
-    Search();
-    bool startSearch(const Board& board, const SearchLimits& searchLimits);
+    explicit SearchEngineWrapper(Board& board);
+    ~SearchEngineWrapper();
+
+    // Non-copyable
+    SearchEngineWrapper(const SearchEngineWrapper&) = delete;
+    SearchEngineWrapper& operator=(const SearchEngineWrapper&) = delete;
+
+    // Start search (blocking call)
+    FFISearchResult search(const FFISearchLimits& limits);
+
+    // Stop search immediately
     void stop();
-    bool isSearching() const;
-    const std::string& getBestMove() const;
-    const SearchInfo& getSearchInfo() const;
+
+    // Check if currently searching
+    bool is_searching() const;
+
+    // Get last search result
+    const FFISearchResult& get_last_result() const;
+
+    // Reset for new game
+    void reset();
 };
 
 } // namespace opera
@@ -66,12 +102,13 @@ bool board_is_in_check(const opera::Board& board);
 bool board_is_checkmate(const opera::Board& board);
 bool board_is_stalemate(const opera::Board& board);
 
-// Search operations - simplified interface
-std::unique_ptr<opera::Search> create_search();
-bool search_start(opera::Search& search, const opera::Board& board, int32_t depth, uint64_t time_ms);
-void search_stop(opera::Search& search);
-rust::String search_get_best_move(const opera::Search& search);
-bool search_is_searching(const opera::Search& search);
+// Search operations - real SearchEngine integration
+std::unique_ptr<opera::SearchEngineWrapper> create_search_engine(opera::Board& board);
+opera::FFISearchResult search_engine_search(opera::SearchEngineWrapper& engine, const opera::FFISearchLimits& limits);
+void search_engine_stop(opera::SearchEngineWrapper& engine);
+bool search_engine_is_searching(const opera::SearchEngineWrapper& engine);
+opera::FFISearchResult search_engine_get_result(const opera::SearchEngineWrapper& engine);
+void search_engine_reset(opera::SearchEngineWrapper& engine);
 
 // Engine configuration
 bool engine_set_hash_size(uint32_t size_mb);
