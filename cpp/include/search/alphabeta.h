@@ -9,8 +9,14 @@
 #include "search/transposition_table.h"
 #include "search/move_ordering.h"
 #include "search/see.h"
+#include "eval/evaluator_interface.h"
 
 namespace opera {
+
+// Forward declaration
+namespace eval {
+    class Evaluator;
+}
 
 // Search constants
 constexpr int INFINITY_SCORE = 32000;
@@ -75,7 +81,8 @@ private:
     TranspositionTable& tt;                 // Transposition table
     MoveOrdering& move_ordering;            // Move ordering system
     StaticExchangeEvaluator& see;           // Static exchange evaluation
-    
+    eval::Evaluator* evaluator;             // Position evaluator (optional - uses material-only if null)
+
     // Search state
     SearchStats stats;                      // Search statistics
     std::vector<Move> pv_line;              // Principal variation
@@ -105,16 +112,25 @@ private:
 public:
     /**
      * Construct AlphaBetaSearch with required components
-     * 
+     *
      * @param board Reference to the chess board
      * @param stop_flag Atomic boolean for search cancellation
      * @param tt Transposition table for position caching
      * @param move_ordering Move ordering system
      * @param see Static exchange evaluator
+     * @param evaluator Optional position evaluator (nullptr = material-only evaluation)
      */
     AlphaBetaSearch(Board& board, std::atomic<bool>& stop_flag,
                    TranspositionTable& tt, MoveOrdering& move_ordering,
-                   StaticExchangeEvaluator& see);
+                   StaticExchangeEvaluator& see,
+                   eval::Evaluator* evaluator = nullptr);
+
+    /**
+     * Set the position evaluator
+     *
+     * @param eval Pointer to evaluator (nullptr = material-only evaluation)
+     */
+    void set_evaluator(eval::Evaluator* eval);
     
     /**
      * Start search from root position

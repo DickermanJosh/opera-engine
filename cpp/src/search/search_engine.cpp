@@ -1,5 +1,7 @@
 #include "search/search_engine.h"
 #include "search/alphabeta.h"
+#include "eval/handcrafted_eval.h"
+#include "eval/morphy_eval.h"
 #include <algorithm>
 #include <sstream>
 #include <thread>
@@ -31,13 +33,19 @@ bool SearchLimits::should_stop(int current_depth, uint64_t nodes, uint64_t elaps
 // SearchEngine implementation
 SearchEngine::SearchEngine(Board& board, std::atomic<bool>& stop_flag)
     : board(board), stop_flag(stop_flag), searching(false), nodes_searched(0) {
-    
+
+    // Initialize evaluators
+    evaluator = std::make_unique<eval::HandcraftedEvaluator>();
+    morphy_evaluator = std::make_unique<eval::MorphyEvaluator>(1.0);  // Default bias = 1.0
+
     // Initialize search components
     tt = std::make_unique<TranspositionTable>(16); // 16MB default size
     move_ordering = std::make_unique<MoveOrdering>(board, *tt);
     see = std::make_unique<StaticExchangeEvaluator>(board);
-    alphabeta = std::make_unique<AlphaBetaSearch>(board, stop_flag, *tt, *move_ordering, *see);
-    
+
+    // Initialize AlphaBetaSearch with handcrafted evaluator by default
+    alphabeta = std::make_unique<AlphaBetaSearch>(board, stop_flag, *tt, *move_ordering, *see, evaluator.get());
+
     pv_line.reserve(64);  // Reserve space for principal variation
 }
 
@@ -466,6 +474,41 @@ int SearchEngine::get_min_depth_for_futility() const {
 
 int SearchEngine::get_min_depth_for_razoring() const {
     return alphabeta ? alphabeta->get_min_depth_for_razoring() : DEFAULT_MIN_DEPTH_FOR_RAZORING;
+}
+
+// Evaluator configuration methods
+void SearchEngine::set_morphy_bias(double bias) {
+    if (morphy_evaluator) {
+        std::map<std::string, std::string> options;
+        options["MorphyBias"] = std::to_string(bias);
+        morphy_evaluator->configure_options(options);
+    }
+}
+
+void SearchEngine::set_pawn_hash_size(int size_mb) {
+    if (evaluator) {
+        std::map<std::string, std::string> options;
+        options["PawnHashSize"] = std::to_string(size_mb);
+        evaluator->configure_options(options);
+    }
+    if (morphy_evaluator) {
+        std::map<std::string, std::string> options;
+        options["PawnHashSize"] = std::to_string(size_mb);
+        morphy_evaluator->configure_options(options);
+    }
+}
+
+void SearchEngine::set_use_morphy_style(bool use_morphy) {
+    use_morphy_style = use_morphy;
+
+    // Switch evaluator in AlphaBetaSearch
+    if (alphabeta) {
+        if (use_morphy_style && morphy_evaluator) {
+            alphabeta->set_evaluator(morphy_evaluator.get());
+        } else if (evaluator) {
+            alphabeta->set_evaluator(evaluator.get());
+        }
+    }
 }
 
 } // namespace opera

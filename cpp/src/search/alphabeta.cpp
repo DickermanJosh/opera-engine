@@ -6,8 +6,9 @@ namespace opera {
 
 AlphaBetaSearch::AlphaBetaSearch(Board& board, std::atomic<bool>& stop_flag,
                                TranspositionTable& tt, MoveOrdering& move_ordering,
-                               StaticExchangeEvaluator& see)
-    : board(board), stop_flag(stop_flag), tt(tt), move_ordering(move_ordering), see(see) {
+                               StaticExchangeEvaluator& see,
+                               eval::Evaluator* evaluator)
+    : board(board), stop_flag(stop_flag), tt(tt), move_ordering(move_ordering), see(see), evaluator(evaluator) {
     
     // Initialize killer moves
     for (int i = 0; i < MAX_PLY; ++i) {
@@ -27,6 +28,10 @@ AlphaBetaSearch::AlphaBetaSearch(Board& board, std::atomic<bool>& stop_flag,
     for (int i = 0; i < MAX_PLY; ++i) {
         pv_table[i].reserve(MAX_PLY - i);
     }
+}
+
+void AlphaBetaSearch::set_evaluator(eval::Evaluator* eval) {
+    evaluator = eval;
 }
 
 int AlphaBetaSearch::search(int depth, int alpha, int beta) {
@@ -370,19 +375,24 @@ void AlphaBetaSearch::clear_history() {
 }
 
 int AlphaBetaSearch::evaluate() {
-    // Basic material evaluation (similar to SearchEngine)
+    // Use evaluator if available, otherwise fall back to material-only
+    if (evaluator) {
+        return evaluator->evaluate(board, board.getSideToMove());
+    }
+
+    // Fallback: Basic material evaluation
     int material = 0;
-    
+
     Color us = board.getSideToMove();
     for (int pieceType = PAWN; pieceType <= QUEEN; ++pieceType) {
-        material += __builtin_popcountll(board.getPieceBitboard(us, static_cast<PieceType>(pieceType))) * 
-                   (pieceType == PAWN ? 100 : pieceType == KNIGHT ? 320 : pieceType == BISHOP ? 330 : 
+        material += __builtin_popcountll(board.getPieceBitboard(us, static_cast<PieceType>(pieceType))) *
+                   (pieceType == PAWN ? 100 : pieceType == KNIGHT ? 320 : pieceType == BISHOP ? 330 :
                     pieceType == ROOK ? 500 : 900);
-        material -= __builtin_popcountll(board.getPieceBitboard(~us, static_cast<PieceType>(pieceType))) * 
-                   (pieceType == PAWN ? 100 : pieceType == KNIGHT ? 320 : pieceType == BISHOP ? 330 : 
+        material -= __builtin_popcountll(board.getPieceBitboard(~us, static_cast<PieceType>(pieceType))) *
+                   (pieceType == PAWN ? 100 : pieceType == KNIGHT ? 320 : pieceType == BISHOP ? 330 :
                     pieceType == ROOK ? 500 : 900);
     }
-    
+
     return material;
 }
 

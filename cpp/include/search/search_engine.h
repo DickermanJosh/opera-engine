@@ -15,6 +15,12 @@
 
 namespace opera {
 
+// Forward declarations
+namespace eval {
+    class HandcraftedEvaluator;
+    class MorphyEvaluator;
+}
+
 // Null move constant for search engine
 const Move NULL_MOVE = Move();
 
@@ -74,11 +80,16 @@ private:
     std::atomic<bool>& stop_flag;          // Atomic stop flag for async cancellation
     
     // Search components
-    std::unique_ptr<TranspositionTable> tt;          // Transposition table
-    std::unique_ptr<MoveOrdering> move_ordering;     // Move ordering system
-    std::unique_ptr<StaticExchangeEvaluator> see;    // Static exchange evaluator
-    std::unique_ptr<AlphaBetaSearch> alphabeta;      // Alpha-beta search engine
-    
+    std::unique_ptr<TranspositionTable> tt;                // Transposition table
+    std::unique_ptr<MoveOrdering> move_ordering;           // Move ordering system
+    std::unique_ptr<StaticExchangeEvaluator> see;          // Static exchange evaluator
+    std::unique_ptr<eval::HandcraftedEvaluator> evaluator; // Position evaluator
+    std::unique_ptr<eval::MorphyEvaluator> morphy_evaluator; // Morphy-style evaluator
+    std::unique_ptr<AlphaBetaSearch> alphabeta;            // Alpha-beta search engine
+
+    // Evaluator configuration
+    bool use_morphy_style = false;                         // Use Morphy evaluator instead of standard
+
     // Search state
     bool searching = false;                // Currently searching flag
     SearchLimits current_limits;           // Current search limits
@@ -160,6 +171,13 @@ public:
     void set_min_depth_for_lmr(int depth);
     void set_min_depth_for_futility(int depth);
     void set_min_depth_for_razoring(int depth);
+
+    /**
+     * Configure evaluation parameters (UCI options)
+     */
+    void set_morphy_bias(double bias);
+    void set_pawn_hash_size(int size_mb);
+    void set_use_morphy_style(bool use_morphy);
     
     /**
      * Get current AlphaBetaSearch optimization parameters
