@@ -166,15 +166,23 @@ This document breaks down the implementation of UCI Protocol support in Rust int
   - **Actual Effort**: ~6 hours
   - **Dependencies**: 3.1, existing C++ SearchEngine class
 
-- [ ] **4.2** Implement Time Management System
+- [x] **4.2** Implement Time Management System ✅ **COMPLETED**
   - **Description**: Create flexible time policy system with safety margins and early stopping logic
-  - **Deliverables**: 
-    - rust/src/time/mod.rs with TimePolicy trait
-    - rust/src/time/policies.rs with standard time management algorithms
-    - Time calculation tests with edge cases
-    - Integration with tokio::time for precision timing
+  - **Deliverables**:
+    - rust/src/time/mod.rs with TimePolicy trait and core types (SearchParams, TimeLimits, PositionInfo, SearchProgress)
+    - rust/src/time/policies.rs with three time management algorithms:
+      - StandardTimePolicy: Classical time allocation with phase awareness and early stopping
+      - FixedTimePolicy: Fixed time per move for movetime commands
+      - InfiniteTimePolicy: Unlimited time for infinite/depth/node searches
+    - rust/src/time/timer.rs with async SearchTimer for tokio integration
+    - rust/tests/time_management_tests.rs with 40+ comprehensive integration tests
+    - Time calculation tests covering edge cases (time trouble, overflow safety, negative time)
+    - Real-world scenario tests (bullet, rapid, classical, Fischer increment)
+    - Property-based tests for safety guarantees (positive time, soft < hard)
+    - Full tokio::time integration with async timers and timeouts
   - **Requirements**: Performance Requirements (3.3), Search and Analysis Requirements (3.3)
   - **Estimated Effort**: 5 hours
+  - **Actual Effort**: ~4 hours
   - **Dependencies**: 1.4
 
 - [ ] **4.3** Implement Go Command Handler with Search Coordination

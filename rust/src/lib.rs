@@ -68,6 +68,7 @@ pub mod error;
 pub mod ffi;
 pub mod logging;
 pub mod runtime;
+pub mod time;
 pub mod uci;
 
 #[cfg(test)]
@@ -75,6 +76,10 @@ pub mod testing;
 
 // Re-export commonly used types
 pub use error::{ContextualError, ContextualResult, ErrorContext, ResultExt, UCIError, UCIResult};
+pub use time::{
+    FixedTimePolicy, InfiniteTimePolicy, PositionInfo, SearchParams, SearchProgress, SearchTimer,
+    StandardTimePolicy, TimePolicy, TimeLimits, timer_from_millis,
+};
 pub use uci::{
     run_uci_event_loop, BasicCommandHandler, BestMoveBuilder, ChessMove, EngineConfig,
     EngineIdentification, EngineState, EngineStatistics, EventLoopConfig, EventLoopStats,
@@ -147,7 +152,7 @@ pub fn report_engine_error(message: String) {
 /// This function receives search progress updates from the C++ engine
 /// and formats them for UCI output.
 #[cfg(feature = "ffi")]
-pub fn report_search_progress(info: &ffi::ffi::SearchInfo) {
+pub fn report_search_progress(info: &ffi::ffi::FFISearchInfo) {
     use tracing::debug;
 
     debug!(
@@ -208,14 +213,14 @@ pub fn initialize_engine() -> UCIResult<()> {
         }
         info!("Basic board operations verified");
 
-        // Test search object creation
-        let search = ffi::ffi::create_search();
-        if search.is_null() {
+        // Test SearchEngine creation
+        let search_engine = ffi::ffi::create_search_engine(board.pin_mut());
+        if search_engine.is_null() {
             return Err(UCIError::Ffi {
-                message: "Failed to create C++ search instance via FFI".to_string(),
+                message: "Failed to create C++ SearchEngine instance via FFI".to_string(),
             });
         }
-        info!("Search engine interface verified");
+        info!("SearchEngine interface verified");
 
         // Verify engine configuration functions
         let hash_result = ffi::ffi::engine_set_hash_size(128);

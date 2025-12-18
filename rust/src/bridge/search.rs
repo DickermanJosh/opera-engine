@@ -243,8 +243,17 @@ impl SearchEngine {
 
         let ffi_limits = limits.to_ffi();
 
-        // Execute blocking search
-        let ffi_result = ffi::search_engine_search(self.inner.pin_mut(), &ffi_limits);
+        // Execute blocking search with output parameter
+        let mut ffi_result = ffi::FFISearchResult {
+            best_move: String::new(),
+            ponder_move: String::new(),
+            score: 0,
+            depth: 0,
+            nodes: 0,
+            time_ms: 0,
+            pv: String::new(),
+        };
+        ffi::search_engine_search(self.inner.pin_mut(), &ffi_limits, &mut ffi_result);
 
         let result = SearchResult::from_ffi(ffi_result);
 
@@ -268,6 +277,9 @@ impl SearchEngine {
         Ok(result)
     }
 
+    // TODO: Fix async search - currently disabled due to Send trait issues with raw pointers
+    // The synchronous search() method works fine for now
+    /*
     /// Perform an asynchronous non-blocking search
     ///
     /// This spawns the search on a blocking thread pool to avoid blocking
@@ -312,6 +324,7 @@ impl SearchEngine {
         debug!("Async search completed");
         Ok(result)
     }
+    */
 
     /// Stop the current search immediately
     ///
@@ -402,6 +415,7 @@ impl fmt::Debug for SearchEngine {
 //
 // However, it is NOT safe to share references across threads (not Sync)
 // because the C++ SearchEngine is not designed for concurrent access.
+#[allow(unsafe_code)] // Required for FFI Send implementation
 unsafe impl Send for SearchEngine {}
 
 #[cfg(test)]

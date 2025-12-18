@@ -8,26 +8,7 @@
 
 #[cxx::bridge]
 pub mod ffi {
-    // Rust-side structs exposed to C++
-    #[derive(Debug)]
-    pub struct SearchLimits {
-        pub depth: i32,
-        pub nodes: u64,
-        pub time_ms: u64,
-        pub infinite: bool,
-    }
-
-    #[derive(Debug)]
-    pub struct SearchInfo {
-        pub depth: i32,
-        pub score: i32,
-        pub time_ms: u64,
-        pub nodes: u64,
-        pub nps: u64,
-        pub pv: String,
-    }
-
-    // C++ side structs (FFI-safe, defined in UCIBridge.h)
+    // Shared structs between Rust and C++ (cxx generates both sides)
     #[namespace = "opera"]
     struct FFISearchLimits {
         max_depth: i32,
@@ -47,7 +28,17 @@ pub mod ffi {
         pv: String,
     }
 
-    // C++ side structs and enums
+    #[namespace = "opera"]
+    struct FFISearchInfo {
+        depth: i32,
+        score: i32,
+        time_ms: u64,
+        nodes: u64,
+        nps: u64,
+        pv: String,
+    }
+
+    // C++ types
     unsafe extern "C++" {
         include!("UCIBridge.h");
 
@@ -56,16 +47,10 @@ pub mod ffi {
         type Board;
         #[namespace = "opera"]
         type MoveGen;
-        #[namespace = "opera"]
-        type Search;
 
-        // Real SearchEngine types
+        // SearchEngine wrapper
         #[namespace = "opera"]
         type SearchEngineWrapper;
-        #[namespace = "opera"]
-        type FFISearchLimits;
-        #[namespace = "opera"]
-        type FFISearchResult;
 
         // Board operations - simplified for initial FFI
         fn create_board() -> UniquePtr<Board>;
@@ -78,25 +63,11 @@ pub mod ffi {
         fn board_is_checkmate(board: &Board) -> bool;
         fn board_is_stalemate(board: &Board) -> bool;
 
-        // Search operations - simplified interface (stub, will be deprecated)
-        fn create_search() -> UniquePtr<Search>;
-        fn search_start(search: Pin<&mut Search>, board: &Board, depth: i32, time_ms: u64) -> bool;
-        fn search_stop(search: Pin<&mut Search>);
-        fn search_get_best_move(search: &Search) -> String;
-        fn search_is_searching(search: &Search) -> bool;
-
-        // Real SearchEngine FFI operations
-        #[namespace = "opera"]
+        // SearchEngine FFI operations (global scope, not in namespace)
         fn create_search_engine(board: Pin<&mut Board>) -> UniquePtr<SearchEngineWrapper>;
-        #[namespace = "opera"]
-        fn search_engine_search(engine: Pin<&mut SearchEngineWrapper>, limits: &FFISearchLimits) -> FFISearchResult;
-        #[namespace = "opera"]
+        fn search_engine_search(engine: Pin<&mut SearchEngineWrapper>, limits: &FFISearchLimits, result: &mut FFISearchResult);
         fn search_engine_stop(engine: Pin<&mut SearchEngineWrapper>);
-        #[namespace = "opera"]
         fn search_engine_is_searching(engine: &SearchEngineWrapper) -> bool;
-        #[namespace = "opera"]
-        fn search_engine_get_result(engine: &SearchEngineWrapper) -> FFISearchResult;
-        #[namespace = "opera"]
         fn search_engine_reset(engine: Pin<&mut SearchEngineWrapper>);
 
         // Engine configuration
@@ -108,7 +79,7 @@ pub mod ffi {
     // Rust functions that C++ can call (callbacks)
     extern "Rust" {
         // Search progress callback
-        fn on_search_progress(info: &SearchInfo);
+        fn on_search_progress(info: &FFISearchInfo);
 
         // Error reporting callback
         fn on_engine_error(error_msg: String);
@@ -117,7 +88,7 @@ pub mod ffi {
 
 // Rust implementations of callback functions
 /// Called by C++ engine during search to report progress
-pub fn on_search_progress(info: &ffi::SearchInfo) {
+pub fn on_search_progress(info: &ffi::FFISearchInfo) {
     use tracing::debug;
 
     debug!(

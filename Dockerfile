@@ -33,9 +33,9 @@ RUN cd cpp && \
     echo "C++ build completed successfully"
 
 # =============================================================================
-# Stage 2: Build Rust UCI Interface  
+# Stage 2: Build Rust UCI Interface
 # =============================================================================
-FROM rust:1.75-slim as rust-builder
+FROM rust:1.83-slim as rust-builder
 
 # Install system dependencies needed for Rust compilation
 RUN apt-get update && apt-get install -y \

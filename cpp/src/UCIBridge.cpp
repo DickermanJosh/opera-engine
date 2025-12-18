@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 #include "rust/cxx.h"
+#include "opera-uci/src/ffi.rs.h"  // Generated FFI definitions
 
 namespace opera {
 
@@ -54,9 +55,6 @@ FFISearchResult SearchEngineWrapper::search(const FFISearchLimits& limits) {
     }
     ffi_result.pv = pv_stream.str();
 
-    // Store result
-    last_result = ffi_result;
-
     return ffi_result;
 }
 
@@ -69,10 +67,6 @@ void SearchEngineWrapper::stop() {
 
 bool SearchEngineWrapper::is_searching() const {
     return engine && engine->is_searching();
-}
-
-const FFISearchResult& SearchEngineWrapper::get_last_result() const {
-    return last_result;
 }
 
 void SearchEngineWrapper::reset() {
@@ -211,53 +205,6 @@ bool board_is_stalemate(const opera::Board& board) {
     }
 }
 
-// Search operations (stub implementations)
-std::unique_ptr<opera::Search> create_search() {
-    try {
-        return std::make_unique<opera::Search>();
-    } catch (const std::exception&) {
-        return nullptr;
-    }
-}
-
-bool search_start(opera::Search& search, const opera::Board& board, int32_t depth, uint64_t time_ms) {
-    try {
-        opera::SearchLimits limits;
-        limits.depth = depth;
-        limits.time_ms = time_ms;
-        limits.nodes = 0;
-        limits.infinite = false;
-        return search.startSearch(board, limits);
-    } catch (const std::exception&) {
-        return false;
-    }
-}
-
-void search_stop(opera::Search& search) {
-    try {
-        search.stop();
-    } catch (const std::exception&) {
-        // Ignore errors during stop - best effort
-    }
-}
-
-rust::String search_get_best_move(const opera::Search& search) {
-    try {
-        return rust::String(search.getBestMove());
-    } catch (const std::exception&) {
-        return rust::String("");
-    }
-}
-
-
-bool search_is_searching(const opera::Search& search) {
-    try {
-        return search.isSearching();
-    } catch (const std::exception&) {
-        return false;
-    }
-}
-
 // Engine configuration (stub implementations)
 bool engine_set_hash_size(uint32_t size_mb) {
     // TODO: Implement hash table size setting
@@ -290,18 +237,18 @@ std::unique_ptr<opera::SearchEngineWrapper> create_search_engine(opera::Board& b
     }
 }
 
-opera::FFISearchResult search_engine_search(opera::SearchEngineWrapper& engine, const opera::FFISearchLimits& limits) {
+void search_engine_search(opera::SearchEngineWrapper& engine, const opera::FFISearchLimits& limits, opera::FFISearchResult& result) {
     try {
-        return engine.search(limits);
+        result = engine.search(limits);
     } catch (const std::exception& e) {
-        // Return empty result on error
-        opera::FFISearchResult error_result;
-        error_result.best_move = "0000";  // Null move indicator
-        error_result.score = 0;
-        error_result.depth = 0;
-        error_result.nodes = 0;
-        error_result.time_ms = 0;
-        return error_result;
+        // Set error result on exception
+        result.best_move = "0000";  // Null move indicator
+        result.ponder_move = "";
+        result.score = 0;
+        result.depth = 0;
+        result.nodes = 0;
+        result.time_ms = 0;
+        result.pv = "";
     }
 }
 
@@ -318,16 +265,6 @@ bool search_engine_is_searching(const opera::SearchEngineWrapper& engine) {
         return engine.is_searching();
     } catch (const std::exception&) {
         return false;
-    }
-}
-
-opera::FFISearchResult search_engine_get_result(const opera::SearchEngineWrapper& engine) {
-    try {
-        return engine.get_last_result();
-    } catch (const std::exception&) {
-        opera::FFISearchResult error_result;
-        error_result.best_move = "0000";
-        return error_result;
     }
 }
 
