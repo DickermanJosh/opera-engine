@@ -1,8 +1,18 @@
-# Current execution baseline — 2026-09-18
+# Current execution baseline — 2026-09-19
+
+## Merge and Unity integration — 2026-09-19
+
+At the owner's explicit request, `uci` was merged into `main` as `bde03c3` and pushed to `origin/main`. Current work is on `unity-integration`, paired with `opera-integration` in the sibling Unity `chess` repository. The owner moved Unity playtesting ahead of core/NN development to experience the current strength. Search and evaluation are unchanged by the integration.
+
+The Unity 6000.0.54f1 editor passes 494 independent legal-move/FEN fixtures, start-position perft depth 3 (8,902), Kiwipete depth 2 (2,039), and repetition adjudication. The real C# UCI client passes legal moves from both sides, cancellation, process restart and child-process cleanup. The fixtures cover both saved Stockfish games, seeded legal games, castling, en passant, pins, all promotion choices and terminal positions. The app's pre-existing board-rule defects needed correction to keep the GUI and engine positions synchronized. See [setup and playtesting](unity-integration.md).
+
+Windows and full cross-platform release acceptance remain open; the merge does not change those earlier limitations.
+
+The standalone Mac app was built and exercised through its visible UI: menu entry, legal-move highlights, `1.e4 Nc6 2.Nf3 Nf6` as White, `1.Nc3 e5 2.Nf3` as Black, board flipping, thinking-time selection, a rapid Black-to-White restart during a three-second search, resignation, returning to the menu and starting another game. No stale move appeared after restart and no application exceptions were logged. Board clicks were migrated from legacy mouse callbacks to the existing Input System/EventSystem with a Physics2DRaycaster after the first graphical check exposed missed clicks. Engine moves ran asynchronously while the controls remained responsive. The Unity implementation is committed as `d4ad557`. The final app is `../chess/build/Opera Desktop/Opera Chess.app`; logs are `/tmp/opera-unity-final-validation.log` and `/tmp/opera-unity-input-build.log`.
 
 ## UCI release-candidate review — 2026-09-18
 
-Release targets are macOS, Windows and Linux. Candidate `f4fb2a8` was committed and pushed to `origin/uci` with the owner's approval. Work remains on `uci`; `main` has not been merged. GitHub confirms the commit but reports repository Actions `enabled: false`, with no check runs or suites for the candidate. Approval to enable that repository setting is pending. The [roadmap](development-roadmap.md) puts engine-core correctness and strength next, neural evaluation/training/tuning after that, and the existing Unity project integration later.
+Release targets are macOS, Windows and Linux. Candidate `f4fb2a8` was committed and pushed to `origin/uci` with the owner's approval. At this review, `main` had not yet been merged. GitHub confirmed the commit but reported repository Actions `enabled: false`, with no check runs or suites for the candidate. Approval to enable that repository setting is pending. The later merge and revised [roadmap](development-roadmap.md) are recorded above.
 
 This review reproduced and fixed two release-relevant defects. Search passed White-relative evaluator scores directly into negamax, reversing the meaning at alternating depths; both evaluators now convert to the current side's perspective. Tests cover both root colors at odd/even depths and taking an undefended queen. A client that filled stdout without reading could hang process teardown after the async output timeout; the executable now bounds Tokio runtime shutdown after joining the search worker. Logging initialization now uses stderr and returns a configuration error on repeat initialization. Tests that install global logging/panic hooks run in isolated subprocesses.
 

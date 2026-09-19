@@ -2,7 +2,7 @@
 
 ## Status — 2026-09-18
 
-Opera now has a persistent Rust UCI executable connected to real C++ search. Process acceptance and independent move-legality checks pass on macOS ARM64 and Docker/Linux ARM64. The external python-chess client also passes protocol checks and completes timed Stockfish games. Windows, real chess GUIs and full Kiro acceptance remain unverified. Engine strength is unfinished; neural evaluation and Unity integration follow core development in the [roadmap](development-roadmap.md).
+Opera now has a persistent Rust UCI executable connected to real C++ search. Process acceptance and independent move-legality checks pass on macOS ARM64 and Docker/Linux ARM64. The external python-chess client also passes protocol checks and completes timed Stockfish games. Windows and full Kiro acceptance remain unverified. Engine strength is unfinished; the owner requested [Unity playtesting](unity-integration.md) before further core and neural development in the [roadmap](development-roadmap.md).
 
 The native CI workflow is configured to build and exercise the UCI executable on Linux, macOS and Windows and upload each executable. Windows uses clang-cl with the MSVC Rust target because the C++ core uses GCC/Clang bit-scan intrinsics. Repository Actions is currently disabled, so the pushed candidate has no CI run. Enabling it requires the owner's approval. `rust/Cargo.lock` pins dependencies for the documented `--locked` builds.
 
@@ -66,7 +66,7 @@ The active coordinator uses a conservative bounded clock allocation: remaining t
 
 ## Unity/network adapter boundary
 
-Run this executable as a child process and communicate over redirected stdin/stdout. Keep stderr separate. Serialize each engine instance's position/search sequence; use separate processes for independent games or analysis sessions. The Unity/network layer remains responsible for game state, move application, clocks, draw adjudication and relaying moves. This change adds no Unity code, network server, accounts, or online transport.
+Run this executable as a child process and communicate over redirected stdin/stdout. Keep stderr separate. Serialize each engine instance's position/search sequence; use separate processes for independent games or analysis sessions. The Unity/network layer remains responsible for game state, move application, clocks, draw adjudication and relaying moves. The sibling Unity app now has a local UCI adapter; [package the native executable](unity-integration.md) into its StreamingAssets. This integration needs no network server or account.
 
 ## Verification
 
@@ -101,6 +101,6 @@ September 18 immediate-cancellation measurements across Hash 1/16/128, both eval
 
 ## Remaining limits
 
-Both test targets compile, but the complete repository test suite is not green. Broad C++ and Rust regression results and remaining failing checks are recorded in the [current baseline](current-baseline.md). No Elo, 1M NPS, coverage percentage, completed fuzzing campaign, GUI or Windows certification is claimed.
+Both test targets compile, but the complete repository test suite is not green. Broad C++ and Rust regression results and remaining failing checks are recorded in the [current baseline](current-baseline.md). The local Unity Mac app passes an initial graphical playtest; that is not general GUI/platform certification. No Elo, 1M NPS, coverage percentage, completed fuzzing campaign or Windows certification is claimed.
 
 Docker's test mode requires handshake/readiness and real search output and returns failure on missing results. Image build, smoke execution and the separate Linux validation target pass locally; they do not execute all repository unit tests.
