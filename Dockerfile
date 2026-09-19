@@ -114,11 +114,14 @@ CMD ["uci"]
 # These testing dependencies are excluded from the final runtime image.
 FROM runtime-base AS uci-validation
 USER root
-RUN apt-get update && apt-get install -y --no-install-recommends python3 stockfish && \
+COPY scripts/requirements-uci.txt /app/scripts/requirements-uci.txt
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip stockfish && \
+    python3 -m pip install --no-cache-dir -r /app/scripts/requirements-uci.txt && \
     rm -rf /var/lib/apt/lists/*
-COPY scripts/test_uci_process.py scripts/test_uci_oracle.py /app/scripts/
+COPY scripts/test_uci_process.py scripts/test_uci_oracle.py scripts/test_uci_client.py /app/scripts/
 USER opera
 RUN python3 /app/scripts/test_uci_process.py /app/opera-uci && \
-    python3 /app/scripts/test_uci_oracle.py /app/opera-uci /usr/games/stockfish
+    python3 /app/scripts/test_uci_oracle.py /app/opera-uci /usr/games/stockfish && \
+    python3 /app/scripts/test_uci_client.py /app/opera-uci /usr/games/stockfish
 
 FROM runtime-base AS runtime

@@ -2,9 +2,9 @@
 
 ## Status — 2026-09-18
 
-Opera now has a persistent Rust UCI executable connected to real C++ search. Process acceptance and independent move-legality checks pass on macOS ARM64 and Docker/Linux ARM64. Windows, real chess GUIs and full Kiro acceptance remain unverified. Engine strength is unfinished; neural evaluation and Unity integration follow core development in the [roadmap](development-roadmap.md).
+Opera now has a persistent Rust UCI executable connected to real C++ search. Process acceptance and independent move-legality checks pass on macOS ARM64 and Docker/Linux ARM64. The external python-chess client also passes protocol checks and completes timed Stockfish games. Windows, real chess GUIs and full Kiro acceptance remain unverified. Engine strength is unfinished; neural evaluation and Unity integration follow core development in the [roadmap](development-roadmap.md).
 
-The native CI workflow now builds and exercises the UCI executable on Linux, macOS and Windows and uploads each executable. Windows uses clang-cl with the MSVC Rust target because the C++ core uses GCC/Clang bit-scan intrinsics. This is configured coverage, not a report that those remote jobs have passed. `rust/Cargo.lock` pins dependencies for the documented `--locked` builds.
+The native CI workflow is configured to build and exercise the UCI executable on Linux, macOS and Windows and upload each executable. Windows uses clang-cl with the MSVC Rust target because the C++ core uses GCC/Clang bit-scan intrinsics. Repository Actions is currently disabled, so the pushed candidate has no CI run. Enabling it requires the owner's approval. `rust/Cargo.lock` pins dependencies for the documented `--locked` builds.
 
 ## Build and launch
 
@@ -16,6 +16,8 @@ cargo build --release --locked --manifest-path rust/Cargo.toml
 ```
 
 Alternatively, `bash launch.sh --uci` builds the release binary and executes it, keeping build output on stderr. Set `CARGO_TARGET_DIR` to an absolute scratch directory to keep build artifacts outside the checkout. Launch the built executable directly from a GUI or game adapter; do not put a compiler invocation in the game's move loop. `launch.sh` without `--uci` still runs the C++ board demo.
+
+On Windows, use the Rust MSVC toolchain and a Visual Studio developer environment with the Windows SDK and clang-cl available. Set `$env:CXX = "clang-cl"` in PowerShell before the Cargo build. The executable is `rust/target/release/opera-uci.exe`; the Bash launch script is optional.
 
 The executable also accepts `--version`, `--hash-size N`, `--threads 1`, `--morphy-style true|false`, and `--debug`. Neural weights and other unsupported arguments fail explicitly. `RUST_LOG=debug` enables diagnostic logs on stderr. Protocol stdout contains only UCI responses in normal engine mode.
 
@@ -81,6 +83,17 @@ docker build --target uci-validation -t opera-engine:uci-validation .
 On September 18, all 21 process tests, 217 Rust library tests, 23 search integration tests, 27 parser tests, 11 handshake tests, three real-search tests, and 40 selected C++ search/control/evaluation tests passed. The library suite passes with default parallel execution and serial execution. Both full test targets compile. The process harness covers command-driven startup, black/non-start/terminal positions, invalid-command recovery, combined limits, ponder timing/replies, repeated jobs, bursts, EOF, options, searchmoves, promotions, castling, en passant, capture choice for both colors, Unix signals, closed output and unread-output backpressure. The signal test is skipped on Windows.
 
 The Stockfish oracle independently validates legal bestmoves, every PV prefix and ponder replies, including both colors' special moves. It passed 176 positions on macOS and Linux; the deterministic walk alternates engine and seeded random legal moves with both evaluators. This is a bounded rules check, not universal certification or a strength measurement. The same process/oracle suites passed with AddressSanitizer and UndefinedBehaviorSanitizer applied to the C++ bridge on macOS; Rust itself was not instrumented, and leak detection was disabled.
+
+For external client interoperability, install the small pinned test dependencies in a Python virtual environment:
+
+```bash
+python3 -m pip install -r scripts/requirements-uci.txt
+python3 scripts/test_uci_client.py /absolute/path/to/opera-uci
+# Optionally include two complete timed games and save their PGN:
+python3 scripts/test_uci_client.py /absolute/path/to/opera-uci /absolute/path/to/stockfish --pgn acceptance.pgn
+```
+
+This uses python-chess's UCI client, exercises actual ponderhit and ponder cancellation, stops infinite analysis, checks restricted special moves and terminal positions, and optionally plays each color against Stockfish with 3-second clocks plus 50ms increment. Stockfish has an additional 20ms move cap to keep this acceptance test short. Games must end within 240 plies with no illegal moves, time forfeits, client parser warnings or abnormal exits. The local macOS games ended by checkmate after 60 and 41 plies; Linux games ended at 54 and 61 plies. All four were losses for Opera. These are interoperability results, not an Elo experiment or a graphical GUI smoke test. The harness has per-operation and whole-run timeouts; CI runs client checks on all three native platforms and timed games on Linux.
 
 September 13 release measurements: 30 isready samples max 0.27ms; 30 stop samples max 0.11ms; 10 quit samples max 1.32ms. Movetime requests 1/10/50/100/250ms completed in about 1.1/1.1/40.1/90.1/240.1ms with the default 10ms overhead. These are historical observations on one machine, not universal timing guarantees. The Kiro task's stricter guaranteed <10ms stop acceptance is not established for every position/platform.
 

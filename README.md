@@ -17,7 +17,9 @@ Use the Rust binary for GUI/game integration. The C++ `opera-engine` executable 
 
 Validation on macOS ARM64: 21 process tests, 281 Rust library/search/protocol tests, and 40 C++ search/control/evaluator integration tests pass. Docker/Linux ARM64 also passes the process suite. An independent Stockfish oracle checks bestmoves, every reported PV and ponder replies across 176 positions on both platforms. The C++ bridge also passes these process/oracle suites with address and undefined-behavior sanitizers on macOS. The broader engine suite still has failures; see the [dated baseline](docs/current-baseline.md) for evidence and limitations.
 
-Native UCI CI is configured for Linux, macOS and Windows, including downloadable executables. Windows uses clang-cl for the C++ bridge. Those remote jobs and GUI compatibility still need verification. Cargo dependencies are pinned in `rust/Cargo.lock`. The [development roadmap](docs/development-roadmap.md) orders the remaining work: UCI release validation, engine core, neural evaluation and tuning, then Unity integration.
+Native UCI CI is configured for Linux, macOS and Windows, including downloadable executables. Windows uses clang-cl for the C++ bridge. Repository Actions is disabled, so the pushed candidate has no remote checks yet. An external python-chess client passes protocol checks and timed Stockfish games locally; Windows and graphical GUI compatibility remain unverified. Cargo dependencies are pinned in `rust/Cargo.lock`. The [development roadmap](docs/development-roadmap.md) orders the remaining work: UCI release validation, engine core, neural evaluation and tuning, then Unity integration.
+
+A separate [two-game Stockfish 17.1 match](docs/games/2026-09-18-stockfish-match.md), with equal 30+0.25 clocks and Opera playing each color, ended 0–2 by checkmate on moves 26 and 28. Both games were legal and within their clocks. [Download the PGN](docs/games/2026-09-18-stockfish-match.pgn), including move-by-move clock annotations. This is a development snapshot, not an Elo estimate.
 
 ## Docker
 

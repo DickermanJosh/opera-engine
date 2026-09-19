@@ -6,8 +6,8 @@ Target operating systems: macOS, Windows and Linux. Finish the engine core befor
 
 The implemented protocol is a release candidate. macOS ARM64 and Docker/Linux ARM64 pass bounded process acceptance and independent Stockfish legality checks. Remaining release work:
 
-- Run the native CI matrix, especially the Windows MSVC/clang-cl build and executable tests; confirm the uploaded binaries work.
-- Exercise a real UCI GUI or match manager, including a complete timed game, analysis, stop and ponder lifecycle.
+- Enable repository Actions with the owner's approval, then run the native CI matrix, especially the Windows MSVC/clang-cl build and executable tests; confirm the uploaded binaries work. The pushed candidate currently has no checks because GitHub reports Actions disabled.
+- Retain external-client acceptance: python-chess now exercises analysis/stop, actual ponder hits and cancelled pondering, special moves and complete timed games against Stockfish. A graphical GUI smoke test remains open for broader compatibility coverage.
 - Resolve any protocol/platform defects found and retain reproducible regressions. Record the platform and architecture tested, without treating configured CI as a pass.
 - Commit the reviewed candidate, merge `uci` into `main` only after release acceptance, and create `engine-core` from the merged main branch. Keep the existing search/evaluation branches intact.
 
