@@ -63,6 +63,10 @@ int AlphaBetaSearch::pvs(int depth, int ply, int alpha, int beta, bool is_pv_nod
         return alpha;
     }
     
+    if (ply < MAX_PLY) pv_table[ply].clear();
+
+    if (ply > 0 && (board.isThreefoldRepetition() || board.isFiftyMoveRule())) return 0;
+
     // Terminal node - call quiescence
     if (depth <= 0) {
         return quiescence(ply, alpha, beta);
@@ -154,6 +158,8 @@ int AlphaBetaSearch::pvs(int depth, int ply, int alpha, int beta, bool is_pv_nod
     for (size_t i = 0; i < moves.size(); ++i) {
         const MoveGen& move_gen = moves[i];
         Move move = movegen_to_move(move_gen);
+        if (ply == 0 && !root_moves.empty() &&
+            std::find(root_moves.begin(), root_moves.end(), move.toString()) == root_moves.end()) continue;
         
         if (should_stop()) {
             break;
@@ -168,7 +174,7 @@ int AlphaBetaSearch::pvs(int depth, int ply, int alpha, int beta, bool is_pv_nod
         bool gives_check = in_check();
         
         // Calculate extensions
-        int extension = get_extensions(move_gen, in_check_flag, gives_check);
+        int extension = ply < 2 * depth ? get_extensions(move_gen, in_check_flag, gives_check) : 0;
         stats.extensions += extension;
         
         // Futility Pruning - skip quiet moves that can't improve alpha
@@ -213,6 +219,7 @@ int AlphaBetaSearch::pvs(int depth, int ply, int alpha, int beta, bool is_pv_nod
         
         // Unmake move
         board.unmakeMove(move_gen);
+        if (should_stop()) return alpha;
         
         if (score > best_score) {
             best_score = score;
@@ -287,8 +294,10 @@ int AlphaBetaSearch::quiescence(int ply, int alpha, int beta) {
         return evaluate();
     }
     
-    // Stand pat evaluation
-    int stand_pat = evaluate();
+    if (board.isThreefoldRepetition() || board.isFiftyMoveRule()) return 0;
+    const bool checked = in_check();
+    // Standing pat is illegal in check: all legal evasions must be considered.
+    int stand_pat = checked ? -INFINITY_SCORE : evaluate();
     
     if (stand_pat >= beta) {
         return beta;
@@ -300,7 +309,9 @@ int AlphaBetaSearch::quiescence(int ply, int alpha, int beta) {
     
     // Generate captures and checks
     MoveGenList<256> captures;
-    generateCaptureMoves(board, captures, board.getSideToMove());
+    if (checked) generateAllLegalMoves(board, captures, board.getSideToMove());
+    else generateCaptureMoves(board, captures, board.getSideToMove());
+    if (checked && captures.size() == 0) return -CHECKMATE_SCORE + ply;
     
     // Score and sort captures by SEE and MVV-LVA
     move_ordering.score_moves(captures, ply);
@@ -315,7 +326,7 @@ int AlphaBetaSearch::quiescence(int ply, int alpha, int beta) {
         }
         
         // SEE pruning - skip losing captures
-        if (see.evaluate(capture) < 0) {
+        if (!checked && see.evaluate(capture) < 0) {
             continue;
         }
         
@@ -377,7 +388,9 @@ void AlphaBetaSearch::clear_history() {
 int AlphaBetaSearch::evaluate() {
     // Use evaluator if available, otherwise fall back to material-only
     if (evaluator) {
-        return evaluator->evaluate(board, board.getSideToMove());
+        const Color side = board.getSideToMove();
+        const int white_score = evaluator->evaluate(board, side);
+        return side == WHITE ? white_score : -white_score;
     }
 
     // Fallback: Basic material evaluation
@@ -411,11 +424,12 @@ int AlphaBetaSearch::get_extensions(const MoveGen& move, bool in_check, bool giv
     }
     
     // Passed pawn extension (simplified)
-    Piece piece = board.getPiece(move.from());
+    // Called after makeMove: the moving piece is now on the destination.
+    Piece piece = board.getPiece(move.to());
     if (typeOf(piece) == PAWN) {
         Square to = move.to();
         Rank rank = rankOf(to);
-        Color us = board.getSideToMove();
+        Color us = ~board.getSideToMove();
         
         if ((us == WHITE && rank >= 6) || (us == BLACK && rank <= 1)) {
             extension += PASSED_PAWN_EXTENSION;
@@ -459,7 +473,7 @@ void AlphaBetaSearch::update_history(const Move& move, int depth) {
 }
 
 bool AlphaBetaSearch::should_stop() {
-    return stop_flag.load();
+    return stop_flag.load() || (stop_check && stop_check());
 }
 
 MoveGen AlphaBetaSearch::move_to_movegen(const Move& move) const {
@@ -474,7 +488,9 @@ MoveGen AlphaBetaSearch::move_to_movegen(const Move& move) const {
 }
 
 Move AlphaBetaSearch::movegen_to_move(const MoveGen& mg) const {
-    return Move(mg.from(), mg.to());
+    return Move(mg.from(), mg.to(), mg.isPromotion() ? PROMOTION :
+        mg.isCastling() ? CASTLING : mg.isEnPassant() ? EN_PASSANT : NORMAL,
+        mg.isPromotion() ? typeOf(mg.promotionPiece()) : NO_PIECE_TYPE);
 }
 
 void AlphaBetaSearch::extract_pv(int ply) {
@@ -568,9 +584,7 @@ bool AlphaBetaSearch::should_stop() const {
         return true;
     }
     
-    // Basic time check (could add more sophisticated time management later)
-    // For now, just rely on external stop flag from SearchEngine
-    return false;
+    return stop_check && stop_check();
 }
 
 } // namespace opera

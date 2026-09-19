@@ -1,90 +1,57 @@
-// Opera Engine UCI (Universal Chess Interface) Implementation
-//
-// This is the main entry point for the Rust-based UCI coordination layer
-// that bridges the C++ engine core and external chess applications.
-
-#![deny(unsafe_code)] // Allow unsafe code only where absolutely necessary (FFI)
-#![warn(
-    clippy::all,
-    clippy::pedantic,
-    clippy::nursery,
-    missing_docs,
-    rust_2018_idioms
-)]
-#![allow(
-    clippy::missing_errors_doc,
-    clippy::missing_panics_doc,
-    clippy::module_name_repetitions
-)]
-
-//! # Opera UCI Engine
-//!
-//! A Rust-based Universal Chess Interface implementation for the Opera Chess Engine.
-//! This serves as an intelligent coordination layer between the C++ engine core,
-//! Python AI wrapper, and external chess GUI applications.
-//!
-//! ## Features
-//!
-//! - **Never-panic Operation**: Comprehensive error handling with graceful recovery
-//! - **Async Architecture**: Non-blocking I/O with tokio runtime
-//! - **Safe FFI**: C++ integration using cxx crate for memory safety
-//! - **Morphy Style**: Paul Morphy-inspired tactical and sacrificial playing style
-//! - **High Performance**: Zero-copy parsing and efficient async patterns
-
-use anyhow::{Context, Result};
-use opera_uci::{initialize_engine, UCIError, AUTHOR, NAME, VERSION};
-use tracing::{error, info, instrument};
-
-/// Main entry point for the Opera UCI engine
-#[tokio::main]
-async fn main() -> Result<()> {
-    // Initialize structured logging first
-    setup_logging()?;
-
-    info!("🎼 Opera UCI Engine starting...");
-    info!("Version: {}", VERSION);
-
-    // Initialize engine with comprehensive safety checks
-    if let Err(uci_error) = initialize_engine() {
-        error!("Failed to initialize UCI engine: {}", uci_error);
-        eprintln!("info string INITIALIZATION ERROR: {}", uci_error);
-        return Err(uci_error.into());
-    }
-
-    // TODO: Initialize UCI command processor (Task 2.2)
-    // TODO: Start async I/O processing loop (Task 2.4)
-
-    // Basic UCI identification (will be expanded in subsequent tasks)
-    info!("Sending UCI identification");
-    println!("id name {}", NAME);
-    println!("id author {}", AUTHOR);
-    println!("uciok");
-
-    // Placeholder main loop - will be replaced with actual UCI processing
-    info!("UCI engine ready - entering main loop");
-    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-
-    Ok(())
+//! Opera UCI executable: async protocol I/O with worker-owned C++ search.
+#![deny(unsafe_code)]
+use anyhow::Result;
+fn main() -> Result<()> {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()?;
+    let result = runtime.block_on(run());
+    // The event loop joins its search worker before returning. Tokio's stdio
+    // blocking tasks cannot be cancelled, however: a GUI that stops reading can
+    // leave a stdout write blocked after its async timeout. Do not wait forever
+    // for that OS write while tearing down this executable's runtime.
+    runtime.shutdown_timeout(std::time::Duration::from_millis(100));
+    result
 }
 
-/// Initialize structured logging with tracing
-#[instrument]
-fn setup_logging() -> Result<()> {
-    use tracing_subscriber::{fmt, EnvFilter};
-
-    // Set up environment filter with default level
-    let filter = EnvFilter::try_from_default_env()
-        .or_else(|_| EnvFilter::try_new("opera_uci=info"))
-        .context("Failed to create logging filter")?;
-
-    // Initialize subscriber with structured formatting
-    fmt()
-        .with_env_filter(filter)
-        .with_target(false)
-        .with_thread_ids(true)
-        .with_file(true)
-        .with_line_number(true)
+async fn run() -> Result<()> {
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "warn".into()),
+        )
+        .with_writer(std::io::stderr)
+        .with_ansi(false)
         .init();
-
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    if args == ["--version"] {
+        println!("{} {}", opera_uci::NAME, opera_uci::VERSION);
+        return Ok(());
+    }
+    let engine = std::sync::Arc::new(opera_uci::uci::UCIEngine::new());
+    let mut i = 0;
+    while i < args.len() {
+        if args[i] == "--debug" {
+            engine.process_command("debug on").await?;
+            i += 1;
+            continue;
+        }
+        let name = match args[i].as_str() {
+            "--hash-size" => "Hash",
+            "--threads" => "Threads",
+            "--morphy-style" => "MorphyStyle",
+            _ => anyhow::bail!(
+                "Unsupported argument {}; use UCI setoption for supported options",
+                args[i]
+            ),
+        };
+        let value = args
+            .get(i + 1)
+            .ok_or_else(|| anyhow::anyhow!("Missing value for {}", args[i]))?;
+        engine
+            .process_command(&format!("setoption name {name} value {value}"))
+            .await?;
+        i += 2;
+    }
+    opera_uci::uci::UCIEventLoop::new(engine)?.run().await?;
     Ok(())
 }

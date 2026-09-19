@@ -1,4 +1,18 @@
+## Runtime validation — 2026-09-18
+
+Docker is now running locally. Linux ARM64 image build and UCI smoke execution pass. The separate `uci-validation` target runs the 21-test process suite and an independent Stockfish legality check across 176 positions against the runtime binary; both pass. Python/Stockfish stay out of the final runtime stage. Native Windows and Linux x86-64 CI remain unverified. These checks do not run the full repository unit suite or validate neural weights. See [current evidence](../docs/current-baseline.md).
+
+## Current implementation — 2026-09-13
+
+The Rust UCI executable is now connected to real C++ search. See [current baseline](../docs/current-baseline.md) and [usage/integration guide](../docs/rust_uci_usage.md) for supported commands, observed tests and remaining limitations. This supersedes the September 7 placeholder/build-blocker status below. Full test targets now compile; the whole repository suite still has failures. No Unity/network or strength/NN expansion is included. Earlier dated claims remain historical.
+
 # Docker Setup
+
+## Current audit — 2026-09-07
+
+See [verified baseline and next milestones](../docs/current-baseline.md). Component implementation and historical test reports do not establish executable UCI compliance, current full-suite success, performance acceptance, or production readiness. Docker validation is blocked locally by an unavailable daemon. The current Dockerfile disables C++ tests and runs no Cargo tests; entrypoint smoke checks do not prove command handling. Image size, platform support, and NN configuration are unverified acceptance targets.
+
+The material below is historical implementation reporting or design intent; its original dates are preserved and its completion claims are not fresh verification.
 
 The Opera engine build system is non-trivial (C++ core, Rust UCI layer, optional Python AI wrapper).
 We need a Dockerized environment that allows developers and users to build and run the engine without manually setting up dependencies.

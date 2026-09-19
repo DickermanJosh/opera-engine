@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 
 #include <atomic>
 #include <vector>
@@ -110,6 +111,9 @@ private:
     int min_depth_for_razoring = DEFAULT_MIN_DEPTH_FOR_RAZORING;
     
 public:
+    std::function<bool()> stop_check;
+    std::vector<std::string> root_moves;
+
     /**
      * Construct AlphaBetaSearch with required components
      *

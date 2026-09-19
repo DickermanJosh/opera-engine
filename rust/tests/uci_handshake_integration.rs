@@ -468,7 +468,7 @@ async fn test_full_uci_session() {
         .await
         .expect("SetOption should work");
     engine
-        .process_command("setoption name Threads value 2")
+        .process_command("setoption name Threads value 1")
         .await
         .expect("SetOption should work");
 

@@ -168,16 +168,34 @@ impl ZeroCopyParser {
     }
 
     fn parse_setoption<'a>(&mut self, raw: &RawCommand<'a>) -> UCIResult<UCICommand<'a>> {
-        let pairs = raw.parse_key_value_pairs();
-
-        let name = pairs.get("name").ok_or_else(|| UCIError::Protocol {
-            message: "setoption command missing 'name' parameter".to_string(),
-        })?;
-
-        // Validate option name and value
-        let value = pairs.get(name).copied();
-        self.sanitizer.validate_option(name, value)?;
-
+        if raw.args.first() != Some(&"name") || raw.args.len() < 2 {
+            return Err(UCIError::Protocol {
+                message: "setoption requires name".into(),
+            });
+        }
+        let value_index = raw.args.iter().position(|x| *x == "value");
+        if value_index == Some(raw.args.len() - 1) {
+            return Err(UCIError::Protocol {
+                message: "setoption value requires a value".into(),
+            });
+        }
+        let name_end = value_index.unwrap_or(raw.args.len());
+        if name_end <= 1 {
+            return Err(UCIError::Protocol {
+                message: "empty option name".into(),
+            });
+        }
+        let slice = |first: usize, last: usize| {
+            &raw.raw[raw.args[first].as_ptr() as usize - raw.raw.as_ptr() as usize
+                ..raw.args[last].as_ptr() as usize - raw.raw.as_ptr() as usize
+                    + raw.args[last].len()]
+        };
+        let name = slice(1, name_end - 1);
+        let value = value_index
+            .filter(|i| i + 1 < raw.args.len())
+            .map(|i| slice(i + 1, raw.args.len() - 1));
+        let normalized_name = name.split_whitespace().collect::<Vec<_>>().join(" ");
+        self.sanitizer.validate_option(&normalized_name, value)?;
         Ok(UCICommand::SetOption { name, value })
     }
 
@@ -260,14 +278,12 @@ impl ZeroCopyParser {
                 // Validate FEN format
                 self.sanitizer.validate_fen(&fen_string)?;
 
-                // For zero-copy operation, we store the original slice
-                // This requires the FEN to be a single token, which it isn't in practice
-                // So we need to allocate here
-                self.stats.allocation_fallbacks += 1;
-
-                // We'll use the first part as a representative slice
-                // In a real implementation, we'd need to store the reconstructed string
-                Position::Fen(raw.args[1])
+                // Preserve the complete FEN as a borrowed slice, including its fields.
+                Position::Fen(
+                    &raw.raw[raw.args[1].as_ptr() as usize - raw.raw.as_ptr() as usize
+                        ..raw.args[6].as_ptr() as usize - raw.raw.as_ptr() as usize
+                            + raw.args[6].len()],
+                )
             }
             _ => {
                 return Err(UCIError::Protocol {
@@ -276,6 +292,15 @@ impl ZeroCopyParser {
             }
         };
 
+        let tail = match position {
+            Position::StartPos => 1,
+            Position::Fen(_) => 7,
+        };
+        if raw.args.len() > tail && (raw.args[tail] != "moves" || raw.args.len() == tail + 1) {
+            return Err(UCIError::Protocol {
+                message: "position expects moves followed by UCI moves".into(),
+            });
+        }
         // Parse moves if present
         let moves = self.parse_moves_from_position(&raw, &position)?;
 
@@ -325,10 +350,23 @@ impl ZeroCopyParser {
         while i < raw.args.len() {
             match raw.args[i] {
                 "searchmoves" => {
-                    // Skip searchmoves for now - not commonly used
+                    if !time_control.search_moves.is_empty() {
+                        return Err(UCIError::Protocol {
+                            message: "duplicate searchmoves parameter".into(),
+                        });
+                    }
                     i += 1;
                     while i < raw.args.len() && !self.is_go_parameter(raw.args[i]) {
+                        let mv = ChessMove::new(raw.args[i])?;
+                        time_control
+                            .search_moves
+                            .push(mv.to_string().to_ascii_lowercase());
                         i += 1;
+                    }
+                    if time_control.search_moves.is_empty() {
+                        return Err(UCIError::Protocol {
+                            message: "searchmoves requires at least one move".into(),
+                        });
                     }
                 }
                 "ponder" => {
@@ -352,11 +390,18 @@ impl ZeroCopyParser {
                     time_control.black_increment_ms = Some(inc_ms);
                 }
                 "movestogo" => {
-                    let moves = self.parse_go_numeric_param(&raw, &mut i, "movestogo")? as u32;
+                    let moves =
+                        u32::try_from(self.parse_go_numeric_param(&raw, &mut i, "movestogo")?)
+                            .map_err(|_| UCIError::Protocol {
+                                message: "movestogo overflow".into(),
+                            })?;
                     time_control.moves_to_go = Some(moves);
                 }
                 "depth" => {
-                    let depth = self.parse_go_numeric_param(&raw, &mut i, "depth")? as u32;
+                    let depth = u32::try_from(self.parse_go_numeric_param(&raw, &mut i, "depth")?)
+                        .map_err(|_| UCIError::Protocol {
+                            message: "depth overflow".into(),
+                        })?;
                     time_control.depth = Some(depth);
                 }
                 "nodes" => {
@@ -364,7 +409,10 @@ impl ZeroCopyParser {
                     time_control.nodes = Some(nodes);
                 }
                 "mate" => {
-                    let mate = self.parse_go_numeric_param(&raw, &mut i, "mate")? as u32;
+                    let mate = u32::try_from(self.parse_go_numeric_param(&raw, &mut i, "mate")?)
+                        .map_err(|_| UCIError::Protocol {
+                            message: "mate overflow".into(),
+                        })?;
                     time_control.mate = Some(mate);
                 }
                 "movetime" => {

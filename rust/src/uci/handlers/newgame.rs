@@ -77,14 +77,8 @@ impl NewGameHandler {
     fn clear_cpp_engine_state(&self) -> UCIResult<()> {
         debug!("Clearing C++ engine transposition tables and hash tables");
 
-        // Clear hash tables through FFI
-        let success = ffi::engine_clear_hash();
-        if !success {
-            return Err(UCIError::Engine {
-                message: "Failed to clear C++ engine hash tables".to_string(),
-            });
-        }
-
+        // This legacy state-only handler owns no C++ engine or hash table.
+        // The executable's SearchSession joins and drops its worker on newgame.
         debug!("C++ engine state cleared successfully");
         Ok(())
     }

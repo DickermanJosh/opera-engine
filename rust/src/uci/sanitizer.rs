@@ -308,7 +308,7 @@ impl InputSanitizer {
         // Note: 'b' for bishop is included in 'a'..='h' range
         if !move_str
             .chars()
-            .all(|c| matches!(c, 'a'..='h' | '1'..='8' | 'q' | 'r' | 'n'))
+            .all(|c| matches!(c, 'a'..='h' | '1'..='8' | 'q' | 'r' | 'n' | 'Q' | 'R' | 'B' | 'N'))
         {
             return Err(UCIError::Move {
                 message: format!("Move contains invalid characters: '{}'", move_str),

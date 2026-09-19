@@ -3,6 +3,15 @@
 # Opera Engine Launch Script
 # Usage: ./launch.sh [--test] [--build] [--debug] [--help]
 
+# Rust UCI entrypoint. Build messages go to stderr; stdout is protocol-only.
+if [ "${1:-}" = "--uci" ]; then
+    shift
+    REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    UCI_TARGET_DIR="${CARGO_TARGET_DIR:-$REPO_DIR/rust/target}"
+    cargo build --release --manifest-path "$REPO_DIR/rust/Cargo.toml" --target-dir "$UCI_TARGET_DIR" >&2 || exit $?
+    exec "$UCI_TARGET_DIR/release/opera-uci" "$@"
+fi
+
 set -e  # Exit on any error
 
 # Colors for output

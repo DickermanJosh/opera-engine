@@ -48,7 +48,7 @@ async fn test_runtime_config_creation() -> UCIResult<()> {
     // Test that runtime configs can be created
     let _default_config = RuntimeConfig::default();
     let _dev_config = RuntimeConfig::development();
-    let _prod_config = RuntimeConfig::production();
+    let _prod_config = RuntimeConfig::performance();
     let _uci_config = RuntimeConfig::uci_optimized();
 
     // Verify they have expected characteristics
@@ -60,15 +60,15 @@ async fn test_runtime_config_creation() -> UCIResult<()> {
     Ok(())
 }
 
-#[tokio::test]
-async fn test_runtime_manager_creation() -> UCIResult<()> {
+#[test]
+fn test_runtime_manager_creation() -> UCIResult<()> {
     // Test that runtime manager can be created
     let config = RuntimeConfig::default();
     let manager = RuntimeManager::new(config)?;
 
     // Verify basic operations work
-    let runtime = manager.get_runtime();
-    assert!(!runtime.id().is_null());
+    let value = manager.block_on(async { 42 })?;
+    assert_eq!(value, 42);
 
     Ok(())
 }

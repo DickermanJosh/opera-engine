@@ -1,44 +1,79 @@
 #include "UCIBridge.h"
 #include "Board.h"
 #include "MoveGen.h"
+#include "search/search_engine.h"
 #include <iostream>
 #include <sstream>
 #include "rust/cxx.h"
+#include "opera-uci/src/ffi.rs.h"  // Generated FFI definitions
 
 namespace opera {
 
-// Search class implementation
-Search::Search() : searching(false), bestMove("e2e4") {
-    // Initialize with some default values
-    info.depth = 1;
-    info.score = 0;
-    info.time_ms = 0;
-    info.nodes = 0;
-    info.nps = 0;
-    info.pv = "e2e4";
+// ============================================================================
+// SearchEngineWrapper Implementation
+// ============================================================================
+
+SearchEngineWrapper::SearchEngineWrapper(Board& board)
+    : board(board), stop_flag(false) {
+    engine = std::make_unique<SearchEngine>(this->board, stop_flag);
 }
 
-bool Search::startSearch(const Board& /*board*/, const SearchLimits& searchLimits) {
-    limits = searchLimits;
-    searching = true;
-    info.depth = limits.depth > 0 ? limits.depth : 1;
-    return true;
+SearchEngineWrapper::~SearchEngineWrapper() {
+    if (engine && engine->is_searching()) {
+        stop();
+    }
 }
 
-void Search::stop() {
-    searching = false;
+FFISearchResult SearchEngineWrapper::search(const FFISearchLimits& limits) {
+    // Convert FFI limits to SearchEngine limits
+    opera::SearchLimits search_limits;
+    search_limits.max_depth = limits.max_depth;
+    search_limits.max_nodes = limits.max_nodes;
+    search_limits.max_time_ms = limits.max_time_ms;
+    search_limits.infinite = limits.infinite;
+
+    // Reset stop flag before search
+    stop_flag.store(false);
+
+    // Execute search (blocking call)
+    SearchResult result = engine->search(search_limits);
+
+    // Convert SearchResult to FFISearchResult
+    FFISearchResult ffi_result;
+    ffi_result.best_move = result.best_move.toString();
+    ffi_result.ponder_move = result.ponder_move.toString();
+    ffi_result.score = result.score;
+    ffi_result.depth = result.depth;
+    ffi_result.nodes = result.nodes;
+    ffi_result.time_ms = result.time_ms;
+
+    // Convert PV to string
+    std::ostringstream pv_stream;
+    for (size_t i = 0; i < result.principal_variation.size(); ++i) {
+        if (i > 0) pv_stream << " ";
+        pv_stream << result.principal_variation[i].toString();
+    }
+    ffi_result.pv = pv_stream.str();
+
+    return ffi_result;
 }
 
-bool Search::isSearching() const {
-    return searching;
+void SearchEngineWrapper::stop() {
+    stop_flag.store(true);
+    if (engine) {
+        engine->stop();
+    }
 }
 
-const std::string& Search::getBestMove() const {
-    return bestMove;
+bool SearchEngineWrapper::is_searching() const {
+    return engine && engine->is_searching();
 }
 
-const SearchInfo& Search::getSearchInfo() const {
-    return info;
+void SearchEngineWrapper::reset() {
+    if (engine) {
+        engine->reset_statistics();
+    }
+    stop_flag.store(false);
 }
 
 } // namespace opera
@@ -67,54 +102,18 @@ bool board_set_fen(opera::Board& board, rust::Str fen) {
 }
 
 bool board_make_move(opera::Board& board, rust::Str move_str) {
-    // Parse move string (simplified implementation for now)
-    std::string move_string(move_str);
-    
     try {
-        if (move_string.length() < 4) {
-            return false;
+        std::string text(move_str);
+        opera::MoveGenList<256> moves;
+        opera::generateAllLegalMoves(board, moves, board.getSideToMove());
+        for (size_t i = 0; i < moves.size(); ++i) {
+            const auto& mg = moves[i];
+            opera::Move move(mg.from(), mg.to(), mg.isPromotion() ? opera::PROMOTION : opera::NORMAL,
+                mg.isPromotion() ? opera::typeOf(mg.promotionPiece()) : opera::NO_PIECE_TYPE);
+            if (move.toString() == text) return board.makeMove(mg);
         }
-        
-        // Extract from/to squares from UCI format (e.g., "e2e4")
-        int from_file = move_string[0] - 'a';
-        int from_rank = move_string[1] - '1';
-        int to_file = move_string[2] - 'a';
-        int to_rank = move_string[3] - '1';
-        
-        if (from_file < 0 || from_file > 7 || from_rank < 0 || from_rank > 7 ||
-            to_file < 0 || to_file > 7 || to_rank < 0 || to_rank > 7) {
-            return false;
-        }
-        
-        opera::Square from = static_cast<opera::Square>(from_rank * 8 + from_file);
-        opera::Square to = static_cast<opera::Square>(to_rank * 8 + to_file);
-        
-        // Create MoveGen object
-        opera::MoveGen::MoveType moveType = opera::MoveGen::MoveType::NORMAL;
-        opera::Piece promotion = opera::NO_PIECE;
-        
-        // Handle promotion
-        if (move_string.length() == 5) {
-            moveType = opera::MoveGen::MoveType::PROMOTION;
-            char promo = move_string[4];
-            opera::Color color = board.getSideToMove();
-            
-            switch (promo) {
-                case 'q': promotion = color == opera::WHITE ? opera::WHITE_QUEEN : opera::BLACK_QUEEN; break;
-                case 'r': promotion = color == opera::WHITE ? opera::WHITE_ROOK : opera::BLACK_ROOK; break;
-                case 'b': promotion = color == opera::WHITE ? opera::WHITE_BISHOP : opera::BLACK_BISHOP; break;
-                case 'n': promotion = color == opera::WHITE ? opera::WHITE_KNIGHT : opera::BLACK_KNIGHT; break;
-                default:
-                    return false;
-            }
-        }
-        
-        opera::MoveGen move(from, to, moveType, promotion);
-        return board.makeMove(move);
-        
-    } catch (const std::exception&) {
         return false;
-    }
+    } catch (const std::exception&) { return false; }
 }
 
 rust::String board_get_fen(const opera::Board& board) {
@@ -170,69 +169,101 @@ bool board_is_stalemate(const opera::Board& board) {
     }
 }
 
-// Search operations (stub implementations)
-std::unique_ptr<opera::Search> create_search() {
+// Engine configuration (stub implementations)
+bool engine_set_hash_size(uint32_t size_mb) {
+    // TODO: Implement hash table size setting
+    return size_mb >= 1 && size_mb <= 2048;
+}
+
+bool engine_set_threads(uint32_t thread_count) {
+    // TODO: Implement thread count setting  
+    return thread_count == 1;
+}
+
+bool engine_clear_hash() {
+    // TODO: Implement hash table clearing
+    return false; // No global engine instance; use per-session reset.
+}
+
+
+// ============================================================================
+// Search FFI Operations - Real SearchEngine Integration  
+// ============================================================================
+
+std::unique_ptr<opera::SearchEngineWrapper> create_search_engine(opera::Board& board) {
     try {
-        return std::make_unique<opera::Search>();
+        return std::make_unique<opera::SearchEngineWrapper>(board);
     } catch (const std::exception&) {
         return nullptr;
     }
 }
 
-bool search_start(opera::Search& search, const opera::Board& board, int32_t depth, uint64_t time_ms) {
+void search_engine_search(opera::SearchEngineWrapper& engine, const opera::FFISearchLimits& limits, opera::FFISearchResult& result) {
     try {
-        opera::SearchLimits limits;
-        limits.depth = depth;
-        limits.time_ms = time_ms;
-        limits.nodes = 0;
-        limits.infinite = false;
-        return search.startSearch(board, limits);
-    } catch (const std::exception&) {
-        return false;
+        result = engine.search(limits);
+    } catch (const std::exception& e) {
+        // Set error result on exception
+        result.best_move = "0000";  // Null move indicator
+        result.ponder_move = "";
+        result.score = 0;
+        result.depth = 0;
+        result.nodes = 0;
+        result.time_ms = 0;
+        result.pv = "";
     }
 }
 
-void search_stop(opera::Search& search) {
+void search_engine_stop(opera::SearchEngineWrapper& engine) {
     try {
-        search.stop();
+        engine.stop();
     } catch (const std::exception&) {
         // Ignore errors during stop - best effort
     }
 }
 
-rust::String search_get_best_move(const opera::Search& search) {
+bool search_engine_is_searching(const opera::SearchEngineWrapper& engine) {
     try {
-        return rust::String(search.getBestMove());
-    } catch (const std::exception&) {
-        return rust::String("");
-    }
-}
-
-
-bool search_is_searching(const opera::Search& search) {
-    try {
-        return search.isSearching();
+        return engine.is_searching();
     } catch (const std::exception&) {
         return false;
     }
 }
 
-// Engine configuration (stub implementations)
-bool engine_set_hash_size(uint32_t size_mb) {
-    // TODO: Implement hash table size setting
-    std::cout << "Setting hash size to " << size_mb << " MB" << std::endl;
-    return true;
+void search_engine_reset(opera::SearchEngineWrapper& engine) {
+    try {
+        engine.reset();
+    } catch (const std::exception&) {
+        // Ignore errors during reset
+    }
 }
 
-bool engine_set_threads(uint32_t thread_count) {
-    // TODO: Implement thread count setting  
-    std::cout << "Setting thread count to " << thread_count << std::endl;
-    return true;
+namespace opera {
+FFISearchResult SearchEngineWrapper::controlled_search(const FFISearchLimits& limits,
+        const ::SearchControl& control, uint32_t hash_mb, bool morphy, rust::Str root_moves) {
+    if (hash_mb != 16) engine->set_hash_size(hash_mb);
+    engine->set_use_morphy_style(morphy);
+    std::istringstream input{std::string(root_moves)};
+    std::vector<std::string> roots;
+    for (std::string move; input >> move;) roots.push_back(move);
+    engine->set_root_moves(roots);
+    engine->external_stop = [&control] { return control.cancelled(); };
+    engine->progress = [&control](const SearchInfo& info) {
+        FFISearchInfo ffi_info;
+        ffi_info.depth = info.depth; ffi_info.score = info.score;
+        ffi_info.time_ms = info.time_ms; ffi_info.nodes = info.nodes;
+        ffi_info.nps = info.nps; ffi_info.pv = info.pv;
+        control.report(ffi_info);
+    };
+    try {
+        auto result = search(limits);
+        engine->external_stop = {}; engine->progress = {};
+        return result;
+    } catch (...) { engine->external_stop = {}; engine->progress = {}; throw; }
+}
+}
+void search_engine_controlled(opera::SearchEngineWrapper& engine, const opera::FFISearchLimits& limits,
+        const SearchControl& control, uint32_t hash_mb, bool morphy, rust::Str root_moves, opera::FFISearchResult& result) {
+    result = engine.controlled_search(limits, control, hash_mb, morphy, root_moves);
 }
 
-bool engine_clear_hash() {
-    // TODO: Implement hash table clearing
-    std::cout << "Clearing hash tables" << std::endl;
-    return true;
-}
-
+bool board_previous_side_in_check(const opera::Board& board) { return board.isInCheck(~board.getSideToMove()); }

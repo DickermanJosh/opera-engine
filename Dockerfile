@@ -4,7 +4,7 @@
 # =============================================================================
 # Stage 1: Build C++ Engine Core
 # =============================================================================
-FROM ubuntu:22.04 as cpp-builder
+FROM ubuntu:22.04 AS cpp-builder
 
 # Install C++ build dependencies
 RUN apt-get update && apt-get install -y \
@@ -33,9 +33,9 @@ RUN cd cpp && \
     echo "C++ build completed successfully"
 
 # =============================================================================
-# Stage 2: Build Rust UCI Interface  
+# Stage 2: Build Rust UCI Interface
 # =============================================================================
-FROM rust:1.75-slim as rust-builder
+FROM rust:1.83-slim AS rust-builder
 
 # Install system dependencies needed for Rust compilation
 RUN apt-get update && apt-get install -y \
@@ -59,7 +59,7 @@ RUN cd rust && \
     cargo --version && \
     rustc --version && \
     # Build release binary
-    cargo build --release --features ffi && \
+    cargo build --release --features ffi --locked && \
     # Verify binary exists
     ls -la target/release/ && \
     echo "Rust build completed successfully"
@@ -67,7 +67,7 @@ RUN cd rust && \
 # =============================================================================
 # Stage 3: Runtime Image (Lightweight)
 # =============================================================================
-FROM ubuntu:22.04 as runtime
+FROM ubuntu:22.04 AS runtime-base
 
 # Install minimal runtime dependencies only
 RUN apt-get update && apt-get install -y \
@@ -109,3 +109,19 @@ LABEL maintainer="Opera Engine Team"
 # Default command - start in UCI mode
 ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["uci"]
+
+# Exercise the exact runtime binary with Python and an independent move oracle.
+# These testing dependencies are excluded from the final runtime image.
+FROM runtime-base AS uci-validation
+USER root
+COPY scripts/requirements-uci.txt /app/scripts/requirements-uci.txt
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip stockfish && \
+    python3 -m pip install --no-cache-dir -r /app/scripts/requirements-uci.txt && \
+    rm -rf /var/lib/apt/lists/*
+COPY scripts/test_uci_process.py scripts/test_uci_oracle.py scripts/test_uci_client.py /app/scripts/
+USER opera
+RUN python3 /app/scripts/test_uci_process.py /app/opera-uci && \
+    python3 /app/scripts/test_uci_oracle.py /app/opera-uci /usr/games/stockfish && \
+    python3 /app/scripts/test_uci_client.py /app/opera-uci /usr/games/stockfish
+
+FROM runtime-base AS runtime

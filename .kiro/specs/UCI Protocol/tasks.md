@@ -1,10 +1,38 @@
 # UCI Protocol Implementation Tasks (Rust)
 
+## Current implementation evidence — 2026-09-18
+
+Follow-up for 4.3/4.4, 5.1/5.4 and 6.1/6.3/6.5: combined node/depth/mate limits, parser-owned transactional searchmoves, option whitespace/button validation, PV ponder replies, and signal/I/O-error worker shutdown now have regressions. Cargo dependencies are pinned; target-aware bridge flags and a Linux/macOS/Windows CI matrix are configured. Windows uses clang-cl. The Docker startup step now propagates failures.
+
+Later release review: fixed evaluator score perspective, unread-stdout teardown, and repeated logging initialization. Process acceptance passes 21/21 on macOS and Docker/Linux ARM64, with independent Stockfish validation of 176 positions on each. Rust library/search/protocol checks pass 281/281; focused C++ checks pass 40/40. The C++ bridge also passes both process/oracle suites with ASan/UBSan on macOS (Rust not instrumented, leak detection disabled). Both full test targets compile; broad results are 342/345 Rust and 433/454 C++. Native CI, Windows, GUI integration and full-suite/coverage/performance acceptance remain open. These results do not close those broader task boxes. See [dated evidence](../../../docs/current-baseline.md), [usage](../../../docs/rust_uci_usage.md), and [roadmap](../../../docs/development-roadmap.md).
+
+## Current implementation evidence — 2026-09-13
+
+The executable now wires main → UCIEngine → SearchSession → worker-owned C++ search. The September 7 audit below is historical. See [baseline](../../../docs/current-baseline.md) and [usage](../../../docs/rust_uci_usage.md).
+
+- Tasks 2.3/2.4 and 3.2/3.3 now operate through the executable, including full FEN slices, transactional legality and newgame.
+- 4.3 implemented in `rust/src/uci/search_session.rs` and coordinator routing (rather than a separate go.rs); depth/node/clock/mate-depth/searchmoves are exercised.
+- 4.4 cancellation is implemented and locally measured; the unconditional <10ms guarantee remains unverified, so acceptance stays open.
+- 5.1 supports validated Hash (1–128MB), Threads=1, Ponder, MorphyStyle, Move Overhead and Clear Hash. Unsupported features are rejected, not simulated. Broader multithreading/options acceptance stays open.
+- 5.2 only the existing Morphy evaluator toggle is connected; SacrificeThreshold/TacticalDepth and strength work are deferred by current scope.
+- 5.3 real completed-depth and periodic info/PV output is connected through one writer.
+- 5.4 infinite/ponder/ponderhit/stop lifecycle is implemented and process-tested.
+- 6.1/6.3/6.5/6.6 have process tests, usage docs, a launch path and corrected container smoke checks; GUI, platform, fuzzing/coverage and full-suite acceptance remain incomplete. 6.2 performance optimization is deferred.
+
+Checked boxes represent implemented component scope, not blanket fulfillment of all timing, platform or quality targets. The requirements/design files are unchanged.
+
+
+## Current audit — 2026-09-07
+
+See [verified baseline and next milestones](../../../docs/current-baseline.md). Component implementation and historical test reports do not establish executable UCI compliance, current full-suite success, performance acceptance, or production readiness. Checked boxes below track reported component delivery, not runtime acceptance. Tasks 2.3/2.4 have library implementations but are not wired into main; 3.2/3.3 handlers are not connected through UCIEngine to board state. Search FFI components exist, but real go/stop routing is unfinished. Keep executable integration acceptance open.
+
+The material below is historical implementation reporting or design intent; its original dates are preserved and its completion claims are not fresh verification.
+
 ## Task Overview
 
 This document breaks down the implementation of UCI Protocol support in Rust into actionable coding tasks. Each task is designed to be completed incrementally, building towards full UCI compliance with async-first architecture, safe C++ FFI integration, and never-panic operation for the Opera Engine.
 
-**Total Estimated Tasks**: 26 tasks organized into 6 phases
+**Task inventory (2026-09-07)**: 25 numbered task checkboxes currently listed across 6 phases (16 checked; 3 updated on 2026-09-13). The original estimate was 26; this is an inventory correction, not acceptance verification.
 
 **Requirements Reference**: This implementation addresses requirements from `requirements.md` with focus on Rust-specific safety and async requirements
 
@@ -147,29 +175,45 @@ This document breaks down the implementation of UCI Protocol support in Rust int
 
 ### Phase 4: Search Integration and Time Management
 
-- [ ] **4.1** **[CRITICAL]** Implement C++ Search FFI Integration
+- [x] **4.1** **[CRITICAL]** Implement C++ Search FFI Integration ✅ **COMPLETED**
   - **Description**: Create async-compatible interface to C++ search engine with cancellation support
-  - **Deliverables**: 
-    - rust/src/bridge/search.rs with async search interface
-    - cpp/src/UCIBridge.cpp Search function implementations
-    - Atomic stop flag integration and testing
-    - Search result marshalling between C++ and Rust
+  - **Deliverables**:
+    - rust/src/bridge/search.rs with async search interface (480+ lines with comprehensive API)
+    - cpp/include/UCIBridge.h with SearchEngineWrapper and FFI structs
+    - cpp/src/UCIBridge.cpp SearchEngine FFI implementations with proper lifecycle management
+    - Atomic stop flag integration through SearchEngineWrapper ownership model
+    - Search result marshalling between C++ SearchResult and FFI-safe FFISearchResult
+    - FFI-safe struct design (FFISearchLimits, FFISearchResult) avoiding std::vector
+    - rust/tests/search_integration_tests.rs with 30+ comprehensive integration tests
+    - rust/build.rs updated to compile all SearchEngine, evaluation, and search C++ files
+    - Principal variation marshalling as space-separated UCI move string
+    - Async search support via tokio::spawn_blocking for non-blocking operation
+    - Thread safety through Send trait (verified safe single-ownership model)
   - **Requirements**: Search and Analysis Requirements (3.3), FFI Integration (4.1)
   - **Estimated Effort**: 8 hours
-  - **Dependencies**: 3.1, existing C++ Search class
+  - **Actual Effort**: ~6 hours
+  - **Dependencies**: 3.1, existing C++ SearchEngine class
 
-- [ ] **4.2** Implement Time Management System
+- [x] **4.2** Implement Time Management System ✅ **COMPLETED**
   - **Description**: Create flexible time policy system with safety margins and early stopping logic
-  - **Deliverables**: 
-    - rust/src/time/mod.rs with TimePolicy trait
-    - rust/src/time/policies.rs with standard time management algorithms
-    - Time calculation tests with edge cases
-    - Integration with tokio::time for precision timing
+  - **Deliverables**:
+    - rust/src/time/mod.rs with TimePolicy trait and core types (SearchParams, TimeLimits, PositionInfo, SearchProgress)
+    - rust/src/time/policies.rs with three time management algorithms:
+      - StandardTimePolicy: Classical time allocation with phase awareness and early stopping
+      - FixedTimePolicy: Fixed time per move for movetime commands
+      - InfiniteTimePolicy: Unlimited time for infinite/depth/node searches
+    - rust/src/time/timer.rs with async SearchTimer for tokio integration
+    - rust/tests/time_management_tests.rs with 40+ comprehensive integration tests
+    - Time calculation tests covering edge cases (time trouble, overflow safety, negative time)
+    - Real-world scenario tests (bullet, rapid, classical, Fischer increment)
+    - Property-based tests for safety guarantees (positive time, soft < hard)
+    - Full tokio::time integration with async timers and timeouts
   - **Requirements**: Performance Requirements (3.3), Search and Analysis Requirements (3.3)
   - **Estimated Effort**: 5 hours
+  - **Actual Effort**: ~4 hours
   - **Dependencies**: 1.4
 
-- [ ] **4.3** Implement Go Command Handler with Search Coordination
+- [x] **4.3** Implement Go Command Handler with Search Coordination
   - **Description**: Handle all variants of go command with async search launching and time limit enforcement
   - **Deliverables**: 
     - rust/src/uci/handlers/go.rs with comprehensive go handling
@@ -215,7 +259,7 @@ This document breaks down the implementation of UCI Protocol support in Rust int
   - **Estimated Effort**: 4 hours
   - **Dependencies**: 5.1, MorphyEvaluator C++ integration
 
-- [ ] **5.3** Implement Search Information Output System
+- [x] **5.3** Implement Search Information Output System
   - **Description**: Create real-time search info output with depth, score, PV, and performance metrics
   - **Deliverables**: 
     - rust/src/uci/info.rs with SearchInfo handling
@@ -226,7 +270,7 @@ This document breaks down the implementation of UCI Protocol support in Rust int
   - **Estimated Effort**: 4 hours
   - **Dependencies**: 4.3
 
-- [ ] **5.4** Implement Advanced Search Modes (infinite, ponder)
+- [x] **5.4** Implement Advanced Search Modes (infinite, ponder)
   - **Description**: Add support for infinite analysis and pondering with proper state management
   - **Deliverables**: 
     - rust/src/uci/handlers/advanced.rs with infinite and ponder modes
@@ -435,14 +479,17 @@ A task is considered "Done" when:
 
 ---
 
-**Task Status**: In Progress
+**Historical task status (2026-09-07; superseded above)**: Component implementation in progress; executable UCI integration incomplete.
 
-**Current Phase**: Phase 3 - Position Management and FFI Integration (3/4 tasks completed)
+**Historical checklist accounting (2026-09-07)**: 13/25 numbered task boxes checked. These are historical component-delivery labels, not a protocol acceptance percentage. The old 10/26 (38.5%) footer dated 2025-01-02 is superseded; no new acceptance percentage is inferred.
 
-**Overall Progress**: 10/26 tasks completed (38.5%)
+**Current priority**: Run the new native CI matrix and GUI/game-adapter verification, then resolve broader engine regressions and deferred options. See the [September 18 baseline](../../../docs/current-baseline.md); the earlier executable/build blockers are historical.
 
-**Last Updated**: 2025-01-02
+**Executable acceptance outstanding at the September 7 audit (historical; see current evidence above)**:
+- [ ] uci/isready responses are command-driven and process stays alive until quit/EOF.
+- [ ] position and ucinewgame update the actual search board.
+- [ ] go returns legal position-dependent results from C++ search, without simulated output.
+- [ ] stop/time controls terminate search within verified bounds.
+- [ ] Full tests compile and pass; GUI, fuzzing, coverage and performance evidence is recorded.
 
-**Assigned Developer**: Claude Code Assistant
-
-**Estimated Completion**: 20 development days (Rust implementation is more complex than C++ due to FFI and safety requirements)
+**Schedule**: No verified completion estimate. Original task estimates remain planning inputs.

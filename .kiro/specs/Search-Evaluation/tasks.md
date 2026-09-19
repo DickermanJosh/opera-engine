@@ -1,5 +1,20 @@
 # Search & Evaluation System Implementation Tasks
 
+## Core review — 2026-09-18
+
+Fixed the White-relative evaluator/side-relative negamax mismatch, with regressions at odd/even depths for both colors and both evaluators. Focused search/control/evaluator integration passes 40/40. Broad C++ acceptance is 433/454 with a five-second per-test cap; task 4.4 and historical strength/performance claims remain open. The next milestone after the UCI platform gate is core correctness and measured strength, followed by neural evaluation/tuning and then Unity. See [baseline](../../../docs/current-baseline.md) and [roadmap](../../../docs/development-roadmap.md).
+
+## Integration update — 2026-09-13
+
+Rust end-to-end UCI integration and search cancellation are now implemented and verified by bounded process tests. All 28 SearchEngine/SearchControl tests pass locally; the full C++ suite still has 26 failures/timeouts out of 452 under a five-second cap. Task 4.4 therefore remains incomplete for full production acceptance, although its executable/launch integration is now present. See [current baseline](../../../docs/current-baseline.md). Historical timing/style/coverage guarantees below are not restored by these narrower tests.
+
+
+## Current audit — 2026-09-07
+
+See [verified baseline and next milestones](../../../docs/current-baseline.md). Component implementation and historical test reports do not establish executable UCI compliance, current full-suite success, performance acceptance, or production readiness. All 18 numbered task entries previously claimed completion (4 + 4 + 6 + 4); this conflicts with the obsolete 9/18 footer. Those entries describe implementation history, not 18 accepted tasks. Task 4.4 is reopened for integration; timing and full-suite acceptance remain open.
+
+The material below is historical implementation reporting or design intent; its original dates are preserved and its completion claims are not fresh verification.
+
 ## Task Overview
 
 This document breaks down the implementation of the Search & Evaluation system for Opera Chess Engine into actionable coding tasks. Each task is designed to build incrementally upon the existing foundation (Board, MoveGen, UCI bridge) while maintaining 100% test coverage and competitive performance.
@@ -25,7 +40,7 @@ This document breaks down the implementation of the Search & Evaluation system f
   - ✅ Integration with existing `UCIBridge.h` interface for FFI compatibility
 - **Actual Effort**: 4 hours (TDD approach was highly efficient)
 - **Dependencies**: ✅ Existing Board system, MoveGen, UCIBridge.h
-- **Acceptance Criteria**: ✅ **ALL MET**
+- **Historical Acceptance Claims — revalidation required**:
   - ✅ SearchEngine manages search limits (depth, time, nodes) correctly
   - ✅ UCI integration works with existing FFI bridge  
   - ✅ Atomic stop flag coordination for async cancellation
@@ -66,7 +81,7 @@ This document breaks down the implementation of the Search & Evaluation system f
   - ✅ Integration with existing `MoveGenList` for efficient move sorting and prioritization
 - **Actual Effort**: 5 hours (matched estimate with comprehensive testing)
 - **Dependencies**: ✅ 1.1, 1.2, existing MoveGen system
-- **Acceptance Criteria**: ✅ **ALL MET**
+- **Historical Acceptance Claims — revalidation required**:
   - ✅ TT move prioritization (10000 points) - highest priority for hash moves
   - ✅ Good captures with MVV-LVA scoring (8000+ points) - proper victim/attacker evaluation
   - ✅ Killer move integration (6000 points) - non-capture moves that cause cutoffs
@@ -85,7 +100,7 @@ This document breaks down the implementation of the Search & Evaluation system f
   - ✅ Integration with existing `Board::isSquareAttacked()` functionality and piece attack detection
 - **Actual Effort**: 6 hours (complex debugging required for exchange sequence simulation)
 - **Dependencies**: ✅ 1.3, existing Board attack detection, piece-square calculations
-- **Acceptance Criteria**: ✅ **ALL MET**
+- **Historical Acceptance Claims — revalidation required**:
   - ✅ Accurate capture sequence evaluation using gain-array minimax approach
   - ✅ Integration ready for move ordering with good/bad capture classification  
   - ✅ Performance: <10μs per SEE evaluation (sub-microsecond achieved)
@@ -107,7 +122,7 @@ This document breaks down the implementation of the Search & Evaluation system f
   - ✅ Integration with SearchEngine-compatible interfaces ready
 - **Actual Effort**: 8 hours
 - **Dependencies**: ✅ 1.1, 1.2, 1.3, 1.4 (all completed)
-- **Acceptance Criteria**: ✅ **ALL MET**
+- **Historical Acceptance Claims — revalidation required**:
   - ✅ PVS implementation with null-window searches for non-PV nodes (99% move ordering effectiveness)
   - ✅ Check extension, singular extension, passed-pawn extension implemented
   - ✅ Killer move and history table updates integrated
@@ -129,7 +144,7 @@ This document breaks down the implementation of the Search & Evaluation system f
   - ✅ Implemented proper principal variation extraction and search control integration
 - **Actual Effort**: 4 hours
 - **Dependencies**: ✅ 2.1 (AlphaBetaSearch), existing SearchEngine infrastructure
-- **Acceptance Criteria**: ✅ **ALL MET**
+- **Historical Acceptance Claims — revalidation required**:
   - ✅ SearchEngine uses AlphaBetaSearch for all search operations (aspiration windows integrated)
   - ✅ Iterative deepening properly coordinates with PVS search (144K+ nodes/second achieved)
   - ✅ Search statistics (nodes, time, PV) correctly reported through SearchInfo
@@ -150,7 +165,7 @@ This document breaks down the implementation of the Search & Evaluation system f
   - ✅ Performance validation demonstrating effective branching factor reduction (3.83 achieved)
 - **Actual Effort**: 6 hours
 - **Dependencies**: ✅ 2.1, 2.2 (completed)
-- **Acceptance Criteria**: ✅ **ALL MET**
+- **Historical Acceptance Claims — revalidation required**:
   - ✅ Null move pruning framework implemented (R=3 reduction, disabled pending proper board support)
   - ✅ Late move reductions (1-3 plies) for non-PV nodes with depth and move-based scaling
   - ✅ Futility pruning in leaf nodes with configurable margins
@@ -173,17 +188,17 @@ This document breaks down the implementation of the Search & Evaluation system f
   - ✅ Progressive aspiration window implementation with ±25cp initial, widening to 400cp maximum
   - ✅ Multi-layered time management with 30% pre-check, 50% stop flag, and responsive node checking
   - ✅ Periodic search info output every 100ms with UCI-compatible formatting
-  - ✅ Emergency stop handling with guaranteed <10ms response time
+  - ✅ Emergency stop handling implemented; <10ms guarantee not established
   - ✅ `cpp/tests/SearchControlTest.cpp` - Comprehensive 9-test suite with 100% pass rate
 - **Actual Effort**: 4 hours
 - **Dependencies**: ✅ 2.1, 2.2, 2.3 (all completed)
-- **Acceptance Criteria**: ✅ **ALL MET**
+- **Historical Acceptance Claims — revalidation required**:
   - ✅ Aspiration windows ±25cp initially, progressive widening on fail-high/low (doubles to max 400cp)
-  - ✅ <1ms search startup time from go command (achieved <10ms for depth-1 searches)
-  - ✅ <10ms stop response time (emergency stop <50ms, typical much faster)
+  - ⚠️ <1ms startup target unverified; a historical <10ms depth-1 result does not establish it or executable go handling
+  - ⚠️ <10ms stop target unverified; the historical <50ms observation does not establish <10ms
   - ✅ Complete depth guarantee before time expiration (30% time buffer ensures completion)
   - ✅ Search info output every 100ms with depth, score, PV, nodes, NPS in UCI format
-  - ✅ Node and time limit enforcement with precise control (±20ms time accuracy)
+  - ⚠️ Node-limit sample passed in the current audit; time-limit acceptance failed to complete within 20 seconds for a 100ms limit
   - ✅ Stop flag propagation through AlphaBetaSearch (checked every 256 nodes)
   - ✅ Enhanced aspiration search with maximum window limits and stop condition checking
 
@@ -200,7 +215,7 @@ This document breaks down the implementation of the Search & Evaluation system f
   - ✅ Incremental evaluation hooks for optimization
 - **Actual Effort**: 2 hours (matched estimate)
 - **Dependencies**: None (foundational)
-- **Acceptance Criteria**: ✅ **ALL MET**
+- **Historical Acceptance Claims — revalidation required**:
   - ✅ Pure virtual interface with evaluate() method
   - ✅ Configuration method for UCI options
   - ✅ Optional incremental update hooks (on_move_made, on_move_undone, on_position_reset)
@@ -219,7 +234,7 @@ This document breaks down the implementation of the Search & Evaluation system f
   - ✅ UCI configuration interface (MaterialWeight, PSTWeight, TempoBonus)
 - **Actual Effort**: 6 hours (TDD with comprehensive debugging)
 - **Dependencies**: ✅ 3.1 (completed)
-- **Acceptance Criteria**: ✅ **ALL MET**
+- **Historical Acceptance Claims — revalidation required**:
   - ✅ Standard piece values (P=100, N=320, B=330, R=500, Q=900) implemented
   - ✅ Piece-square tables for all pieces (pawns, knights, bishops, rooks, queens, king)
   - ✅ Opening/endgame phase detection and interpolation (tapered evaluation)
@@ -244,7 +259,7 @@ This document breaks down the implementation of the Search & Evaluation system f
   - ✅ Documented known limitations in `AdvancedEvalKnownLimitations.md`
 - **Actual Effort**: 10 hours (includes comprehensive debugging, Codex review, and test refinement)
 - **Dependencies**: ✅ 3.2 (completed)
-- **Acceptance Criteria**: ✅ **FULLY MET**
+- **Historical Acceptance Claims — revalidation required**:
   - ✅ Pawn structure penalties: isolated (-20cp), doubled (-10cp) **WORKING & TESTED**
   - ✅ Passed pawn bonuses scaling with rank (10cp→150cp) **IMPLEMENTED & TESTED**
   - ✅ King safety based on pawn shield (+10cp/pawn) and open files (-15cp) **WORKING & TESTED**
@@ -269,7 +284,7 @@ This document breaks down the implementation of the Search & Evaluation system f
   - ✅ Added to CMakeLists.txt (both core library and test suite)
 - **Actual Effort**: 6 hours (includes test debugging and FEN corrections)
 - **Dependencies**: ✅ 3.2 (completed), ✅ 3.3 (completed)
-- **Acceptance Criteria**: ✅ **ALL MET**
+- **Historical Acceptance Claims — revalidation required**:
   - ✅ Development bonus: 1.2x weight in opening phase **IMPLEMENTED & TESTED**
   - ✅ King safety aggression: 1.5x weight for attack evaluation **IMPLEMENTED & TESTED**
   - ✅ Initiative/tempo bonus: 1.1x weight for active pieces **IMPLEMENTED & TESTED**
@@ -303,7 +318,7 @@ This document breaks down the implementation of the Search & Evaluation system f
   - ✅ Tactical pattern recognition for sacrificial motifs (uncastled king, king attacks, development)
 - **Actual Effort**: 0 hours (implemented as part of Task 3.4's 6-hour effort)
 - **Dependencies**: ✅ 3.4 (completed with sacrifice recognition integrated)
-- **Acceptance Criteria**: ✅ **ALL MET**
+- **Historical Acceptance Claims — revalidation required**:
   - ✅ Detection of material sacrifices vs positional compensation
     - Implemented in `calculate_sacrifice_compensation()` [morphy_eval.cpp:134-172](cpp/src/eval/morphy_eval.cpp#L134-L172)
     - Rejects compensation for large deficits (>400cp)
@@ -345,7 +360,7 @@ This document breaks down the implementation of the Search & Evaluation system f
   - ✅ Codex autonomous code review with 5 findings documented
 - **Actual Effort**: 4 hours (includes TDD, Codex review, and technical debt documentation)
 - **Dependencies**: ✅ 3.2, ✅ 3.3, ✅ 3.4 (all completed)
-- **Acceptance Criteria**: ✅ **ALL MET**
+- **Historical Acceptance Claims — revalidation required**:
   - ✅ Pawn hash table with >95% hit rate (achieved in testing)
   - ✅ <1μs average evaluation time with caching (sub-microsecond performance)
   - ✅ Memory usage <10MB for evaluation caches (default 4MB, configurable 1-256MB)
@@ -396,7 +411,7 @@ This document breaks down the implementation of the Search & Evaluation system f
   - ✅ UCI option registration - MorphyBias, PawnHashSize, UseMorphyStyle exposed
 - **Estimated Effort**: 4 hours
 - **Dependencies**: All previous tasks (1.1-3.6)
-- **Acceptance Criteria**: ✅ **ALL MET**
+- **Historical Acceptance Claims — revalidation required**:
   - ✅ All search and evaluation components work together seamlessly
   - ✅ UCI options exposed: Hash (existing), MorphyBias, PawnHashSize, UseMorphyStyle
   - ✅ Search performance >100K nodes/second (validated in integration tests)
@@ -512,33 +527,20 @@ This document breaks down the implementation of the Search & Evaluation system f
   - Several validation tests fail as expected (development priority, king safety, sacrifice compensation) - indicating need for Morphy evaluator enhancement
   - Performance benchmarks show Morphy evaluator at 0.351μs/eval vs handcrafted 0.228μs/eval (acceptable overhead)
   - Tactical solve rate measurement requires extended search times (>60s for full suite)
-  - **Next Steps**: Task 4.4 for production integration, then return to enhance MorphyEvaluator implementation to pass style validation tests
+  - **Next Steps**: Reopened Task 4.4 and baseline milestones; style/tactical acceptance remains open, including historically reported failing validation tests
 
-#### **4.4** **[CRITICAL]** Production Integration and Launch ✅ **COMPLETED**
-- **Description**: Complete integration with existing build system, launch script, and UCI infrastructure for production readiness
-- **Requirements Addressed**: R39-R40 (FFI compatibility, launch integration), Production deployment
-- **Deliverables**:
-  - ✅ CMakeLists.txt integration for search/eval components
-  - ✅ Launch script `--search-eval` and `--search-bench` options
-  - ⚠️ FFI interface completion in `UCIBridge.cpp` (deferred - C++ only for now)
-  - ✅ Documentation updates and performance reports
-- **Estimated Effort**: 3 hours
-- **Dependencies**: 4.1, 4.2, 4.3
-- **Acceptance Criteria**:
-  - ✅ `./launch.sh --search-eval` runs complete test suite (16 test suites)
-  - ✅ `./launch.sh --search-bench` executes performance benchmarks
-  - ⚠️ FFI integration works correctly with Rust UCI coordinator (deferred - standalone C++ implementation complete)
-  - ✅ Build system compiles without errors or warnings
-  - ✅ All existing tests compile and are accessible via launch script
-- **Completion Notes**:
-  - Added `--search-eval` flag to [launch.sh](launch.sh) - runs 16 test suites covering search, evaluation, and integration
-  - Added `--search-bench` flag to [launch.sh](launch.sh) - runs PerformanceBenchmarkTest suite with 10 benchmarks
-  - [cpp/CMakeLists.txt](cpp/CMakeLists.txt) already integrated with all search/eval components from Tasks 4.1-4.3
-  - FFI/Rust integration deferred - current implementation is standalone C++ chess engine
-  - Build system fully functional with zero errors/warnings
-  - Test infrastructure complete with 40+ test files, 171+ tests
-  - **Test Coverage**: Search (7 suites), Evaluation (6 suites), Integration (3 suites)
-  - **Next Steps**: Future FFI integration with Rust UCI coordinator if needed, or deploy as standalone C++ UCI engine
+#### **4.4** **[CRITICAL]** Production Integration and Launch — **INCOMPLETE / REOPENED 2026-09-07**
+- **Description**: Complete build, launch, and Rust UCI integration while retaining the existing design.
+- **Requirements Addressed**: R39-R40 (FFI compatibility, launch integration), production deployment.
+- **Implemented components**: CMake search/evaluation targets, launch-script search/evaluation and benchmark flags, C++ FFI wrappers, Rust bridge modules.
+- **Acceptance still open**:
+  - [ ] Full C++ and Rust test targets compile and run successfully; current failures are recorded in the baseline.
+  - [x] Rust main starts a persistent UCI event loop and routes position/go/stop to real C++ search (2026-09-13 process tests).
+  - [ ] Search respects time limits and responsive cancellation under bounded external tests.
+  - [ ] Executable transcripts and GUI integration validate actual position-dependent legal best moves.
+  - [ ] Performance, tactical/style behavior, coverage, and deployment claims have reproducible evidence.
+- **Correction to prior completion notes**: `cpp/src/main.cpp` is a board demo, not a standalone C++ UCI engine. FFI integration is required for the chosen Rust-facing architecture. Successful core compilation does not establish full test compilation or a warning-free build.
+- **Dependencies**: 4.1–4.3 acceptance revalidation and UCI integration tasks; see the current baseline for ordered milestones.
 
 ## Task Guidelines
 
@@ -728,39 +730,12 @@ This section tracks known limitations and planned improvements identified during
 
 ---
 
-**Task Status**: ✅ Phase 3 Progressing - Evaluation System Implementation (2/6 tasks complete)
+**Current status (2026-09-07)**: Search/evaluation components are implemented; acceptance and end-to-end UCI integration remain incomplete.
 
-**Current Phase**: Phase 3 - Evaluation System Implementation
+**Implementation history**: 18/18 numbered entries formerly marked completed (Phase 1: 4, Phase 2: 4, Phase 3: 6, Phase 4: 4). This is a count of historical labels, not a verified completion percentage. Task 4.4 is now reopened. Other component claims require requirement-by-requirement revalidation.
 
-**Current Task**: 3.3 - Add Advanced Positional Evaluation (NEXT PRIORITY)
+**Current priority**: Restore full test compilation, resolve bounded search termination, and complete the Rust executable integration described in the [baseline](../../../docs/current-baseline.md). Task 3.3 already has implementation and historical results; it is not the next unimplemented task.
 
-**Overall Progress**: 50% complete (9/18 tasks)
+**Acceptance**: No aggregate completion percentage or completion date assigned. Timing, tactical/style, coverage, and performance targets remain unverified unless explicitly observed in the current baseline.
 
-**Phase 1 Progress**: ✅ 100% complete (4/4 tasks) **MILESTONE 1 ACHIEVED**
-
-**Phase 2 Progress**: ✅ 100% complete (4/4 tasks) **MILESTONE 2 ACHIEVED**
-
-**Phase 3 Progress**: ✅ 33.3% complete (2/6 tasks) - Foundation evaluation system functional
-
-**Overall Complexity**: High (Advanced algorithms with performance requirements)
-
-**Estimated Completion**: 15 development days (on schedule - Phase 1&2 complete, Phase 3 foundation done)
-
-**Dependencies**: ✅ Evaluator interface + handcrafted foundation ready for advanced positional features
-
-**Success Metrics**: >100K NPS ✅ (179K achieved), <1μs evaluation ✅ (achieved), >70% tactical solutions, Morphy style validation
-
-**Last Updated**: 2025-01-06
-
-**Recent Achievement**: ✅ Task 3.2 complete! Handcrafted Evaluator Foundation with material + PST evaluation - 25/25 tests passing (100%)
-
-**Major Milestones Achieved**:
-
-- ✅ **MILESTONE 1**: Complete search infrastructure (Tasks 1.1-1.4)
-- ✅ **MILESTONE 2**: Alpha-Beta PVS implementation (Tasks 2.1-2.2)
-- ✅ **MILESTONE 3**: Advanced search optimizations and control (Tasks 2.3-2.4)
-- ✅ **MILESTONE 4**: Evaluator interface and foundation (Tasks 3.1-3.2)
-
-**Assigned Developer**: Implementation team with chess algorithm expertise
-
-**Technical Reviewers**: Search algorithm experts, performance optimization specialists, chess engine architects
+**Historical footer superseded**: The footer dated 2025-01-06 reported 50% (9/18), Phase 3 at 2/6, and Task 3.3 next. Later entries contradict that snapshot; original dated task narratives above are preserved as history.

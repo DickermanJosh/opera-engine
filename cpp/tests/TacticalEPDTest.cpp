@@ -1,3 +1,4 @@
+#include <iomanip>
 /**
  * @file TacticalEPDTest.cpp
  * @brief Tactical puzzle test suite using standard EPD positions

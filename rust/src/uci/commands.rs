@@ -111,6 +111,8 @@ pub struct TimeControl {
     pub depth: Option<u32>,
     pub nodes: Option<u64>,
     pub mate: Option<u32>,
+    /// Legal root moves to consider, normalized to lowercase UCI notation.
+    pub search_moves: Vec<String>,
 }
 
 impl Default for TimeControl {
@@ -127,6 +129,7 @@ impl Default for TimeControl {
             depth: None,
             nodes: None,
             mate: None,
+            search_moves: Vec::new(),
         }
     }
 }

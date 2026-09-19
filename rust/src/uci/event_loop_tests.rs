@@ -10,7 +10,7 @@ use tokio::sync::oneshot;
 use tokio::time::timeout;
 use tracing_test::traced_test;
 
-use opera_uci::{EngineState, EventLoopConfig, UCIEngine, UCIEventLoop};
+use crate::{EngineState, EventLoopConfig, UCIEngine, UCIEventLoop};
 
 /// Test event loop creation and configuration
 #[tokio::test]
@@ -175,7 +175,7 @@ async fn test_engine_state_integration() {
         .expect("Event loop creation should succeed");
 
     // Verify initial state
-    assert_eq!(engine.current_state(), EngineState::Ready);
+    assert_eq!(engine.state(), EngineState::Ready);
 
     // Test shutdown detection
     assert!(!event_loop.should_shutdown());
@@ -185,7 +185,7 @@ async fn test_engine_state_integration() {
         .process_command("quit")
         .await
         .expect("Quit command should work");
-    assert_eq!(engine.current_state(), EngineState::Stopping);
+    assert_eq!(engine.state(), EngineState::Stopping);
     assert!(event_loop.should_shutdown());
 }
 

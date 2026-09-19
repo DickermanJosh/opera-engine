@@ -3,7 +3,8 @@
 // These tests verify that the Rust-C++ FFI interface works correctly
 // and that basic engine operations can be performed through the bridge.
 
-use opera_uci::ffi;
+#![cfg(feature = "ffi")]
+use opera_uci::ffi::ffi;
 
 #[test]
 fn test_ffi_compilation() {
@@ -59,10 +60,11 @@ fn test_move_operations() {
 
 #[test]
 fn test_search_creation() {
-    let search = ffi::create_search();
+    let mut board = ffi::create_board();
+    let search = ffi::create_search_engine(board.pin_mut());
     assert!(!search.is_null(), "Failed to create search instance");
 
-    let is_searching = ffi::search_is_searching(&search);
+    let is_searching = ffi::search_engine_is_searching(&search);
     assert!(!is_searching, "Search should not be active initially");
 }
 
@@ -73,10 +75,17 @@ fn test_engine_configuration() {
     assert!(result, "Failed to set hash size");
 
     // Test thread setting
-    let result = ffi::engine_set_threads(4);
+    let result = ffi::engine_set_threads(1);
     assert!(result, "Failed to set thread count");
 
     // Test hash clearing
     let result = ffi::engine_clear_hash();
-    assert!(result, "Failed to clear hash");
+    assert!(
+        !result,
+        "No global engine exists; clearing must be session-owned"
+    );
+    assert!(
+        !ffi::engine_set_threads(4),
+        "Unsupported threads must not silently succeed"
+    );
 }

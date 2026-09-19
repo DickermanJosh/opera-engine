@@ -25,3 +25,6 @@ pub use state::{
 
 // Re-export commonly used error types
 pub use crate::error::{UCIError, UCIResult};
+
+#[cfg(feature = "ffi")]
+pub mod search_session;

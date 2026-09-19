@@ -51,8 +51,9 @@ TEST_F(SearchControlTest, SearchInfoUpdating) {
     EXPECT_EQ(info.depth, result.depth);
     EXPECT_EQ(info.score, result.score);
     EXPECT_EQ(info.nodes, result.nodes);
-    EXPECT_GT(info.time_ms, 0);
-    EXPECT_GT(info.nps, 0);
+    // A shallow search can complete within the clock's millisecond resolution.
+    EXPECT_LE(info.time_ms, result.time_ms);
+    EXPECT_EQ(info.nps, info.time_ms == 0 ? 0 : info.nodes * 1000 / info.time_ms);
     EXPECT_FALSE(info.pv.empty());
 }
 

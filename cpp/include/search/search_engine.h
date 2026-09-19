@@ -91,17 +91,22 @@ private:
     bool use_morphy_style = false;                         // Use Morphy evaluator instead of standard
 
     // Search state
-    bool searching = false;                // Currently searching flag
+    std::atomic<bool> searching{false};                // Currently searching flag
     SearchLimits current_limits;           // Current search limits
     SearchInfo current_info;               // Current search information
-    std::chrono::high_resolution_clock::time_point search_start_time;
-    std::chrono::high_resolution_clock::time_point last_info_time;  // Last info output time
+    std::chrono::steady_clock::time_point search_start_time;
+    std::chrono::steady_clock::time_point last_info_time;  // Last info output time
     
     // Search statistics (now delegated to AlphaBetaSearch)
     uint64_t nodes_searched = 0;           // Total nodes searched this session
     std::vector<Move> pv_line;             // Current principal variation
     
 public:
+    std::function<bool()> external_stop;
+    std::function<void(const SearchInfo&)> progress;
+    void set_hash_size(size_t mb);
+    void set_root_moves(const std::vector<std::string>& moves) { alphabeta->root_moves = moves; }
+
     /**
      * Construct SearchEngine with board reference and stop flag
      * 

@@ -122,16 +122,20 @@ pub fn initialize_logging(config: LoggingConfig) -> UCIResult<()> {
     // Simple console-only logging for now (can be enhanced later)
     let subscriber = tracing_subscriber::fmt()
         .with_env_filter(env_filter)
+        .with_writer(std::io::stderr)
         .with_target(config.with_target)
         .with_thread_ids(config.with_thread_ids)
         .with_file(config.with_file_location)
         .with_line_number(config.with_file_location);
 
-    if config.with_timestamp {
-        subscriber.init();
+    let result = if config.with_timestamp {
+        subscriber.try_init()
     } else {
-        subscriber.without_time().init();
-    }
+        subscriber.without_time().try_init()
+    };
+    result.map_err(|e| UCIError::Configuration {
+        message: format!("Failed to initialize logging: {e}"),
+    })?;
 
     tracing::info!("Logging initialized with level: {}", config.level);
     if let Some(file_path) = &config.file_path {
@@ -359,16 +363,13 @@ mod tests {
     /// Integration test for logging initialization
     #[test]
     fn test_logging_initialization() {
-        let config = LoggingConfig::testing();
-
-        // This should not fail in test environment
-        let result = initialize_logging(config);
-
-        // We can't easily test the actual logging output,
-        // but we can test that initialization doesn't panic
-        if result.is_err() {
-            // Logging may already be initialized by other tests
-            // This is acceptable in test environment
+        if !crate::testing::run_in_subprocess("logging::tests::test_logging_initialization") {
+            return;
         }
+        assert!(initialize_logging(LoggingConfig::testing()).is_ok());
+        assert!(matches!(
+            initialize_logging(LoggingConfig::testing()),
+            Err(UCIError::Configuration { .. })
+        ));
     }
 }

@@ -3,9 +3,12 @@
 // These tests verify async operation coordination and timing behavior
 // across the entire UCI engine system.
 
-use opera_uci::testing::{MockUCICommands, PerformanceMeasurer, TestConfig, TestRuntime};
+use opera_uci::{error, logging};
+#[path = "../src/testing.rs"]
+mod testing;
 use opera_uci::{UCIError, UCIResult};
 use std::time::Duration;
+use testing::{MockUCICommands, PerformanceMeasurer, TestConfig, TestRuntime};
 use tokio::time::timeout;
 
 /// Test basic async runtime functionality

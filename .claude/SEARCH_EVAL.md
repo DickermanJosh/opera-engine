@@ -1,4 +1,18 @@
+## Core review — 2026-09-18
+
+Fixed an evaluator-perspective defect: both evaluators return White-relative scores, which negamax must convert to the current side's perspective. Odd/even-depth and both-color queen-capture regressions pass. Focused search/control/evaluator integration is 40/40; the broader C++ suite is 433/454 under a five-second cap. Core development follows the UCI release gate, before neural evaluation and later Unity integration. See [baseline](../docs/current-baseline.md) and [roadmap](../docs/development-roadmap.md).
+
+## Current implementation — 2026-09-13
+
+The Rust UCI executable is now connected to real C++ search. See [current baseline](../docs/current-baseline.md) and [usage/integration guide](../docs/rust_uci_usage.md) for supported commands, observed tests and remaining limitations. This supersedes the September 7 placeholder/build-blocker status below. Full test targets now compile; the whole repository suite still has failures. No Unity/network or strength/NN expansion is included. Earlier dated claims remain historical.
+
 # Core Search & Eval (Engine)
+
+## Current audit — 2026-09-07
+
+See [verified baseline and next milestones](../docs/current-baseline.md). Component implementation and historical test reports do not establish executable UCI compliance, current full-suite success, performance acceptance, or production readiness. Search and evaluation components exist; the old 171/171 and coverage/performance statements below are historical, not current acceptance.
+
+The material below is historical implementation reporting or design intent; its original dates are preserved and its completion claims are not fresh verification.
 
 ### Overview
 Implement the **core search and evaluation system** for the Opera chess engine.  

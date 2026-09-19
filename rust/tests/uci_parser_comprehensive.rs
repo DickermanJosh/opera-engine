@@ -7,6 +7,46 @@ use opera_uci::uci::*;
 use opera_uci::{UCIError, UCIResult};
 use std::collections::HashMap;
 
+#[test]
+fn searchmoves_are_part_of_the_parsed_search_request() {
+    let mut parser = ZeroCopyParser::new();
+    let command = parser
+        .parse_command("go depth 2 searchmoves E2E4 d2d4 nodes 100")
+        .unwrap();
+    if let UCICommand::Go(limits) = command {
+        assert_eq!(limits.search_moves, ["e2e4", "d2d4"]);
+        assert_eq!(limits.depth, Some(2));
+        assert_eq!(limits.nodes, Some(100));
+    } else {
+        panic!("expected go command");
+    }
+    for invalid in [
+        "go searchmoves",
+        "go searchmoves depth 2",
+        "go searchmoves garbage",
+        "go searchmoves e2e4 searchmoves d2d4",
+    ] {
+        assert!(parser.parse_command(invalid).is_err(), "{invalid}");
+    }
+    if let UCICommand::Go(limits) = parser.parse_command("go depth 1").unwrap() {
+        assert!(limits.search_moves.is_empty());
+    } else {
+        panic!("expected go command");
+    }
+}
+
+#[test]
+fn option_whitespace_and_missing_values() {
+    let mut parser = ZeroCopyParser::new();
+    assert!(parser
+        .parse_command("setoption name Move\tOverhead value 0")
+        .is_ok());
+    assert!(parser.parse_command("setoption name Clear Hash").is_ok());
+    assert!(parser
+        .parse_command("setoption name Clear Hash value")
+        .is_err());
+}
+
 /// Integration tests for the zero-copy parser
 #[cfg(test)]
 mod integration_tests {
@@ -89,7 +129,7 @@ mod integration_tests {
         }
 
         // Test startpos with moves
-        let result = parser.parse_command("position startpos moves e2e4 e7e5 nf3 nc6");
+        let result = parser.parse_command("position startpos moves e2e4 e7e5 g1f3 b8c6");
         assert!(result.is_ok());
         if let UCICommand::Position { position, moves } = result.unwrap() {
             assert!(matches!(position, Position::StartPos));
@@ -206,8 +246,8 @@ mod integration_tests {
         let result = parser.parse_command("setoption name Clear Hash");
         assert!(result.is_ok());
         if let UCICommand::SetOption { name, value } = result.unwrap() {
-            assert_eq!(name, "Clear");
-            assert_eq!(value, Some("Hash"));
+            assert_eq!(name, "Clear Hash");
+            assert_eq!(value, None);
         } else {
             panic!("Expected SetOption command");
         }
@@ -397,10 +437,11 @@ mod sanitization_tests {
     fn test_dangerous_input_rejection() {
         let mut parser = ZeroCopyParser::new();
 
+        let long_input = "x".repeat(5000);
         let dangerous_inputs = vec![
-            "uci\0",           // Null byte
-            "uci\x01\x02",     // Control characters
-            &"x".repeat(5000), // Extremely long command
+            "uci\0",       // Null byte
+            "uci\x01\x02", // Control characters
+            &long_input,   // Extremely long command
         ];
 
         for input in dangerous_inputs {
@@ -464,9 +505,9 @@ mod chess_validation_tests {
         let valid_moves = vec![
             "position startpos moves e2e4",
             "position startpos moves a1h8",
-            "position startpos moves e7e8q",             // Promotion
-            "position startpos moves h7h8R",             // Promotion (uppercase)
-            "position startpos moves e2e4 e7e5 nf3 nc6", // Multiple moves
+            "position startpos moves e7e8q", // Promotion
+            "position startpos moves h7h8R", // Promotion (uppercase)
+            "position startpos moves e2e4 e7e5 g1f3 b8c6", // Multiple moves
         ];
 
         for cmd in valid_moves {
@@ -624,19 +665,19 @@ mod fuzz_tests {
 
         // Test with random-ish input that could cause panics
         let problematic_inputs = vec![
-            "\0\0\0\0",
-            &"x".repeat(10000),
-            "go " + &"param ".repeat(100),
-            "position fen " + &"x".repeat(300),
-            "\x01\x02\x03\x04",
-            "uci\nuci\nuci",
-            "go wtime 18446744073709551615", // Max u64
+            "\0\0\0\0".to_string(),
+            "x".repeat(10000),
+            "go ".to_owned() + &"param ".repeat(100),
+            "position fen ".to_owned() + &"x".repeat(300),
+            "\x01\x02\x03\x04".to_string(),
+            "uci\nuci\nuci".to_string(),
+            "go wtime 18446744073709551615".to_string(),
         ];
 
         for input in problematic_inputs {
             // Parser should never panic, only return errors
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                parser.parse_command(input)
+                parser.parse_command(&input)
             }));
 
             assert!(result.is_ok(), "Parser panicked on input: '{}'", input);
@@ -722,7 +763,7 @@ mod integration_simulation_tests {
         let mut parser = ZeroCopyParser::new();
 
         // Simulate parsing moves from a short chess game
-        let game_moves = "e2e4 e7e5 nf3 nc6 bb5 a6 ba4 nf6 o-o be7";
+        let game_moves = "e2e4 e7e5 g1f3 b8c6 f1b5 a7a6 b5a4 g8f6 e1g1 f8e7";
         let position_cmd = format!("position startpos moves {}", game_moves);
 
         let result = parser.parse_command(&position_cmd);
