@@ -1,61 +1,36 @@
 # Opera Chess Engine
 
-A UCI compliant chess engine designed to emulate Paul Morphy's sacrifical, fast paced playing style. **Currently in active development**.
+A C++ chess search/evaluation core with a Rust UCI executable, intended to support Morphy-inspired play.
 
-## Quick Start with Docker
+## Current status — 2026-09-18
 
-The easiest way to build and run the Opera Engine is using Docker, which handles all dependencies automatically.
+The Rust executable now handles persistent UCI commands and real asynchronous search. It supports positions/FEN/moves, depth/node/time limits, infinite analysis, pondering, cancellation, and supported options. It is ready for basic process-level integration experiments; playing strength and full production acceptance remain unfinished.
 
-### Build the Engine
+```bash
+cargo build --release --locked --manifest-path rust/Cargo.toml
+./rust/target/release/opera-uci
+# Or build and launch through the existing script:
+bash launch.sh --uci
+```
+
+Use the Rust binary for GUI/game integration. The C++ `opera-engine` executable remains a board demo. See the [UCI usage and Unity adapter boundary](docs/rust_uci_usage.md) for commands, options, supported limits and verification.
+
+Validation on macOS ARM64: 21 process tests, 281 Rust library/search/protocol tests, and 40 C++ search/control/evaluator integration tests pass. Docker/Linux ARM64 also passes the process suite. An independent Stockfish oracle checks bestmoves, every reported PV and ponder replies across 176 positions on both platforms. The C++ bridge also passes these process/oracle suites with address and undefined-behavior sanitizers on macOS. The broader engine suite still has failures; see the [dated baseline](docs/current-baseline.md) for evidence and limitations.
+
+Native UCI CI is configured for Linux, macOS and Windows, including downloadable executables. Windows uses clang-cl for the C++ bridge. Those remote jobs and GUI compatibility still need verification. Cargo dependencies are pinned in `rust/Cargo.lock`. The [development roadmap](docs/development-roadmap.md) orders the remaining work: UCI release validation, engine core, neural evaluation and tuning, then Unity integration.
+
+## Docker
 
 ```bash
 docker build -t opera-engine .
-```
-
-### Run the Engine
-
-**Start in UCI mode (default):**
-
-```bash
 docker run -it opera-engine
-```
-
-**Run tests:**
-
-```bash
 docker run opera-engine test
+# Run the bounded process suite and independent move oracle in Linux:
+docker build --target uci-validation -t opera-engine:uci-validation .
 ```
 
-**Run with custom neural network weights:**
+The entrypoint starts the Rust binary. `test` checks actual handshake/readiness/search output; it is not the full unit suite. The separate `uci-validation` target runs the process/oracle suites against the runtime binary; its Python/Stockfish dependencies are excluded from the final image. Image build and execution were validated locally through Docker on Linux ARM64. The Dockerfile disables C++ unit tests and does not run Cargo tests. Neural weights remain unsupported.
 
-```bash
-docker run -v $(pwd)/nn:/nn opera-engine -weights /nn/morphy.nnue
-```
+## Specifications
 
-**Debug mode with custom settings:**
-
-```bash
-docker run -it opera-engine debug -hash 256 -threads 2 -morphy
-```
-
-### Docker Configuration
-
-The Docker setup uses a multi-stage build for optimal performance:
-
-- **Stage 1**: Builds C++ engine core with CMake/Ninja
-- **Stage 2**: Builds Rust UCI interface with Cargo
-- **Stage 3**: Creates lightweight runtime image (<300MB)
-
-**Volume Mounts:**
-
-- `/nn` - Neural network weights directory
-- `/logs` - Log file output directory
-
-**Supported Platforms:**
-
-- Linux x86_64/arm64
-- macOS x86_64/arm64 (via Docker Desktop)
-
-## Manual Development Setup
-
-For local development without Docker, you'll need to set up the multi-language build system manually.
+Kiro requirements/design/tasks live in `.kiro/specs/`. Current implementation evidence is dated separately from historical completion reports. GUI, cross-platform, fuzzing, performance/coverage and advanced style requirements remain open where unverified.

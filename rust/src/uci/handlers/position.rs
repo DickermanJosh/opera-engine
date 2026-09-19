@@ -379,13 +379,10 @@ mod tests {
     fn test_apply_invalid_move() {
         let mut handler = PositionCommandHandler::new().unwrap();
 
-        // NOTE: Current C++ engine accepts all move formats, including "invalid" chess moves
-        // This test verifies that the position handler correctly processes moves that
-        // the underlying engine accepts. When proper move validation is implemented
-        // in the C++ engine, this test should be updated.
+        // Regression: the old bridge accepted an illegal three-square pawn jump.
         let moves = vec![ChessMove {
             from_square: "e2",
-            to_square: "e5", // Currently accepted by C++ engine
+            to_square: "e5", // Illegal three-square pawn jump
             promotion: None,
         }];
 
@@ -395,12 +392,9 @@ mod tests {
         };
 
         let result = handler.handle_position_command(&cmd);
-        assert!(
-            result.is_ok(),
-            "Should accept moves that C++ engine accepts"
-        );
-        assert_eq!(handler.get_move_history().len(), 1);
-        assert_eq!(handler.get_move_history()[0], "e2e5");
+        assert!(result.is_err(), "Illegal pawn jump must be rejected");
+        assert_eq!(handler.get_move_history().len(), 0);
+        assert!(handler.get_move_history().is_empty());
     }
 
     #[test]
@@ -465,14 +459,8 @@ mod tests {
             handler.validate_move("g1f3").unwrap(),
             "g1f3 should be valid"
         );
-        assert!(
-            handler.validate_move("e2e5").unwrap(),
-            "e2e5 currently accepted by engine"
-        );
-        assert!(
-            handler.validate_move("a1a2").unwrap(),
-            "a1a2 currently accepted by engine"
-        );
+        assert!(!handler.validate_move("e2e5").unwrap(), "e2e5 is illegal");
+        assert!(!handler.validate_move("a1a2").unwrap(), "a1a2 is blocked");
 
         // Test that malformed move strings would fail
         // (These should fail due to format, not chess rules)

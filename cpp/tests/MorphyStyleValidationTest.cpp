@@ -1,3 +1,4 @@
+#include <iomanip>
 /**
  * @file MorphyStyleValidationTest.cpp
  * @brief Morphy playing style validation tests (Task 4.3)

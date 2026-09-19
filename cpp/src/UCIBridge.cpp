@@ -14,8 +14,8 @@ namespace opera {
 // ============================================================================
 
 SearchEngineWrapper::SearchEngineWrapper(Board& board)
-    : stop_flag(false) {
-    engine = std::make_unique<SearchEngine>(board, stop_flag);
+    : board(board), stop_flag(false) {
+    engine = std::make_unique<SearchEngine>(this->board, stop_flag);
 }
 
 SearchEngineWrapper::~SearchEngineWrapper() {
@@ -102,54 +102,18 @@ bool board_set_fen(opera::Board& board, rust::Str fen) {
 }
 
 bool board_make_move(opera::Board& board, rust::Str move_str) {
-    // Parse move string (simplified implementation for now)
-    std::string move_string(move_str);
-    
     try {
-        if (move_string.length() < 4) {
-            return false;
+        std::string text(move_str);
+        opera::MoveGenList<256> moves;
+        opera::generateAllLegalMoves(board, moves, board.getSideToMove());
+        for (size_t i = 0; i < moves.size(); ++i) {
+            const auto& mg = moves[i];
+            opera::Move move(mg.from(), mg.to(), mg.isPromotion() ? opera::PROMOTION : opera::NORMAL,
+                mg.isPromotion() ? opera::typeOf(mg.promotionPiece()) : opera::NO_PIECE_TYPE);
+            if (move.toString() == text) return board.makeMove(mg);
         }
-        
-        // Extract from/to squares from UCI format (e.g., "e2e4")
-        int from_file = move_string[0] - 'a';
-        int from_rank = move_string[1] - '1';
-        int to_file = move_string[2] - 'a';
-        int to_rank = move_string[3] - '1';
-        
-        if (from_file < 0 || from_file > 7 || from_rank < 0 || from_rank > 7 ||
-            to_file < 0 || to_file > 7 || to_rank < 0 || to_rank > 7) {
-            return false;
-        }
-        
-        opera::Square from = static_cast<opera::Square>(from_rank * 8 + from_file);
-        opera::Square to = static_cast<opera::Square>(to_rank * 8 + to_file);
-        
-        // Create MoveGen object
-        opera::MoveGen::MoveType moveType = opera::MoveGen::MoveType::NORMAL;
-        opera::Piece promotion = opera::NO_PIECE;
-        
-        // Handle promotion
-        if (move_string.length() == 5) {
-            moveType = opera::MoveGen::MoveType::PROMOTION;
-            char promo = move_string[4];
-            opera::Color color = board.getSideToMove();
-            
-            switch (promo) {
-                case 'q': promotion = color == opera::WHITE ? opera::WHITE_QUEEN : opera::BLACK_QUEEN; break;
-                case 'r': promotion = color == opera::WHITE ? opera::WHITE_ROOK : opera::BLACK_ROOK; break;
-                case 'b': promotion = color == opera::WHITE ? opera::WHITE_BISHOP : opera::BLACK_BISHOP; break;
-                case 'n': promotion = color == opera::WHITE ? opera::WHITE_KNIGHT : opera::BLACK_KNIGHT; break;
-                default:
-                    return false;
-            }
-        }
-        
-        opera::MoveGen move(from, to, moveType, promotion);
-        return board.makeMove(move);
-        
-    } catch (const std::exception&) {
         return false;
-    }
+    } catch (const std::exception&) { return false; }
 }
 
 rust::String board_get_fen(const opera::Board& board) {
@@ -208,20 +172,17 @@ bool board_is_stalemate(const opera::Board& board) {
 // Engine configuration (stub implementations)
 bool engine_set_hash_size(uint32_t size_mb) {
     // TODO: Implement hash table size setting
-    std::cout << "Setting hash size to " << size_mb << " MB" << std::endl;
-    return true;
+    return size_mb >= 1 && size_mb <= 2048;
 }
 
 bool engine_set_threads(uint32_t thread_count) {
     // TODO: Implement thread count setting  
-    std::cout << "Setting thread count to " << thread_count << std::endl;
-    return true;
+    return thread_count == 1;
 }
 
 bool engine_clear_hash() {
     // TODO: Implement hash table clearing
-    std::cout << "Clearing hash tables" << std::endl;
-    return true;
+    return false; // No global engine instance; use per-session reset.
 }
 
 
@@ -275,3 +236,34 @@ void search_engine_reset(opera::SearchEngineWrapper& engine) {
         // Ignore errors during reset
     }
 }
+
+namespace opera {
+FFISearchResult SearchEngineWrapper::controlled_search(const FFISearchLimits& limits,
+        const ::SearchControl& control, uint32_t hash_mb, bool morphy, rust::Str root_moves) {
+    if (hash_mb != 16) engine->set_hash_size(hash_mb);
+    engine->set_use_morphy_style(morphy);
+    std::istringstream input{std::string(root_moves)};
+    std::vector<std::string> roots;
+    for (std::string move; input >> move;) roots.push_back(move);
+    engine->set_root_moves(roots);
+    engine->external_stop = [&control] { return control.cancelled(); };
+    engine->progress = [&control](const SearchInfo& info) {
+        FFISearchInfo ffi_info;
+        ffi_info.depth = info.depth; ffi_info.score = info.score;
+        ffi_info.time_ms = info.time_ms; ffi_info.nodes = info.nodes;
+        ffi_info.nps = info.nps; ffi_info.pv = info.pv;
+        control.report(ffi_info);
+    };
+    try {
+        auto result = search(limits);
+        engine->external_stop = {}; engine->progress = {};
+        return result;
+    } catch (...) { engine->external_stop = {}; engine->progress = {}; throw; }
+}
+}
+void search_engine_controlled(opera::SearchEngineWrapper& engine, const opera::FFISearchLimits& limits,
+        const SearchControl& control, uint32_t hash_mb, bool morphy, rust::Str root_moves, opera::FFISearchResult& result) {
+    result = engine.controlled_search(limits, control, hash_mb, morphy, root_moves);
+}
+
+bool board_previous_side_in_check(const opera::Board& board) { return board.isInCheck(~board.getSideToMove()); }

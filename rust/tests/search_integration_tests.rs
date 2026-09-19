@@ -32,7 +32,10 @@ fn test_search_depth_limited() {
     assert!(result.is_ok(), "Search failed: {:?}", result.err());
     let result = result.unwrap();
     assert!(result.is_valid(), "Search returned invalid result");
-    assert!(!result.best_move.is_empty(), "Best move should not be empty");
+    assert!(
+        !result.best_move.is_empty(),
+        "Best move should not be empty"
+    );
     assert!(result.depth > 0, "Search depth should be > 0");
     assert!(result.nodes > 0, "Nodes searched should be > 0");
 }
@@ -46,7 +49,11 @@ fn test_search_starting_position() {
     let result = engine.search(limits).expect("Search failed");
 
     assert!(result.is_valid(), "Invalid search result");
-    assert_eq!(result.best_move.len(), 4, "Move should be 4 characters (e.g., e2e4)");
+    assert_eq!(
+        result.best_move.len(),
+        4,
+        "Move should be 4 characters (e.g., e2e4)"
+    );
 
     // Verify it's a valid starting move
     let valid_starting_moves = ["e2e4", "d2d4", "g1f3", "b1c3", "c2c4", "f2f4"];
@@ -148,31 +155,27 @@ fn test_search_limits_default() {
 // Search Stop and Control Tests
 // ============================================================================
 
-#[test]
-fn test_search_stop() {
-    let mut board = Board::new().expect("Failed to create board");
-    let mut engine = SearchEngine::new(&mut board).expect("Failed to create engine");
-
-    // Start a long search in background thread
-    let engine_ptr = &mut engine as *mut SearchEngine;
-
-    let handle = thread::spawn(move || {
-        let engine = unsafe { &mut *engine_ptr };
-        let limits = SearchLimits::depth(20); // Deep search
-        engine.search(limits)
-    });
-
-    // Give search time to start
-    thread::sleep(Duration::from_millis(50));
-
-    // Stop the search
-    engine.stop();
-
-    // Wait for result
-    let result = handle.join().expect("Thread panicked");
-
-    // Should return a result (may be incomplete due to stop)
-    assert!(result.is_ok(), "Search should complete after stop");
+#[tokio::test]
+async fn test_search_stop() {
+    let engine = opera_uci::uci::UCIEngine::new();
+    engine.initialize().await.unwrap();
+    let mut responses = engine.subscribe_responses();
+    engine.process_command("go infinite").await.unwrap();
+    tokio::time::sleep(Duration::from_millis(50)).await;
+    let start = Instant::now();
+    engine.process_command("stop").await.unwrap();
+    let result = tokio::time::timeout(Duration::from_millis(50), async {
+        loop {
+            let line = responses.recv().await.unwrap();
+            if line.starts_with("bestmove ") {
+                break line;
+            }
+        }
+    })
+    .await
+    .expect("stop must produce bestmove");
+    assert!(!result.contains("0000"));
+    assert!(start.elapsed() < Duration::from_millis(50));
 }
 
 #[test]
@@ -184,8 +187,13 @@ fn test_search_is_searching_flag() {
     assert!(!engine.is_searching(), "Should not be searching initially");
 
     // After search completes, should not be searching
-    let _result = engine.search(SearchLimits::depth(3)).expect("Search failed");
-    assert!(!engine.is_searching(), "Should not be searching after completion");
+    let _result = engine
+        .search(SearchLimits::depth(3))
+        .expect("Search failed");
+    assert!(
+        !engine.is_searching(),
+        "Should not be searching after completion"
+    );
 }
 
 #[test]
@@ -194,14 +202,22 @@ fn test_search_reset() {
     let mut engine = SearchEngine::new(&mut board).expect("Failed to create engine");
 
     // Perform first search
-    let _result1 = engine.search(SearchLimits::depth(4)).expect("Search failed");
-    assert!(engine.get_last_result().is_some(), "Should have last result");
+    let _result1 = engine
+        .search(SearchLimits::depth(4))
+        .expect("Search failed");
+    assert!(
+        engine.get_last_result().is_some(),
+        "Should have last result"
+    );
 
     // Reset engine
     engine.reset();
 
     // Last result should be cleared
-    assert!(engine.get_last_result().is_none(), "Last result should be cleared after reset");
+    assert!(
+        engine.get_last_result().is_none(),
+        "Last result should be cleared after reset"
+    );
 
     // Should still be able to search
     let result2 = engine.search(SearchLimits::depth(4));
@@ -217,10 +233,15 @@ fn test_search_result_contains_pv() {
     let mut board = Board::new().expect("Failed to create board");
     let mut engine = SearchEngine::new(&mut board).expect("Failed to create engine");
 
-    let result = engine.search(SearchLimits::depth(5)).expect("Search failed");
+    let result = engine
+        .search(SearchLimits::depth(5))
+        .expect("Search failed");
 
     assert!(result.is_valid(), "Invalid result");
-    assert!(!result.principal_variation.is_empty(), "PV should not be empty");
+    assert!(
+        !result.principal_variation.is_empty(),
+        "PV should not be empty"
+    );
     assert_eq!(
         result.principal_variation[0], result.best_move,
         "First PV move should match best move"
@@ -232,7 +253,9 @@ fn test_search_result_statistics() {
     let mut board = Board::new().expect("Failed to create board");
     let mut engine = SearchEngine::new(&mut board).expect("Failed to create engine");
 
-    let result = engine.search(SearchLimits::depth(5)).expect("Search failed");
+    let result = engine
+        .search(SearchLimits::depth(5))
+        .expect("Search failed");
 
     assert!(result.is_valid(), "Invalid result");
     assert!(result.nodes > 0, "Should have searched some nodes");
@@ -257,8 +280,14 @@ fn test_search_result_display() {
     };
 
     let display = format!("{}", result);
-    assert!(display.contains("bestmove e2e4"), "Display should contain bestmove");
-    assert!(display.contains("ponder e7e5"), "Display should contain ponder");
+    assert!(
+        display.contains("bestmove e2e4"),
+        "Display should contain bestmove"
+    );
+    assert!(
+        display.contains("ponder e7e5"),
+        "Display should contain ponder"
+    );
     assert!(display.contains("score 50"), "Display should contain score");
 }
 
@@ -271,7 +300,9 @@ fn test_search_performance_minimum_nps() {
     let mut board = Board::new().expect("Failed to create board");
     let mut engine = SearchEngine::new(&mut board).expect("Failed to create engine");
 
-    let result = engine.search(SearchLimits::depth(5)).expect("Search failed");
+    let result = engine
+        .search(SearchLimits::depth(5))
+        .expect("Search failed");
 
     let nps = result.nps();
     // Should achieve at least 10K nps (very conservative for basic test)
@@ -283,13 +314,19 @@ fn test_search_scaling_with_depth() {
     let mut board = Board::new().expect("Failed to create board");
     let mut engine = SearchEngine::new(&mut board).expect("Failed to create engine");
 
-    let depth3 = engine.search(SearchLimits::depth(3)).expect("Search failed");
+    let depth3 = engine
+        .search(SearchLimits::depth(3))
+        .expect("Search failed");
     engine.reset();
 
-    let depth4 = engine.search(SearchLimits::depth(4)).expect("Search failed");
+    let depth4 = engine
+        .search(SearchLimits::depth(4))
+        .expect("Search failed");
     engine.reset();
 
-    let depth5 = engine.search(SearchLimits::depth(5)).expect("Search failed");
+    let depth5 = engine
+        .search(SearchLimits::depth(5))
+        .expect("Search failed");
 
     // Nodes should generally increase with depth
     assert!(
@@ -326,7 +363,10 @@ fn test_multiple_engines_concurrent() {
     }
 
     for handle in handles {
-        handle.join().expect("Thread panicked").expect("Search failed");
+        handle
+            .join()
+            .expect("Thread panicked")
+            .expect("Search failed");
     }
 }
 
@@ -342,7 +382,10 @@ fn test_sequential_searches() {
         assert!(result.is_valid(), "Search at depth {} failed", depth);
 
         // Verify last result is cached
-        assert!(engine.get_last_result().is_some(), "Last result should be cached");
+        assert!(
+            engine.get_last_result().is_some(),
+            "Last result should be cached"
+        );
     }
 }
 
@@ -364,7 +407,10 @@ fn test_search_in_checkmate_position() {
     // Should still be able to search (even though position is mate)
     let result = engine.search(SearchLimits::depth(3));
     // Result behavior may vary - either finds mate or returns any legal move
-    assert!(result.is_ok(), "Should handle checkmate position gracefully");
+    assert!(
+        result.is_ok(),
+        "Should handle checkmate position gracefully"
+    );
 }
 
 #[test]
@@ -378,9 +424,14 @@ fn test_search_after_board_moves() {
 
     // Create engine after moves
     let mut engine = SearchEngine::new(&mut board).expect("Failed to create engine");
-    let result = engine.search(SearchLimits::depth(4)).expect("Search failed");
+    let result = engine
+        .search(SearchLimits::depth(4))
+        .expect("Search failed");
 
-    assert!(result.is_valid(), "Should search correctly after board moves");
+    assert!(
+        result.is_valid(),
+        "Should search correctly after board moves"
+    );
 }
 
 #[test]
@@ -389,7 +440,9 @@ fn test_search_engine_lifecycle() {
     for _i in 0..10 {
         let mut board = Board::new().expect("Failed to create board");
         let mut engine = SearchEngine::new(&mut board).expect("Failed to create engine");
-        let _result = engine.search(SearchLimits::depth(3)).expect("Search failed");
+        let _result = engine
+            .search(SearchLimits::depth(3))
+            .expect("Search failed");
         // Engine and board should be properly cleaned up here
     }
 }
@@ -442,7 +495,9 @@ fn test_search_engine_memory_cleanup() {
     for _i in 0..100 {
         let mut board = Board::new().expect("Failed to create board");
         let mut engine = SearchEngine::new(&mut board).expect("Failed to create engine");
-        let _result = engine.search(SearchLimits::depth(2)).expect("Search failed");
+        let _result = engine
+            .search(SearchLimits::depth(2))
+            .expect("Search failed");
         // Should be properly cleaned up
     }
 }
@@ -453,5 +508,8 @@ fn test_search_engine_debug_display() {
     let engine = SearchEngine::new(&mut board).expect("Failed to create engine");
 
     let debug_str = format!("{:?}", engine);
-    assert!(debug_str.contains("SearchEngine"), "Debug output should contain 'SearchEngine'");
+    assert!(
+        debug_str.contains("SearchEngine"),
+        "Debug output should contain 'SearchEngine'"
+    );
 }

@@ -143,34 +143,25 @@ case "$COMMAND" in
     test)
         log_info "Running Opera Engine test suite"
         
-        # In runtime image, tests were run during build
-        # This is a basic smoke test to verify engine functionality
-        log_info "Running engine smoke tests..."
-        
-        # Test 1: Engine can start and respond to UCI
-        echo "Testing UCI protocol response..."
-        echo "uci" | ./opera-uci | grep -q "uciok" && echo "✓ UCI protocol test passed" || echo "✗ UCI protocol test failed"
-        
-        # Test 2: Engine can handle position commands
-        echo "Testing position command handling..."
-        (echo "uci"; echo "position startpos"; echo "quit") | ./opera-uci > /dev/null && echo "✓ Position handling test passed" || echo "✗ Position handling test failed"
-        
-        # Test 3: Engine version info
-        echo "Testing engine version..."
-        ./opera-uci --version && echo "✓ Version test passed" || echo "✗ Version test failed"
-        
-        log_info "Engine smoke tests completed successfully"
-        log_info "Note: Full unit tests are run during Docker build process"
+        transcript="$(mktemp)"
+        trap 'rm -f "$transcript"' EXIT
+        { printf 'uci\nisready\nposition startpos\ngo movetime 100\n'; sleep 1; printf 'quit\n'; } |
+            timeout 5 ./opera-uci > "$transcript"
+        grep -q '^uciok$' "$transcript"
+        grep -q '^readyok$' "$transcript"
+        grep -q '^info depth ' "$transcript"
+        grep -Eq '^bestmove [a-h][1-8][a-h][1-8][qrbn]?$' "$transcript"
+        log_info "UCI process smoke test passed; this is not the full unit suite"
         ;;
         
     test-rust)
-        log_info "Rust tests are run during Docker build process"
+        log_info "Rust tests are not run by the current Dockerfile"
         log_info "Runtime image contains only compiled binaries"
         log_info "Run 'test' command for engine smoke tests"
         ;;
         
     test-cpp)
-        log_info "C++ tests are run during Docker build process"
+        log_info "C++ tests are disabled in the current Dockerfile"
         log_info "Runtime image contains only compiled binaries" 
         log_info "Run 'test' command for engine smoke tests"
         ;;

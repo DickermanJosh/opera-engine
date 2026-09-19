@@ -5,10 +5,10 @@
 
 #![allow(clippy::missing_docs_in_private_items)]
 
+use crate::bridge::Board;
 use crate::error::{UCIError, UCIResult};
 use crate::ffi::ffi;
-use crate::bridge::Board;
-use cxx::{UniquePtr, let_cxx_string};
+use cxx::{let_cxx_string, UniquePtr};
 use std::fmt;
 use std::time::Duration;
 use tracing::{debug, error, info, instrument, warn};
@@ -88,7 +88,7 @@ pub struct SearchResult {
     pub best_move: String,
     /// Ponder move (move to think about during opponent's time)
     pub ponder_move: String,
-    /// Evaluation score in centipawns (from white's perspective)
+    /// Evaluation score in centipawns from the root side-to-move's perspective.
     pub score: i32,
     /// Depth reached during search
     pub depth: i32,
@@ -107,7 +107,9 @@ impl SearchResult {
         let pv = if ffi_result.pv.is_empty() {
             Vec::new()
         } else {
-            ffi_result.pv.split_whitespace()
+            ffi_result
+                .pv
+                .split_whitespace()
                 .map(|s| s.to_string())
                 .collect()
         };
@@ -161,7 +163,7 @@ impl fmt::Display for SearchResult {
 /// integration for async cancellation, and offers ergonomic Rust APIs.
 pub struct SearchEngine {
     /// The underlying C++ SearchEngineWrapper instance
-    /// Note: This holds a reference to the Board, so Board must outlive SearchEngine
+    /// The wrapper owns a board snapshot; no caller-owned reference is retained.
     inner: UniquePtr<ffi::SearchEngineWrapper>,
     /// Last search result (cached for retrieval)
     last_result: Option<SearchResult>,
@@ -181,9 +183,8 @@ impl SearchEngine {
     ///
     /// # Safety
     ///
-    /// The Board must remain alive and not be modified externally while the
-    /// SearchEngine is active. The SearchEngine holds a reference to the Board
-    /// through C++ FFI.
+    /// The C++ wrapper copies the board and its history at construction. Subsequent
+    /// changes to the original board do not affect this search instance.
     ///
     /// # Examples
     ///
@@ -257,13 +258,7 @@ impl SearchEngine {
 
         let result = SearchResult::from_ffi(ffi_result);
 
-        if !result.is_valid() {
-            error!("Search returned invalid result (null move)");
-            return Err(UCIError::Search {
-                message: "Search failed - returned null move".to_string(),
-            });
-        }
-
+        // 0000 is a normal result for mate/stalemate, not an FFI failure.
         info!(
             best_move = %result.best_move,
             score = result.score,
@@ -277,54 +272,38 @@ impl SearchEngine {
         Ok(result)
     }
 
-    // TODO: Fix async search - currently disabled due to Send trait issues with raw pointers
-    // The synchronous search() method works fine for now
-    /*
-    /// Perform an asynchronous non-blocking search
-    ///
-    /// This spawns the search on a blocking thread pool to avoid blocking
-    /// the async runtime. The search can be stopped using `stop()`.
-    ///
-    /// # Arguments
-    ///
-    /// * `limits` - Search limits (depth, time, nodes, infinite)
-    ///
-    /// # Returns
-    ///
-    /// - `Ok(SearchResult)` - Search completed successfully
-    /// - `Err(UCIError::Search)` - Search failed or was stopped
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let result = engine.search_async(SearchLimits::infinite()).await?;
-    /// ```
-    #[instrument(level = "debug", skip(self))]
-    pub async fn search_async(&mut self, limits: SearchLimits) -> UCIResult<SearchResult> {
-        debug!("Starting async search");
-
-        // Move the search to a blocking thread to avoid blocking the async runtime
-        // Note: We can't move self, so we use unsafe raw pointer access
-        // This is safe because:
-        // 1. The SearchEngine is not moved or destroyed during the search
-        // 2. The C++ SearchEngine is thread-safe for concurrent read operations
-        // 3. We only call search() which is designed to be called from any thread
-
-        let engine_ptr = self as *mut SearchEngine;
-
-        let result = tokio::task::spawn_blocking(move || {
-            let engine = unsafe { &mut *engine_ptr };
-            engine.search(limits)
-        })
-        .await
+    /// Search with a separately owned cancellation/progress channel.
+    pub fn search_controlled(
+        &mut self,
+        limits: SearchLimits,
+        control: &crate::uci::search_session::SearchControl,
+        hash_mb: u32,
+        morphy: bool,
+        roots: &str,
+    ) -> UCIResult<SearchResult> {
+        let mut result = ffi::FFISearchResult {
+            best_move: String::new(),
+            ponder_move: String::new(),
+            score: 0,
+            depth: 0,
+            nodes: 0,
+            time_ms: 0,
+            pv: String::new(),
+        };
+        ffi::search_engine_controlled(
+            self.inner.pin_mut(),
+            &limits.to_ffi(),
+            control,
+            hash_mb,
+            morphy,
+            roots,
+            &mut result,
+        )
         .map_err(|e| UCIError::Search {
-            message: format!("Async search task failed: {}", e),
-        })??;
-
-        debug!("Async search completed");
-        Ok(result)
+            message: e.to_string(),
+        })?;
+        Ok(SearchResult::from_ffi(result))
     }
-    */
 
     /// Stop the current search immediately
     ///
@@ -408,13 +387,9 @@ impl fmt::Debug for SearchEngine {
     }
 }
 
-// SearchEngine is safe to send between threads because:
-// 1. The C++ SearchEngine operations are thread-safe
-// 2. The atomic stop flag provides safe cross-thread cancellation
-// 3. UniquePtr ensures exclusive ownership
-//
-// However, it is NOT safe to share references across threads (not Sync)
-// because the C++ SearchEngine is not designed for concurrent access.
+// Safety: UniquePtr exclusively owns a C++ wrapper, its board snapshot, stop flag,
+// and all mutable search data. Moving ownership does not share references. The
+// wrapper is deliberately not Sync; control uses a separate atomic Rust token.
 #[allow(unsafe_code)] // Required for FFI Send implementation
 unsafe impl Send for SearchEngine {}
 

@@ -32,6 +32,48 @@ protected:
     std::unique_ptr<SearchEngine> engine;
 };
 
+TEST_F(SearchEvalIntegrationTest, ScoreUsesRootSideAtOddAndEvenDepths) {
+    // The evaluator contract is White-relative; negamax and UCI are root-relative.
+    // A missing black queen must favor White at both odd and even horizons.
+    for (bool morphy : {false, true}) {
+        for (const char* side : {"w", "b"}) {
+            for (int depth : {1, 2}) {
+                SCOPED_TRACE(::testing::Message() << "morphy=" << morphy
+                             << " side=" << side << " depth=" << depth);
+                const std::string fen = std::string("rnb1kbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR ")
+                    + side + " KQkq - 0 1";
+                board->setFromFEN(fen);
+                engine = std::make_unique<SearchEngine>(*board, stop_flag);
+                engine->set_use_morphy_style(morphy);
+                SearchLimits limits;
+                limits.max_depth = depth;
+                const auto result = engine->search(limits);
+                ASSERT_EQ(result.depth, depth);
+                if (board->getSideToMove() == WHITE) EXPECT_GT(result.score, 500);
+                else EXPECT_LT(result.score, -500);
+            }
+        }
+    }
+}
+
+TEST_F(SearchEvalIntegrationTest, BothSidesCaptureAnUndefendedQueen) {
+    for (bool morphy : {false, true}) {
+        for (const auto& position : {
+                std::make_pair("7k/8/8/8/8/8/q7/R6K w - - 0 1", "a1a2"),
+                std::make_pair("r6k/Q7/8/8/8/8/8/7K b - - 0 1", "a8a7")}) {
+            SCOPED_TRACE(::testing::Message() << "morphy=" << morphy << " fen=" << position.first);
+            board->setFromFEN(position.first);
+            engine = std::make_unique<SearchEngine>(*board, stop_flag);
+            engine->set_use_morphy_style(morphy);
+            SearchLimits limits;
+            limits.max_depth = 1;
+            const auto result = engine->search(limits);
+            EXPECT_EQ(result.best_move.toString(), position.second);
+            EXPECT_GT(result.score, 300);
+        }
+    }
+}
+
 // ============================================================================
 // Evaluator Integration Tests
 // ============================================================================

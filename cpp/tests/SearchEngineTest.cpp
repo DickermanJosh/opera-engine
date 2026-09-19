@@ -200,7 +200,7 @@ TEST_F(SearchEngineTest, SearchInfoUpdates) {
 
 // Edge Cases and Error Handling
 TEST_F(SearchEngineTest, CheckmatePosition) {
-    // Fool's mate position - black to move, checkmate in 1
+    // Fool's mate: White to move is already checkmated.
     board->setFromFEN("rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3");
     
     SearchLimits limits;
@@ -209,13 +209,14 @@ TEST_F(SearchEngineTest, CheckmatePosition) {
     auto result = search_engine->search(limits);
     
     // Should handle checkmate gracefully
-    EXPECT_NE(result.best_move, NULL_MOVE);  // Should find a legal move
+    EXPECT_EQ(result.best_move, NULL_MOVE);  // Checkmate has no legal move
+    EXPECT_EQ(result.score, -30000);
     EXPECT_GT(result.depth, 0);
 }
 
 TEST_F(SearchEngineTest, StalematePosition) {
     // Stalemate position
-    board->setFromFEN("8/8/8/8/8/6k1/5q2/7K b - - 0 1");
+    board->setFromFEN("8/8/8/8/8/6k1/5q2/7K w - - 0 1");
     
     SearchLimits limits;
     limits.max_depth = 3;
@@ -224,7 +225,8 @@ TEST_F(SearchEngineTest, StalematePosition) {
     
     // Should handle stalemate gracefully
     EXPECT_GT(result.depth, 0);
-    // Note: In stalemate, there might not be a legal move, so best_move could be NULL_MOVE
+    EXPECT_EQ(result.best_move, NULL_MOVE);
+    EXPECT_EQ(result.score, 0);
 }
 
 TEST_F(SearchEngineTest, InfiniteSearchMode) {

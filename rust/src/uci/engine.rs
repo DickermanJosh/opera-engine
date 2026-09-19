@@ -5,13 +5,13 @@
 
 use std::sync::Arc;
 use tokio::sync::{broadcast, mpsc, oneshot};
-use tokio::time::{Duration, Instant};
+use tokio::time::Instant;
 use tracing::{debug, error, info, instrument, warn};
 
 use crate::error::{UCIError, UCIResult};
 use crate::uci::commands::{TimeControl, UCICommand};
 use crate::uci::parser::ZeroCopyParser;
-use crate::uci::state::{EngineConfig, EngineState, SearchContext, StateChangeEvent, UCIState};
+use crate::uci::state::{EngineConfig, EngineState, StateChangeEvent, UCIState};
 
 /// Main UCI engine coordinator with async command processing
 pub struct UCIEngine {
@@ -33,6 +33,9 @@ pub struct UCIEngine {
 
     /// Startup timestamp
     startup_time: Instant,
+    processing: tokio::sync::Mutex<()>,
+    #[cfg(feature = "ffi")]
+    search: tokio::sync::Mutex<super::search_session::SearchSession>,
 }
 
 /// Engine identification information for UCI protocol
@@ -104,7 +107,7 @@ impl UCIEngine {
             .expect("Failed to set initial config");
 
         let (command_tx, command_rx) = mpsc::unbounded_channel();
-        let (response_tx, _) = broadcast::channel(64);
+        let (response_tx, _) = broadcast::channel(4096);
 
         Self {
             state,
@@ -114,6 +117,9 @@ impl UCIEngine {
             response_tx,
             id_info: EngineIdentification::default(),
             startup_time: Instant::now(),
+            processing: tokio::sync::Mutex::new(()),
+            #[cfg(feature = "ffi")]
+            search: tokio::sync::Mutex::new(super::search_session::SearchSession::default()),
         }
     }
 
@@ -147,6 +153,9 @@ impl UCIEngine {
             if let Err(e) = self.handle_engine_command(command).await {
                 error!(error = ?e, "Error processing engine command");
                 // Don't break the loop for individual command errors
+            }
+            if self.state() == EngineState::Stopping {
+                break;
             }
         }
 
@@ -187,6 +196,7 @@ impl UCIEngine {
     /// Process a UCI command string
     #[instrument(skip(self, command_str))]
     async fn process_uci_command(&self, command_str: &str) -> UCIResult<()> {
+        let _command_guard = self.processing.lock().await;
         debug!(command = command_str, "Processing UCI command");
 
         // Parse the command (need mutable lock for statistics)
@@ -254,53 +264,64 @@ impl UCIEngine {
 
     /// Handle set option command
     async fn handle_setoption_command(&self, name: &str, value: Option<&str>) -> UCIResult<()> {
-        debug!(name, value, "Setting UCI option");
-
-        match name.to_lowercase().as_str() {
-            "hash" => {
-                if let Some(value_str) = value {
-                    let hash_size: u32 = value_str.parse().map_err(|_| UCIError::Protocol {
-                        message: format!("Invalid hash size: {}", value_str),
-                    })?;
-
-                    self.state.update_config(|cfg| {
-                        cfg.hash_size_mb = hash_size.clamp(1, 2048);
-                    })?;
-
-                    info!(hash_size_mb = hash_size, "Hash size updated");
+        let bad = || UCIError::Protocol {
+            message: format!("Unsupported option or invalid value: {name}"),
+        };
+        #[cfg(feature = "ffi")]
+        {
+            let mut search = self.search.lock().await;
+            let normalized_name = name.split_whitespace().collect::<Vec<_>>().join(" ");
+            match normalized_name.to_ascii_lowercase().as_str() {
+                "hash" => {
+                    let n = value
+                        .and_then(|v| v.parse::<u32>().ok())
+                        .filter(|n| (1..=128).contains(n))
+                        .ok_or_else(bad)?;
+                    search.hash_mb = n;
+                    self.state.update_config(|c| c.hash_size_mb = n)?;
                 }
-            }
-            "threads" => {
-                if let Some(value_str) = value {
-                    let thread_count: u32 = value_str.parse().map_err(|_| UCIError::Protocol {
-                        message: format!("Invalid thread count: {}", value_str),
+                "threads" => {
+                    if value != Some("1") {
+                        return Err(bad());
+                    }
+                    self.state.update_config(|c| {
+                        c.thread_count = 1;
+                        c.multithread_enabled = false;
                     })?;
-
-                    self.state.update_config(|cfg| {
-                        cfg.thread_count = thread_count.clamp(1, 64);
-                        cfg.multithread_enabled = thread_count > 1;
-                    })?;
-
-                    info!(thread_count, "Thread count updated");
                 }
-            }
-            "ponder" => {
-                if let Some(value_str) = value {
-                    let ponder_enabled = matches!(value_str.to_lowercase().as_str(), "true" | "1");
-
-                    self.state.update_config(|cfg| {
-                        cfg.ponder_enabled = ponder_enabled;
-                    })?;
-
-                    info!(ponder_enabled, "Ponder setting updated");
+                "ponder" => {
+                    let on = match value {
+                        Some("true") => true,
+                        Some("false") => false,
+                        _ => return Err(bad()),
+                    };
+                    self.state.update_config(|c| c.ponder_enabled = on)?;
                 }
+                "morphystyle" => {
+                    search.morphy = match value {
+                        Some("true") => true,
+                        Some("false") => false,
+                        _ => return Err(bad()),
+                    };
+                }
+                "move overhead" => {
+                    search.overhead_ms = value
+                        .and_then(|v| v.parse::<u64>().ok())
+                        .filter(|n| *n <= 5000)
+                        .ok_or_else(bad)?;
+                }
+                "clear hash" => {
+                    if value.is_some() {
+                        return Err(bad());
+                    }
+                    search.stop().await?;
+                } // Each worker owns a fresh table.
+                _ => return Err(bad()),
             }
-            _ => {
-                warn!(name, "Unknown UCI option");
-            }
+            return Ok(());
         }
-
-        Ok(())
+        #[cfg(not(feature = "ffi"))]
+        Err(bad())
     }
 
     /// Handle registration command (no-op for open source engine)
@@ -317,69 +338,40 @@ impl UCIEngine {
 
     /// Handle new game command
     async fn handle_ucinewgame_command(&self) -> UCIResult<()> {
-        info!("Starting new game");
-
-        // Reset engine state but keep configuration
-        self.state.reset()?;
-
-        // TODO: Clear hash tables and reset position
-        // This will be implemented when we integrate with the C++ engine
-
-        Ok(())
+        #[cfg(feature = "ffi")]
+        self.search.lock().await.new_game().await?;
+        self.state.reset()
     }
 
-    /// Handle position command
     async fn handle_position_command(
         &self,
-        _position: crate::uci::commands::Position<'_>,
-        _moves: Vec<crate::uci::commands::ChessMove<'_>>,
+        position: crate::uci::commands::Position<'_>,
+        moves: Vec<crate::uci::commands::ChessMove<'_>>,
     ) -> UCIResult<()> {
-        debug!("Setting board position");
-
-        // TODO: Set board position and apply moves
-        // This will be implemented when we integrate with the C++ engine
-
-        Ok(())
+        #[cfg(feature = "ffi")]
+        {
+            return self.search.lock().await.position(position, moves).await;
+        }
+        #[cfg(not(feature = "ffi"))]
+        Err(UCIError::Engine {
+            message: "C++ FFI required".into(),
+        })
     }
 
-    /// Handle go command to start search
     async fn handle_go_command(&self, time_control: TimeControl) -> UCIResult<()> {
-        info!(time_control = ?time_control, "Starting search");
-
-        let search_context = SearchContext {
-            start_time: std::time::Instant::now(),
-            time_control,
-            max_depth: None,
-            max_nodes: None,
-            is_infinite: false,
-            is_ponder: false,
-        };
-
-        // Start search
-        self.state.start_search(search_context)?;
-
-        // TODO: Actually perform the search
-        // For now, simulate a quick search and return a dummy move
-        tokio::spawn({
-            let state = Arc::clone(&self.state);
-            let response_tx = self.response_tx.clone();
-
-            async move {
-                // Simulate search time
-                tokio::time::sleep(Duration::from_millis(100)).await;
-
-                // Complete search
-                if let Err(e) = state.complete_search(1000) {
-                    error!(error = ?e, "Failed to complete search");
-                    return;
-                }
-
-                // Send best move (dummy for now)
-                let _ = response_tx.send("bestmove e2e4".to_string());
-            }
-        });
-
-        Ok(())
+        #[cfg(feature = "ffi")]
+        {
+            return self
+                .search
+                .lock()
+                .await
+                .go(time_control, self.state.clone(), self.response_tx.clone())
+                .await;
+        }
+        #[cfg(not(feature = "ffi"))]
+        Err(UCIError::Engine {
+            message: "C++ FFI required for search".into(),
+        })
     }
 
     /// Handle stop command
@@ -389,14 +381,12 @@ impl UCIEngine {
 
     /// Handle ponder hit command
     async fn handle_ponderhit_command(&self) -> UCIResult<()> {
-        debug!("Ponder hit received");
-
-        let current_state = self.state.current_state();
-        if current_state == EngineState::Pondering {
+        if self.state() == EngineState::Pondering {
             self.state
-                .transition_to(EngineState::Searching, "Ponder hit - converting to search")?;
+                .transition_to(EngineState::Searching, "Ponder hit")?;
         }
-
+        #[cfg(feature = "ffi")]
+        self.search.lock().await.ponderhit();
         Ok(())
     }
 
@@ -408,38 +398,19 @@ impl UCIEngine {
 
     /// Stop current search operation
     async fn stop_search(&self) -> UCIResult<()> {
-        let current_state = self.state.current_state();
-
-        if current_state.is_computing() {
-            info!("Stopping current search");
-
-            // TODO: Signal C++ engine to stop search
-
-            // Complete search with current results
-            self.state.complete_search(0)?;
-
-            // Send stop confirmation (best move should have been sent already)
-            self.send_response("bestmove (none)")?;
-        } else {
-            debug!(state = ?current_state, "Stop command received but not searching");
-        }
-
+        #[cfg(feature = "ffi")]
+        self.search.lock().await.stop().await?;
         Ok(())
     }
 
-    /// Shutdown the engine gracefully
+    /// Stop and join worker before transitioning out of the ready lifecycle.
     async fn shutdown(&self) -> UCIResult<()> {
-        info!("Shutting down UCI engine");
-
-        self.state
-            .transition_to(EngineState::Stopping, "Engine shutdown requested")?;
-
-        // Stop any ongoing search
-        if self.state.current_state().is_computing() {
-            let _ = self.stop_search().await;
+        self.stop_search().await?;
+        if self.state() == EngineState::Stopping {
+            return Ok(());
         }
-
-        Ok(())
+        self.state
+            .transition_to(EngineState::Stopping, "Engine shutdown requested")
     }
 
     /// Reset engine to clean state
@@ -459,32 +430,16 @@ impl UCIEngine {
 
     /// Send UCI options for the uci command
     fn send_uci_options(&self) -> UCIResult<()> {
-        let config = self.state.config();
-
-        // Hash size option
-        self.send_response(&format!(
-            "option name Hash type spin default {} min 1 max 2048",
-            config.hash_size_mb
-        ))?;
-
-        // Thread count option
-        self.send_response(&format!(
-            "option name Threads type spin default {} min 1 max 64",
-            config.thread_count
-        ))?;
-
-        // Ponder option
-        self.send_response(&format!(
-            "option name Ponder type check default {}",
-            config.ponder_enabled
-        ))?;
-
-        // Analysis mode option
-        self.send_response(&format!(
-            "option name UCI_AnalyseMode type check default {}",
-            config.analysis_mode
-        ))?;
-
+        for option in [
+            "option name Hash type spin default 16 min 1 max 128",
+            "option name Threads type spin default 1 min 1 max 1",
+            "option name Ponder type check default false",
+            "option name MorphyStyle type check default false",
+            "option name Move Overhead type spin default 10 min 0 max 5000",
+            "option name Clear Hash type button",
+        ] {
+            self.send_response(option)?;
+        }
         Ok(())
     }
 
@@ -622,12 +577,12 @@ mod tests {
 
         // Test threads option
         engine
-            .process_command("setoption name Threads value 4")
+            .process_command("setoption name Threads value 1")
             .await
             .unwrap();
         let config = engine.state.config();
-        assert_eq!(config.thread_count, 4);
-        assert!(config.multithread_enabled);
+        assert_eq!(config.thread_count, 1);
+        assert!(!config.multithread_enabled);
 
         // Test ponder option
         engine
@@ -646,7 +601,7 @@ mod tests {
         let mut responses = engine.subscribe_responses();
         let mut state_changes = engine.subscribe_state_changes();
 
-        engine.process_command("go movetime 1000").await.unwrap();
+        engine.process_command("go movetime 100").await.unwrap();
 
         // Should transition to searching
         let state_change = tokio::time::timeout(Duration::from_millis(500), state_changes.recv())
@@ -656,10 +611,17 @@ mod tests {
         assert_eq!(state_change.to, EngineState::Searching);
 
         // Should eventually get a best move response
-        let response = tokio::time::timeout(Duration::from_millis(500), responses.recv())
-            .await
-            .unwrap()
-            .unwrap();
+        let response = tokio::time::timeout(Duration::from_millis(500), async {
+            loop {
+                let line = responses.recv().await?;
+                if line.starts_with("bestmove ") {
+                    break Ok::<_, broadcast::error::RecvError>(line);
+                }
+            }
+        })
+        .await
+        .unwrap()
+        .unwrap();
         assert!(response.starts_with("bestmove"));
 
         // Should return to ready state

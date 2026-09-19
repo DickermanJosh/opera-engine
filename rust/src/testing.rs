@@ -10,6 +10,27 @@ use tracing::{error, info};
 use crate::error::{UCIError, UCIResult};
 use crate::logging::LoggingConfig;
 
+/// Isolate tests that install process-global logging or panic hooks.
+/// Returns true in the child; the parent verifies that child and returns false.
+pub(crate) fn run_in_subprocess(name: &str) -> bool {
+    const CHILD: &str = "OPERA_ISOLATED_TEST";
+    if std::env::var(CHILD).as_deref() == Ok(name) {
+        return true;
+    }
+    let result = std::process::Command::new(std::env::current_exe().expect("test executable"))
+        .args(["--exact", name, "--nocapture"])
+        .env(CHILD, name)
+        .output()
+        .expect("start isolated test");
+    assert!(
+        result.status.success(),
+        "isolated {name} failed:\n{}\n{}",
+        String::from_utf8_lossy(&result.stdout),
+        String::from_utf8_lossy(&result.stderr)
+    );
+    false
+}
+
 /// Test configuration for async operations
 #[derive(Debug, Clone)]
 pub struct TestConfig {

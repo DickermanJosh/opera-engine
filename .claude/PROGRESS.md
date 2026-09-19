@@ -1,3 +1,19 @@
+## UCI follow-up — 2026-09-18
+
+The release-candidate review adds correct negamax score perspective, bounded shutdown when stdout is unread, and safe logging initialization. Process acceptance passes 21/21 on macOS and Docker/Linux ARM64; an independent Stockfish oracle validates 176 positions on each. The macOS C++ bridge passes both harnesses under ASan/UBSan. Rust library/search/protocol checks pass 281/281; focused C++ checks pass 40/40. Broad results are 342/345 Rust and 433/454 C++; Windows/native CI and GUI acceptance remain pending. `uci` has not been merged. See [dated evidence](../docs/current-baseline.md) and the [core → neural evaluation → Unity roadmap](../docs/development-roadmap.md).
+
+## Current implementation — 2026-09-13
+
+The Rust UCI executable is now connected to real C++ search. See [current baseline](../docs/current-baseline.md) and [usage/integration guide](../docs/rust_uci_usage.md) for supported commands, observed tests and remaining limitations. This supersedes the September 7 placeholder/build-blocker status below. Full test targets now compile; the whole repository suite still has failures. No Unity/network or strength/NN expansion is included. Earlier dated claims remain historical.
+
+## Current audit — 2026-09-07
+
+See [verified baseline and next milestones](../docs/current-baseline.md). Component implementation and historical test reports do not establish executable UCI compliance, current full-suite success, performance acceptance, or production readiness. The current Rust executable ignores stdin and exits after about one second; C++ opera-engine is a board demo. Both full test suites fail compilation. 204 Rust library tests pass; five selected C++ search tests pass, but the 100ms time-limit test exceeded a 20-second external timeout. No engine/test source was changed in this documentation audit.
+
+The material below is historical implementation reporting or design intent; its original dates are preserved and its completion claims are not fresh verification.
+
+---
+
 1) Excellent! All 20 tests are passing (including the new capturing promotion test)! The coverage warnings are
   just noise from multiple test runs - they don't indicate any issues with the tests themselves.
 

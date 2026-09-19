@@ -1,4 +1,4 @@
-name: Opera Engine Docker CI
+name: Opera Engine UCI CI
 
 on:
   push:
@@ -8,6 +8,9 @@ on:
       - 'cpp/**'
       - 'Dockerfile'
       - 'docker-entrypoint.sh'
+      - 'scripts/test_uci_process.py'
+      - 'scripts/test_uci_oracle.py'
+      - 'launch.sh'
       - '.github/workflows/uci-rust.yml'
   pull_request:
     branches: [ main, develop ]
@@ -16,9 +19,65 @@ on:
       - 'cpp/**'
       - 'Dockerfile'
       - 'docker-entrypoint.sh'
+      - 'scripts/test_uci_process.py'
+      - 'scripts/test_uci_oracle.py'
+      - 'launch.sh'
       - '.github/workflows/uci-rust.yml'
 
 jobs:
+  native-uci:
+    name: UCI (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            cxx: g++
+            executable: opera-uci
+          - os: macos-latest
+            cxx: clang++
+            executable: opera-uci
+          - os: windows-latest
+            # The core uses Clang/GCC bit-scan builtins. clang-cl supports these
+            # while producing objects compatible with the Rust MSVC target.
+            cxx: clang-cl
+            executable: opera-uci.exe
+    env:
+      CXX: ${{ matrix.cxx }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Set up Rust
+        run: rustup toolchain install stable --profile minimal --no-self-update
+      - name: Build release UCI executable
+        run: cargo +stable build --release --locked --manifest-path rust/Cargo.toml
+      - name: Compile all Rust test targets
+        run: cargo +stable test --locked --manifest-path rust/Cargo.toml --no-run
+      - name: Run Rust library tests
+        run: cargo +stable test --locked --manifest-path rust/Cargo.toml --lib
+      - name: Run protocol and real-search integration tests
+        run: cargo +stable test --locked --manifest-path rust/Cargo.toml --test uci_parser_comprehensive --test uci_handshake_integration --test uci_real_search --test search_integration_tests
+      - name: Run bounded process acceptance tests
+        run: python scripts/test_uci_process.py rust/target/release/${{ matrix.executable }}
+      - name: Install independent move oracle
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y stockfish
+      - name: Validate bestmoves and PV against Stockfish
+        if: runner.os == 'Linux'
+        run: python scripts/test_uci_oracle.py rust/target/release/${{ matrix.executable }} /usr/games/stockfish
+      - name: Upload native executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: opera-uci-${{ runner.os }}-${{ runner.arch }}
+          path: rust/target/release/${{ matrix.executable }}
+          if-no-files-found: error
+
   docker-build-and-test:
     name: Docker Build & Test
     runs-on: ubuntu-latest
@@ -37,21 +96,23 @@ jobs:
         echo "🐳 Building Opera Engine Docker image..."
         docker build -t opera-engine .
 
+    - name: Validate the runtime binary in Linux
+      run: docker build --target uci-validation -t opera-engine:uci-validation .
+
     - name: Verify Docker image
       run: |
         echo "✅ Verifying Docker image was built successfully..."
         docker images opera-engine
         docker run --rm opera-engine version
 
-    - name: Run engine tests in container
+    - name: Run UCI smoke test in container
       run: |
-        echo "🧪 Running Opera Engine test suite in Docker container..."
+        echo "Running UCI smoke test in Docker container..."
         docker run --rm opera-engine test
 
-    - name: Test UCI mode startup
+    - name: Test clean EOF shutdown
       run: |
-        echo "🎯 Testing UCI mode startup (with timeout)..."
-        timeout 10s docker run --rm opera-engine uci < /dev/null || echo "UCI mode started successfully"
+        timeout 10s docker run --rm -i opera-engine uci < /dev/null
 
     - name: Check Docker image size
       run: |

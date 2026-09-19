@@ -124,7 +124,6 @@ temp/
 
 # Rust
 rust/target/
-rust/Cargo.lock
 rust/**/*.rs.bk
 rust/fuzz/target/
 rust/fuzz/corpus/

@@ -1,4 +1,18 @@
+## UCI follow-up — 2026-09-18
+
+The latest review fixes search score perspective, unread-stdout shutdown and logging initialization, building on combined limits, transactional searchmoves and ponder replies. Process acceptance passes 21/21 on macOS and Docker/Linux ARM64; the independent Stockfish oracle validates 176 positions on each. Rust library/search/protocol checks pass 281/281 and focused C++ checks pass 40/40. C++ bridge ASan/UBSan checks pass on macOS. Native Linux/macOS/Windows CI is configured but unverified remotely. See [current baseline](../docs/current-baseline.md) and [usage](../docs/rust_uci_usage.md); broad engine failures, GUI tests and deferred advanced options remain open.
+
+## Current implementation — 2026-09-13
+
+The Rust UCI executable is now connected to real C++ search. See [current baseline](../docs/current-baseline.md) and [usage/integration guide](../docs/rust_uci_usage.md) for supported commands, observed tests and remaining limitations. This supersedes the September 7 placeholder/build-blocker status below. Full test targets now compile; the whole repository suite still has failures. No Unity/network or strength/NN expansion is included. Earlier dated claims remain historical.
+
 # Opera Engine — UCI Strategy Plan (Rust)
+
+## Current audit — 2026-09-07
+
+See [verified baseline and next milestones](../docs/current-baseline.md). Component implementation and historical test reports do not establish executable UCI compliance, current full-suite success, performance acceptance, or production readiness. This remains the intended architecture. The executable does not start the event loop, and UCIEngine position/go/stop integration remains incomplete.
+
+The material below is historical implementation reporting or design intent; its original dates are preserved and its completion claims are not fresh verification.
 
 > Purpose: Define how Rust will own the **UCI-facing executable** for Opera Engine, bridging to the C++ core (search/movegen) and remaining independent of the Python NN training stack. This document is **implementation-agnostic** (no code), focused on roles, boundaries, and best practices.
 

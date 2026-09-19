@@ -1,5 +1,6 @@
 //! Build script for cxx integration with C++ Opera Engine core
 
+#[cfg(feature = "ffi")]
 use std::path::PathBuf;
 
 fn main() {
@@ -34,29 +35,22 @@ fn main() {
             // Utilities
             .file("../cpp/src/utils/Types.cpp")
             .include(&cpp_include_path)
-            .flag("-std=c++17")
-            .flag("-O3")
-            .flag("-DNDEBUG");
+            .cpp(true)
+            .std("c++17")
+            .opt_level(3)
+            .define("NDEBUG", None);
 
-        // Force use of system clang to avoid toolchain mismatch
-        #[cfg(target_os = "macos")]
-        {
-            bridge.cpp(true).flag("-fno-addrsig"); // Disable address significance tables that cause compatibility issues
+        let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
+        if target_os == "macos" {
+            bridge.flag_if_supported("-fno-addrsig");
         }
 
         bridge.compile("opera-uci-bridge");
 
         // Platform-specific linking
-        #[cfg(target_os = "linux")]
-        println!("cargo:rustc-link-lib=pthread");
-
-        #[cfg(target_os = "macos")]
-        println!("cargo:rustc-link-lib=c++");
-
-        #[cfg(target_os = "windows")]
-        {
-            println!("cargo:rustc-link-lib=msvcrt");
-            println!("cargo:rustc-link-lib=kernel32");
+        // cc/cxx select the target's C++ runtime and MSVC CRT automatically.
+        if target_os == "linux" {
+            println!("cargo:rustc-link-lib=pthread");
         }
     }
 

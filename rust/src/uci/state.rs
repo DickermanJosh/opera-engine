@@ -243,7 +243,14 @@ impl UCIState {
     /// Start a new search with the given context
     pub fn start_search(&self, context: SearchContext) -> UCIResult<()> {
         // Transition to searching state
-        self.transition_to(EngineState::Searching, "Starting new search")?;
+        self.transition_to(
+            if context.is_ponder {
+                EngineState::Pondering
+            } else {
+                EngineState::Searching
+            },
+            "Starting new search",
+        )?;
 
         // Update search context
         {

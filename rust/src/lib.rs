@@ -77,8 +77,8 @@ pub mod testing;
 // Re-export commonly used types
 pub use error::{ContextualError, ContextualResult, ErrorContext, ResultExt, UCIError, UCIResult};
 pub use time::{
-    FixedTimePolicy, InfiniteTimePolicy, PositionInfo, SearchParams, SearchProgress, SearchTimer,
-    StandardTimePolicy, TimePolicy, TimeLimits, timer_from_millis,
+    timer_from_millis, FixedTimePolicy, InfiniteTimePolicy, PositionInfo, SearchParams,
+    SearchProgress, SearchTimer, StandardTimePolicy, TimeLimits, TimePolicy,
 };
 pub use uci::{
     run_uci_event_loop, BasicCommandHandler, BestMoveBuilder, ChessMove, EngineConfig,
@@ -294,6 +294,9 @@ mod tests {
 
     #[test]
     fn test_panic_hook_installation() {
+        if !crate::testing::run_in_subprocess("tests::test_panic_hook_installation") {
+            return;
+        }
         // This test just verifies the function can be called
         // We can't easily test panic behavior in unit tests
         setup_panic_hook();
@@ -301,6 +304,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_engine_initialization() {
+        if !crate::testing::run_in_subprocess("tests::test_engine_initialization") {
+            return;
+        }
         // Test initialization (may fail if C++ engine not available)
         match initialize_engine() {
             Ok(()) => {

@@ -5,33 +5,22 @@
 // and graceful shutdown.
 
 use std::sync::Arc;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::io::AsyncWriteExt;
 use tokio::sync::{broadcast, oneshot};
 use tokio::time::{timeout, Duration, Instant};
 use tokio::{select, signal};
-use tracing::{debug, error, info, instrument, warn};
+use tracing::{debug, error, info, instrument};
 
 use crate::error::{UCIError, UCIResult};
 use crate::uci::engine::UCIEngine;
-use crate::uci::parser::ZeroCopyParser;
-use crate::uci::sanitizer::InputSanitizer;
 
 /// Main UCI event loop coordinator with async I/O processing
 pub struct UCIEventLoop {
-    /// Input reader for stdin commands
-    stdin_reader: BufReader<tokio::io::Stdin>,
-
     /// Output writer for stdout responses
     stdout_writer: tokio::io::Stdout,
 
     /// UCI engine instance
     engine: Arc<UCIEngine>,
-
-    /// Command parser with input validation
-    parser: ZeroCopyParser,
-
-    /// Input sanitizer for security
-    sanitizer: InputSanitizer,
 
     /// Response receiver from engine
     response_rx: broadcast::Receiver<String>,
@@ -124,19 +113,14 @@ impl UCIEventLoop {
 
     /// Create a new UCI event loop with custom configuration
     pub fn with_config(engine: Arc<UCIEngine>, config: EventLoopConfig) -> UCIResult<Self> {
-        let stdin = tokio::io::stdin();
         let stdout = tokio::io::stdout();
-        let stdin_reader = BufReader::with_capacity(config.input_buffer_size, stdin);
 
         // Subscribe to engine responses
         let response_rx = engine.subscribe_responses();
 
         Ok(Self {
-            stdin_reader,
             stdout_writer: stdout,
             engine,
-            parser: ZeroCopyParser::new(),
-            sanitizer: InputSanitizer::default(),
             response_rx,
             shutdown_rx: None,
             stats: EventLoopStats {
@@ -158,6 +142,11 @@ impl UCIEventLoop {
     pub async fn run(&mut self) -> UCIResult<()> {
         info!("Starting UCI event loop");
 
+        let shutdown_signal = shutdown_signal().map_err(|e| UCIError::Io {
+            message: format!("Failed to register shutdown signals: {e}"),
+        })?;
+        tokio::pin!(shutdown_signal);
+
         // Initialize engine
         self.engine
             .initialize()
@@ -166,186 +155,118 @@ impl UCIEventLoop {
                 message: format!("Failed to initialize engine: {}", e),
             })?;
 
-        let mut input_buffer = String::with_capacity(self.config.input_buffer_size);
-        let mut graceful_shutdown = false;
-
-        loop {
-            input_buffer.clear();
-
-            select! {
-                // Handle stdin input with highest priority
-                result = self.stdin_reader.read_line(&mut input_buffer) => {
-                    match result {
-                        Ok(0) => {
-                            info!("EOF received on stdin - initiating graceful shutdown");
-                            graceful_shutdown = true;
-                            break;
-                        }
-                        Ok(_) => {
-                            if let Err(e) = self.process_input_command(&input_buffer).await {
-                                error!(error = %e, "Failed to process input command");
-                                // Continue processing despite errors
-                            }
-                        }
+        let (input_tx, mut input_rx) = tokio::sync::mpsc::channel::<Result<String, String>>(64);
+        let input_capacity = self.config.input_buffer_size.max(1);
+        // Tokio stdin uses an uncancellable blocking task and can keep runtime shutdown
+        // alive after quit. A dedicated reader is detached; process exit closes its fd.
+        std::thread::spawn(move || {
+            use std::io::{BufRead, BufReader};
+            let mut reader = BufReader::with_capacity(input_capacity, std::io::stdin());
+            loop {
+                let mut bytes = Vec::new();
+                let mut oversized = false;
+                loop {
+                    let chunk = match reader.fill_buf() {
+                        Ok(c) => c,
                         Err(e) => {
-                            error!(error = %e, "Failed to read from stdin");
-                            return Err(UCIError::Io {
-                                message: format!("Stdin read error: {}", e)
-                            });
+                            let _ = input_tx.blocking_send(Err(e.to_string()));
+                            return;
                         }
+                    };
+                    if chunk.is_empty() {
+                        if oversized {
+                            let _ =
+                                input_tx.blocking_send(Err("command exceeds 4096 bytes".into()));
+                        } else if !bytes.is_empty() {
+                            let _ = input_tx
+                                .blocking_send(String::from_utf8(bytes).map_err(|e| e.to_string()));
+                        }
+                        return;
                     }
-                }
-
-                // Handle engine responses
-                result = self.response_rx.recv() => {
-                    match result {
-                        Ok(response) => {
-                            if let Err(e) = self.send_response(&response).await {
-                                error!(error = %e, response = %response, "Failed to send response");
-                            }
-                        }
-                        Err(broadcast::error::RecvError::Closed) => {
-                            info!("Engine response channel closed");
-                            break;
-                        }
-                        Err(broadcast::error::RecvError::Lagged(skipped)) => {
-                            warn!(skipped_responses = skipped, "Response buffer lagged - some responses may have been dropped");
-                        }
-                    }
-                }
-
-                // Handle shutdown signal
-                _ = async {
-                    if let Some(shutdown_rx) = self.shutdown_rx.take() {
-                        let _ = shutdown_rx.await;
+                    let length = chunk
+                        .iter()
+                        .position(|b| *b == b'\n')
+                        .map(|i| i + 1)
+                        .unwrap_or(chunk.len());
+                    let ended = chunk[length - 1] == b'\n';
+                    if bytes.len() + length <= 4096 && !oversized {
+                        bytes.extend_from_slice(&chunk[..length]);
                     } else {
-                        std::future::pending::<()>().await;
+                        oversized = true;
                     }
-                }, if self.shutdown_rx.is_some() => {
-                    info!("Shutdown signal received");
-                    graceful_shutdown = true;
-                    break;
-                }
-
-                // Periodic maintenance and monitoring
-                _ = tokio::time::sleep(Duration::from_secs(1)), if self.config.enable_monitoring => {
-                    self.update_stats();
-
-                    // Log performance metrics periodically
-                    if self.stats.commands_processed % 100 == 0 && self.stats.commands_processed > 0 {
-                        debug!(
-                            commands = self.stats.commands_processed,
-                            responses = self.stats.responses_sent,
-                            avg_time_ms = self.stats.avg_command_time_ms,
-                            "Event loop performance metrics"
-                        );
+                    reader.consume(length);
+                    if ended {
+                        break;
                     }
                 }
+                let line = if oversized {
+                    Err("command exceeds 4096 bytes".into())
+                } else {
+                    String::from_utf8(bytes).map_err(|e| e.to_string())
+                };
+                if input_tx.blocking_send(line).is_err() {
+                    return;
+                }
             }
-
-            // Check for quit command processing
-            if self.should_shutdown() {
-                info!("Quit command processed - initiating shutdown");
-                break;
+        });
+        let result = async {
+            loop {
+                select! {
+                    biased;
+                    signal = &mut shutdown_signal => {
+                        signal.map_err(|e| UCIError::Io { message: e.to_string() })?;
+                        break Ok(());
+                    }
+                    _ = async {
+                        match self.shutdown_rx.as_mut() {
+                            Some(rx) => { let _ = rx.await; }
+                            None => std::future::pending::<()>().await,
+                        }
+                    } => break Ok(()),
+                    result = self.response_rx.recv() => {
+                        match result {
+                            Ok(line) => self.send_response(&line).await?,
+                            Err(broadcast::error::RecvError::Lagged(_)) => {
+                                return Err(UCIError::Io {
+                                    message: "protocol output queue overflow".into(),
+                                });
+                            }
+                            Err(_) => break Ok(()),
+                        }
+                    }
+                    line = input_rx.recv() => {
+                        match line {
+                            Some(Ok(line)) => {
+                                if let Err(e) = self.process_input_command(&line).await {
+                                    self.send_response(&format!("info string ERROR: {e}")).await?;
+                                }
+                                if self.should_shutdown() { break Ok(()); }
+                            }
+                            Some(Err(e)) => self.send_response(&format!("info string ERROR: {e}")).await?,
+                            None => break Ok(()),
+                        }
+                    }
+                }
+                self.update_stats();
             }
         }
-
-        // Graceful shutdown sequence
-        if graceful_shutdown {
-            self.graceful_shutdown().await?;
-        }
-
-        info!(
-            uptime = ?self.stats.uptime,
-            commands_processed = self.stats.commands_processed,
-            responses_sent = self.stats.responses_sent,
-            "UCI event loop shutdown complete"
-        );
-
-        Ok(())
+        .await;
+        // Join the worker on every exit path, including an output or signal error.
+        let stopped = self.engine.process_command("quit").await;
+        result?;
+        stopped?;
+        self.graceful_shutdown().await
     }
 
     /// Process a single input command with timeout and error handling
     #[instrument(skip(self, input))]
     async fn process_input_command(&mut self, input: &str) -> UCIResult<()> {
         let command_start = Instant::now();
-
-        // Sanitize and validate input
-        let sanitized = self
-            .sanitizer
-            .sanitize_string(input)
-            .map_err(|e| UCIError::Protocol {
-                message: format!("Input sanitization failed: {}", e),
-            })?;
-
-        if sanitized.is_empty() {
-            return Ok(()); // Skip empty lines
+        if input.trim().is_empty() {
+            return Ok(());
         }
-
-        debug!(command = %sanitized, "Processing UCI command");
-
-        // Parse command with timeout
-        let parse_result = timeout(
-            Duration::from_millis(100), // Quick parse timeout
-            async { self.parser.parse_command(&sanitized) },
-        )
-        .await
-        .map_err(|_| UCIError::Timeout { duration_ms: 100 })?;
-
-        match parse_result {
-            Ok(_command) => {
-                // Process command with timeout
-                let process_result = timeout(
-                    Duration::from_millis(self.config.command_timeout_ms),
-                    self.engine.process_command(&sanitized),
-                )
-                .await;
-
-                match process_result {
-                    Ok(Ok(())) => {
-                        // Command processed successfully
-                        let elapsed = command_start.elapsed();
-                        self.update_command_stats(elapsed);
-
-                        debug!(
-                            command = %sanitized,
-                            processing_time_ms = elapsed.as_millis(),
-                            "Command processed successfully"
-                        );
-                    }
-                    Ok(Err(e)) => {
-                        error!(
-                            command = %sanitized,
-                            error = %e,
-                            "Engine command processing failed"
-                        );
-                        return Err(e);
-                    }
-                    Err(_) => {
-                        self.stats.command_timeouts += 1;
-                        warn!(
-                            command = %sanitized,
-                            timeout_ms = self.config.command_timeout_ms,
-                            "Command processing timed out"
-                        );
-                        return Err(UCIError::Timeout {
-                            duration_ms: self.config.command_timeout_ms,
-                        });
-                    }
-                }
-            }
-            Err(e) => {
-                warn!(
-                    input = %sanitized,
-                    error = %e,
-                    "Command parsing failed"
-                );
-                // Send error info to GUI
-                let error_response = format!("info string ERROR: Invalid command: {}", e);
-                self.send_response(&error_response).await?;
-            }
-        }
-
+        self.engine.process_command(input).await?;
+        self.update_command_stats(command_start.elapsed());
         Ok(())
     }
 
@@ -356,20 +277,16 @@ impl UCIEventLoop {
 
         match timeout(
             Duration::from_millis(self.config.response_timeout_ms),
-            self.stdout_writer
-                .write_all(response_with_newline.as_bytes()),
+            async {
+                self.stdout_writer
+                    .write_all(response_with_newline.as_bytes())
+                    .await?;
+                self.stdout_writer.flush().await
+            },
         )
         .await
         {
             Ok(Ok(())) => {
-                // Ensure immediate delivery
-                if let Err(e) = self.stdout_writer.flush().await {
-                    error!(error = %e, "Failed to flush stdout");
-                    return Err(UCIError::Io {
-                        message: format!("Stdout flush error: {}", e),
-                    });
-                }
-
                 self.stats.responses_sent += 1;
                 debug!(response = %response, "Response sent");
                 Ok(())
@@ -407,35 +324,22 @@ impl UCIEventLoop {
     async fn graceful_shutdown(&mut self) -> UCIResult<()> {
         info!("Starting graceful shutdown sequence");
 
-        // Send final responses if any are queued
-        let shutdown_deadline =
-            Instant::now() + Duration::from_millis(self.config.shutdown_timeout_ms);
-
-        while Instant::now() < shutdown_deadline {
-            select! {
-                result = self.response_rx.recv() => {
-                    match result {
-                        Ok(response) => {
-                            if let Err(e) = self.send_response(&response).await {
-                                warn!(error = %e, "Failed to send final response during shutdown");
-                            }
-                        }
-                        Err(_) => break, // Channel closed
-                    }
+        // Search has joined, so all final responses are already queued.
+        timeout(
+            Duration::from_millis(self.config.shutdown_timeout_ms),
+            async {
+                while let Ok(line) = self.response_rx.try_recv() {
+                    self.send_response(&line).await?;
                 }
-                _ = tokio::time::sleep(Duration::from_millis(100)) => {
-                    // Check for more responses periodically
-                }
-            }
-        }
-
-        // Final stdout flush
-        if let Err(e) = self.stdout_writer.flush().await {
-            warn!(error = %e, "Failed final stdout flush during shutdown");
-        }
-
-        info!("Graceful shutdown sequence complete");
-        Ok(())
+                self.stdout_writer.flush().await.map_err(|e| UCIError::Io {
+                    message: e.to_string(),
+                })
+            },
+        )
+        .await
+        .map_err(|_| UCIError::Timeout {
+            duration_ms: self.config.shutdown_timeout_ms,
+        })?
     }
 
     /// Update command processing statistics
@@ -443,7 +347,7 @@ impl UCIEventLoop {
         self.stats.commands_processed += 1;
 
         // Update rolling average processing time
-        let new_time_ms = processing_time.as_millis() as f64;
+        let new_time_ms = processing_time.as_secs_f64() * 1000.0;
         let count = self.stats.commands_processed as f64;
         self.stats.avg_command_time_ms =
             ((self.stats.avg_command_time_ms * (count - 1.0)) + new_time_ms) / count;
@@ -483,27 +387,30 @@ pub async fn run_uci_event_loop(config: EventLoopConfig) -> UCIResult<()> {
     // Create engine instance
     let engine = Arc::new(UCIEngine::new());
 
-    // Create shutdown signal
-    let (shutdown_tx, shutdown_rx) = oneshot::channel();
-
-    // Setup signal handling
-    tokio::spawn(async move {
-        match signal::ctrl_c().await {
-            Ok(()) => {
-                info!("Ctrl+C received - sending shutdown signal");
-                let _ = shutdown_tx.send(());
-            }
-            Err(err) => {
-                error!(error = %err, "Failed to setup signal handler");
-            }
-        }
-    });
-
     // Create and run event loop
-    let mut event_loop =
-        UCIEventLoop::with_config(engine, config)?.with_shutdown_signal(shutdown_rx);
+    let mut event_loop = UCIEventLoop::with_config(engine, config)?;
 
     event_loop.run().await
+}
+
+// Install Unix handlers before processing commands so SIGTERM (including Docker
+// stop) and SIGINT follow the same worker-join/output-drain path as UCI quit.
+fn shutdown_signal() -> std::io::Result<impl std::future::Future<Output = std::io::Result<()>>> {
+    #[cfg(unix)]
+    {
+        let mut interrupt = signal::unix::signal(signal::unix::SignalKind::interrupt())?;
+        let mut terminate = signal::unix::signal(signal::unix::SignalKind::terminate())?;
+        Ok(async move {
+            select! {
+                _ = interrupt.recv() => Ok(()),
+                _ = terminate.recv() => Ok(()),
+            }
+        })
+    }
+    #[cfg(not(unix))]
+    {
+        Ok(signal::ctrl_c())
+    }
 }
 
 #[cfg(test)]
@@ -609,3 +516,7 @@ mod tests {
         assert_eq!(formatted, "readyok\n");
     }
 }
+
+#[cfg(test)]
+#[path = "event_loop_tests.rs"]
+mod integration_tests;

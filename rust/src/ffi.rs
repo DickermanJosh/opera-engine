@@ -58,6 +58,7 @@ pub mod ffi {
         fn board_make_move(board: Pin<&mut Board>, move_str: &str) -> bool;
         fn board_get_fen(board: &Board) -> String;
         fn board_is_valid_move(board: &Board, move_str: &str) -> bool;
+        fn board_previous_side_in_check(board: &Board) -> bool;
         fn board_reset(board: Pin<&mut Board>);
         fn board_is_in_check(board: &Board) -> bool;
         fn board_is_checkmate(board: &Board) -> bool;
@@ -65,10 +66,24 @@ pub mod ffi {
 
         // SearchEngine FFI operations (global scope, not in namespace)
         fn create_search_engine(board: Pin<&mut Board>) -> UniquePtr<SearchEngineWrapper>;
-        fn search_engine_search(engine: Pin<&mut SearchEngineWrapper>, limits: &FFISearchLimits, result: &mut FFISearchResult);
+        fn search_engine_search(
+            engine: Pin<&mut SearchEngineWrapper>,
+            limits: &FFISearchLimits,
+            result: &mut FFISearchResult,
+        );
         fn search_engine_stop(engine: Pin<&mut SearchEngineWrapper>);
         fn search_engine_is_searching(engine: &SearchEngineWrapper) -> bool;
         fn search_engine_reset(engine: Pin<&mut SearchEngineWrapper>);
+
+        fn search_engine_controlled(
+            engine: Pin<&mut SearchEngineWrapper>,
+            limits: &FFISearchLimits,
+            control: &SearchControl,
+            hash_mb: u32,
+            morphy: bool,
+            root_moves: &str,
+            result: &mut FFISearchResult,
+        ) -> Result<()>;
 
         // Engine configuration
         fn engine_set_hash_size(size_mb: u32) -> bool;
@@ -78,6 +93,10 @@ pub mod ffi {
 
     // Rust functions that C++ can call (callbacks)
     extern "Rust" {
+        type SearchControl;
+        fn cancelled(self: &SearchControl) -> bool;
+        fn report(self: &SearchControl, info: &FFISearchInfo);
+
         // Search progress callback
         fn on_search_progress(info: &FFISearchInfo);
 
@@ -85,6 +104,8 @@ pub mod ffi {
         fn on_engine_error(error_msg: String);
     }
 }
+
+use crate::uci::search_session::SearchControl;
 
 // Rust implementations of callback functions
 /// Called by C++ engine during search to report progress
