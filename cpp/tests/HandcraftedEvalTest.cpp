@@ -98,13 +98,17 @@ TEST_F(HandcraftedEvalTest, WhiteUpPawn) {
  * Test 6: Black up a pawn shows negative evaluation
  */
 TEST_F(HandcraftedEvalTest, BlackUpPawn) {
-    // Black has extra pawn (white missing e2 pawn)
-    board->setFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+    // Black has extra pawn (white missing a2 pawn; keep central mobility unchanged)
+    board->setFromFEN("rnbqkbnr/pppppppp/8/8/8/8/1PPPPPPP/RNBQKBNR w KQkq - 0 1");
 
     int score = evaluator->evaluate(*board, Color::WHITE);
 
-    // Should be at least -100 centipawns
-    EXPECT_LT(score, -80);
+    // Material is one pawn down; mobility, structure and tempo also contribute.
+    class MaterialProbe : public HandcraftedEvaluator {
+    public: using HandcraftedEvaluator::evaluate_material;
+    } probe;
+    EXPECT_EQ(probe.evaluate_material(*board, WHITE) - probe.evaluate_material(*board, BLACK), -100);
+    EXPECT_LT(score, 0);
 }
 
 /**

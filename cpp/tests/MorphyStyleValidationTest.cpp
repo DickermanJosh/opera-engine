@@ -132,53 +132,31 @@ TEST_F(MorphyStyleValidationTest, EarlyDevelopmentBonus) {
  * Test 3: King safety differential emphasis
  */
 TEST_F(MorphyStyleValidationTest, KingSafetyEmphasis) {
-    // Black king exposed, White has attacking chances
-    std::string unsafe_king = "r1bq1rk1/ppp2p1p/2np1np1/2b1p3/2B1P3/2NP1N2/PPP2PPP/R1BQK2R w KQ - 0 1";
-
-    auto comparison = compare_evaluators(unsafe_king, 1.5);
-
-    std::cout << "\n  King Attack Position:\n";
-    std::cout << "    Morphy evaluation: " << comparison.morphy_score << " cp\n";
-    std::cout << "    Morphy bonus for attack: " << comparison.difference << " cp\n";
-
-    // Morphy should value attacking chances
-    EXPECT_GT(comparison.difference, 10);  // At least 10cp bonus for attack
+    // Equal material, White sheltered on g1; Black has walked to e6.
+    const auto result = compare_evaluators("r2q1b1r/ppp2ppp/2nbkn2/3pp3/3PP3/2NB1N2/PPP2PPP/R1BQ1RK1 w - - 0 8", 1.5);
+    EXPECT_GT(result.difference, 10);
 }
 
 /**
  * Test 4: Sacrifice compensation detection
  */
 TEST_F(MorphyStyleValidationTest, SacrificeCompensation) {
-    // Position after piece sacrifice for initiative
-    // White sacrificed knight on f7 for attack
-    std::string sacrifice_pos = "r1bq1rk1/ppp2Npp/2np4/2b1p3/2B1P3/2NP4/PPP2PPP/R1BQK2R b KQ - 0 1";
-
-    auto comparison = compare_evaluators(sacrifice_pos, 1.8);
-
-    std::cout << "\n  Sacrifice Compensation:\n";
-    std::cout << "    Material balance: -300cp (knight sacrificed)\n";
-    std::cout << "    Morphy evaluation: " << comparison.morphy_score << " cp\n";
-    std::cout << "    Compensation bonus: " << comparison.difference << " cp\n";
-
-    // Morphy should recognize attack compensation
-    EXPECT_GT(comparison.difference, 30);  // Significant compensation for initiative
+    // A pawn deficit with development and king safety, versus a passive pawn loss.
+    const auto active = compare_evaluators("rnbqkbnr/pppp1ppp/8/4p3/2B1P3/5N2/PPPP1PP1/RNBQ1RK1 b kq - 4 3", 1.5);
+    const auto passive = compare_evaluators("rnbqkbnr/pppppppp/8/8/8/8/1PPPPPPP/RNBQKBNR w KQkq - 0 1", 1.5);
+    EXPECT_GT(active.difference, passive.difference);
+    EXPECT_LT(passive.morphy_score, 0); // Losing material alone earns no compensation.
 }
 
 /**
  * Test 5: Uncastled king in opening penalty
  */
 TEST_F(MorphyStyleValidationTest, UncastledKingPenalty) {
-    // Black hasn't castled in middlegame
-    std::string uncastled = "r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 0 1";
-
-    auto comparison = compare_evaluators(uncastled, 1.5);
-
-    std::cout << "\n  Uncastled King:\n";
-    std::cout << "    Morphy penalty for uncastled: " << -comparison.difference << " cp\n";
-
-    // Morphy should penalize uncastled king more than standard eval
-    // (Negative difference means Morphy evaluates lower)
-    EXPECT_LT(comparison.difference, -20);  // At least 20cp extra penalty
+    // Scores are White-relative, including when it is Black's turn.
+    const auto white_safe = compare_evaluators("rnbqkbnr/pppp1ppp/8/4p3/2B1P3/5N2/PPPP1PPP/RNBQ1RK1 b kq - 4 3", 1.5);
+    const auto black_safe = compare_evaluators("rnbq1rk1/pppp1ppp/5n2/2b1p3/4P3/8/PPPP1PPP/RNBQKBNR w KQ - 4 3", 1.5);
+    EXPECT_GT(white_safe.difference, 20);
+    EXPECT_EQ(white_safe.difference, -black_safe.difference);
 }
 
 // ============================================================================
@@ -189,32 +167,20 @@ TEST_F(MorphyStyleValidationTest, UncastledKingPenalty) {
  * Test 6: Initiative and tempo valuation
  */
 TEST_F(MorphyStyleValidationTest, InitiativeValuation) {
-    // White has tempo and initiative
-    std::string initiative_pos = "r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 0 1";
-
-    auto comparison = compare_evaluators(initiative_pos, 1.5);
-
-    std::cout << "\n  Initiative Position:\n";
-    std::cout << "    Morphy initiative bonus: " << comparison.difference << " cp\n";
-
-    // Morphy should value having the initiative
-    EXPECT_GT(comparison.difference, 15);
+    // Genuine development lead with equal material (after a legal opening).
+    const auto active = compare_evaluators("rnbqkbnr/pppp1ppp/8/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3", 1.5);
+    const auto symmetric = compare_evaluators(STARTING_FEN, 1.5);
+    EXPECT_GT(active.difference, symmetric.difference);
 }
 
 /**
  * Test 7: Central control emphasis
  */
 TEST_F(MorphyStyleValidationTest, CentralControlEmphasis) {
-    // Strong central control position
-    std::string central = "rnbqkb1r/ppp2ppp/3p1n2/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R w KQkq - 0 1";
-
-    auto comparison = compare_evaluators(central, 1.5);
-
-    std::cout << "\n  Central Control:\n";
-    std::cout << "    Morphy central bonus: " << comparison.difference << " cp\n";
-
-    // Morphy should value central control
-    EXPECT_GT(comparison.difference, 5);
+    // Isolate the central-activity term with equally sheltered kings and pawns.
+    const auto central = compare_evaluators("r2q1rk1/ppp2ppp/2nbbn2/8/3N4/3BBN2/PPP2PPP/R2Q1RK1 w - - 0 1", 1.5);
+    const auto rim = compare_evaluators("r2q1rk1/ppp2ppp/2nbbn2/8/N7/3BBN2/PPP2PPP/R2Q1RK1 w - - 0 1", 1.5);
+    EXPECT_GT(central.difference, rim.difference);
 }
 
 // ============================================================================
@@ -225,29 +191,8 @@ TEST_F(MorphyStyleValidationTest, CentralControlEmphasis) {
  * Test 8: Morphy finds tactical sacrifice
  */
 TEST_F(MorphyStyleValidationTest, FindsTacticalSacrifice) {
-    // Bxh7+ Greek gift sacrifice available
-    std::string greek_gift = "rn1qkb1r/ppp2ppp/3b1n2/3Pp3/4P3/2N5/PPP1BPPP/R1BQK1NR w KQkq - 0 1";
-
-    // This test is aspirational - engine may not find it yet
-    // Keeping as documentation of desired behavior
-    std::cout << "\n  Greek Gift Position:\n";
-    std::cout << "    Testing if Morphy finds Bxh7+...\n";
-
-    // Run search with Morphy
-    board->setFromFEN(greek_gift);
-    SearchEngine engine(*board, stop_flag);
-    engine.set_use_morphy_style(true);
-    engine.set_morphy_bias(2.0);  // Maximum bias
-
-    SearchLimits limits;
-    limits.max_depth = 6;
-
-    SearchResult result = engine.search(limits);
-    std::cout << "    Best move: " << result.best_move.toString() << "\n";
-    std::cout << "    Score: " << result.score << " cp\n";
-
-    // Aspirational test - may not pass yet
-    // EXPECT_TRUE(morphy_finds_move(greek_gift, "h7", 6));
+    // Morphy's Opera Game: Qb8+! Nxb8 Rd8#.
+    EXPECT_TRUE(morphy_finds_move("4kb1r/p2n1ppp/4q3/4p1B1/4P3/1Q6/PPP2PPP/2KR4 w k - 0 16", "b3b8", 4));
 }
 
 /**
@@ -383,22 +328,12 @@ TEST_F(MorphyStyleValidationTest, EvaluationSpeedComparison) {
  * Test 13: Style consistency across game phases
  */
 TEST_F(MorphyStyleValidationTest, StyleConsistencyAcrossPhases) {
-    std::vector<std::string> phases = {
-        "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",  // Opening
-        "r1bq1rk1/ppp2ppp/2np1n2/2b1p3/2B1P3/2NP1N2/PPP2PPP/R1BQK2R w KQ - 0 8",  // Middlegame
-        "8/5k2/3p4/1p1Pp2p/pP2Pp1P/P4P1K/8/8 b - - 0 1",  // Endgame
-    };
-
-    std::cout << "\n  Style Consistency:\n";
-
-    for (const auto& fen : phases) {
-        auto comparison = compare_evaluators(fen, 1.5);
-        std::cout << "    Phase difference: " << comparison.difference << " cp\n";
-
-        // Morphy bias should work in all phases
-        // (May be smaller in endgame where material matters more)
+    for (const auto* fen : {STARTING_FEN,
+         "r2q1b1r/ppp2ppp/2nbkn2/3pp3/3PP3/2NB1N2/PPP2PPP/R1BQ1RK1 w - - 0 8",
+         "8/5k2/3p4/1p1Pp2p/pP2Pp1P/P4P1K/8/8 b - - 0 1"}) {
+        const auto zero = compare_evaluators(fen, 0.0);
+        EXPECT_EQ(zero.difference, 0);
+        const auto biased = compare_evaluators(fen, 1.5);
+        EXPECT_LT(std::abs(biased.difference), 400);
     }
-
-    // Just verify both evaluators work in all phases
-    SUCCEED();
 }

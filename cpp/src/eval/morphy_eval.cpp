@@ -24,7 +24,8 @@ MorphyEvaluator::MorphyEvaluator(double morphy_bias)
 
 int MorphyEvaluator::evaluate(const Board& board, Color side_to_move) {
     // Start with base handcrafted evaluation
-    int base_score = HandcraftedEvaluator::evaluate(board, side_to_move);
+    EvaluationTerms terms;
+    int base_score = evaluate_with_terms(board, side_to_move, terms);
 
     // If Morphy bias is 0, just return base score (normal play)
     if (morphy_bias_ < 0.01) {
@@ -32,7 +33,7 @@ int MorphyEvaluator::evaluate(const Board& board, Color side_to_move) {
     }
 
     // Calculate phase for context-dependent adjustments
-    int phase = calculate_phase(board);
+    int phase = terms.phase;
 
     // Get component scores for white and black
     Color white = Color::WHITE;
@@ -45,9 +46,9 @@ int MorphyEvaluator::evaluate(const Board& board, Color side_to_move) {
     int morphy_adjustment = 0;
 
     // 1. Development Bias (1.2x in opening, fades in endgame)
-    if (phase > 128) {  // Opening/middlegame
-        int white_dev = evaluate_development(board, white, phase);
-        int black_dev = evaluate_development(board, black, phase);
+    if (phase > 0) {  // Opening/middlegame
+        int white_dev = terms.development[WHITE];
+        int black_dev = terms.development[BLACK];
         int dev_advantage = white_dev - black_dev;
 
         // Apply development bias (extra 0.2x scaled by morphy_bias)
@@ -58,8 +59,8 @@ int MorphyEvaluator::evaluate(const Board& board, Color side_to_move) {
 
     // 2. King Safety Aggression Bias (1.5x for attacking enemy king)
     {
-        int white_king_safety = evaluate_king_safety(board, white, phase);
-        int black_king_safety = evaluate_king_safety(board, black, phase);
+        int white_king_safety = terms.king_safety[WHITE];
+        int black_king_safety = terms.king_safety[BLACK];
 
         // Morphy focuses on ATTACKING enemy king (black's safety matters more)
         // Negative black king safety = good for white
@@ -73,8 +74,8 @@ int MorphyEvaluator::evaluate(const Board& board, Color side_to_move) {
 
     // 3. Mobility and Initiative Bias (1.1x for piece activity)
     {
-        int white_mobility = evaluate_mobility(board, white);
-        int black_mobility = evaluate_mobility(board, black);
+        int white_mobility = terms.mobility[WHITE];
+        int black_mobility = terms.mobility[BLACK];
         int mobility_advantage = white_mobility - black_mobility;
 
         double mobility_multiplier = 1.0 + (MOBILITY_BIAS - 1.0) * morphy_bias_;
@@ -83,35 +84,39 @@ int MorphyEvaluator::evaluate(const Board& board, Color side_to_move) {
     }
 
     // 4. Uncastled King Penalty (Morphy-specific)
-    if (phase > 128) {  // Opening/middlegame only
+    if (phase > 0) {  // Opening/middlegame only
         if (is_uncastled_in_opening(board, black, phase)) {
-            int penalty = static_cast<int>(UNCASTLED_PENALTY * morphy_bias_);
+            int penalty = static_cast<int>(UNCASTLED_PENALTY * morphy_bias_ * phase / 256.0);
             morphy_adjustment += penalty;  // Good for white
         }
         if (is_uncastled_in_opening(board, white, phase)) {
-            int penalty = static_cast<int>(UNCASTLED_PENALTY * morphy_bias_);
+            int penalty = static_cast<int>(UNCASTLED_PENALTY * morphy_bias_ * phase / 256.0);
             morphy_adjustment -= penalty;  // Bad for white
         }
     }
 
     // 5. Material Sacrifice Compensation
     {
-        int white_material = evaluate_material(board, white);
-        int black_material = evaluate_material(board, black);
+        int white_material = terms.material[WHITE];
+        int black_material = terms.material[BLACK];
         int material_balance = white_material - black_material;
 
         // If white is behind in material, check for compensation
         if (material_balance < -50) {  // Down at least half a pawn
-            int compensation = calculate_sacrifice_compensation(board, white, material_balance);
+            int compensation = calculate_sacrifice_compensation(board, white, material_balance, terms);
             morphy_adjustment += compensation;
         }
         // If black is behind, check their compensation (subtract from white's score)
         else if (material_balance > 50) {
-            int compensation = calculate_sacrifice_compensation(board, black, -material_balance);
+            int compensation = calculate_sacrifice_compensation(board, black, -material_balance, terms);
             morphy_adjustment -= compensation;
         }
     }
 
+    // Value activity even before material is sacrificed; compensation must be
+    // earned by a real advantage over the opponent, not merely by losing a pawn.
+    morphy_adjustment += static_cast<int>(morphy_bias_ *
+        (calculate_initiative(board, WHITE, terms) - calculate_initiative(board, BLACK, terms)) / 4.0);
     return base_score + morphy_adjustment;
 }
 
@@ -132,7 +137,7 @@ void MorphyEvaluator::configure_options(const std::map<std::string, std::string>
 // ============================================================================
 
 int MorphyEvaluator::calculate_sacrifice_compensation(
-    const Board& board, Color color, int material_deficit) const {
+    const Board& board, Color color, int material_deficit, const EvaluationTerms& terms) const {
 
     // No compensation for large material deficits (>400cp = more than a minor piece)
     if (material_deficit < -400) {
@@ -142,23 +147,23 @@ int MorphyEvaluator::calculate_sacrifice_compensation(
     int compensation = 0;
 
     // Calculate initiative advantage
-    int initiative = calculate_initiative(board, color);
+    int initiative = std::max(0, calculate_initiative(board, color, terms) - calculate_initiative(board, ~color, terms));
     compensation += initiative;
 
     // Check for king attack potential (enemy king safety)
     Color enemy = ~color;
-    int phase = calculate_phase(board);
-    int enemy_king_safety = evaluate_king_safety(board, enemy, phase);
+    int phase = terms.phase;
+    int enemy_king_safety = terms.king_safety[enemy];
 
     // Poor enemy king safety = compensation for sacrifice
-    if (enemy_king_safety < -20) {  // Enemy king is unsafe
+    if (enemy_king_safety < -20 && enemy_king_safety < terms.king_safety[color] - 20) {  // Enemy king is unsafe
         compensation += std::min(30, -enemy_king_safety);
     }
 
     // Check for development advantage
-    if (phase > 128) {  // Opening/middlegame
-        int our_dev = evaluate_development(board, color, phase);
-        int enemy_dev = evaluate_development(board, enemy, phase);
+    if (phase > 0) {  // Opening/middlegame
+        int our_dev = terms.development[color];
+        int enemy_dev = terms.development[enemy];
         if (our_dev > enemy_dev + 20) {  // Significant development lead
             compensation += 20;
         }
@@ -175,7 +180,7 @@ bool MorphyEvaluator::is_uncastled_in_opening(
     const Board& board, Color enemy_color, int phase) const {
 
     // Only check in opening/middlegame
-    if (phase < 128) {
+    if (phase == 0) {
         return false;
     }
 
@@ -189,16 +194,14 @@ bool MorphyEvaluator::is_uncastled_in_opening(
     int king_file = king_sq % 8;
     int king_rank = king_sq / 8;
 
-    // King on back rank in center (files c-f) = not castled
-    int back_rank = (enemy_color == Color::WHITE) ? 0 : 7;
-    if (king_rank == back_rank && king_file >= 2 && king_file <= 5) {
-        return true;  // King still in center on back rank
-    }
+    // Both castling wings are safe starting points; walking the king forward
+    // does not make the opening penalty disappear.
+    const int relative_rank = enemy_color == WHITE ? king_rank : 7 - king_rank;
+    return relative_rank > 1 || (king_file >= 3 && king_file <= 5);
 
-    return false;
 }
 
-int MorphyEvaluator::calculate_initiative(const Board& board, Color color) const {
+int MorphyEvaluator::calculate_initiative(const Board& board, Color color, const EvaluationTerms& terms) const {
     int initiative = 0;
 
     // 1. Central control
@@ -211,13 +214,13 @@ int MorphyEvaluator::calculate_initiative(const Board& board, Color color) const
     initiative += central_pieces * 5;  // 5cp per central piece
 
     // 2. Piece mobility advantage
-    int mobility = evaluate_mobility(board, color);
+    int mobility = terms.mobility[color];
     initiative += mobility / 3;  // Use 1/3 of mobility score
 
     // 3. Development in opening
-    int phase = calculate_phase(board);
-    if (phase > 128) {
-        int development = evaluate_development(board, color, phase);
+    int phase = terms.phase;
+    if (phase > 0) {
+        int development = terms.development[color];
         initiative += development / 4;  // Use 1/4 of development score
     }
 

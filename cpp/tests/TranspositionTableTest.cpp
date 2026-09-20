@@ -349,37 +349,21 @@ TEST_F(TranspositionTableTest, NegativeScores) {
     EXPECT_EQ(entry.get_score(), negative_score);
 }
 
-// Thread Safety Tests (Basic)
-TEST_F(TranspositionTableTest, BasicThreadSafety) {
-    const int num_threads = 4;
-    const int ops_per_thread = 1000;
-    
-    std::vector<std::thread> threads;
-    
-    // Launch threads that perform concurrent operations
-    for (int t = 0; t < num_threads; ++t) {
-        threads.emplace_back([this, t, ops_per_thread]() {
-            for (int i = 0; i < ops_per_thread; ++i) {
-                uint64_t key = static_cast<uint64_t>(t * ops_per_thread + i) * 0x1000ULL;
-                Move move(static_cast<Square>((t + i) % 64), static_cast<Square>((t + i + 1) % 64));
-                
-                tt->store(key, move, i, i % 32, TTEntryType::EXACT);
-                
-                TTEntry entry;
-                tt->probe(key, entry);  // May or may not find it due to races, but shouldn't crash
-            }
-        });
-    }
-    
-    // Wait for all threads
-    for (auto& thread : threads) {
-        thread.join();
-    }
-    
-    // Verify table is still functional
-    const auto& stats = tt->get_stats();
-    EXPECT_GT(stats.stores.load(), 0);
-    EXPECT_GT(stats.lookups.load(), 0);
+// Production has one owner per table; atomic counters do not make entries safe
+// to share. Exercise parallel independent workers without introducing a test race.
+TEST_F(TranspositionTableTest, IndependentWorkerTables) {
+    std::vector<std::thread> workers;
+    for (int t = 0; t < 4; ++t) workers.emplace_back([t]() {
+        TranspositionTable table(1);
+        for (int i = 0; i < 1000; ++i) {
+            uint64_t key = static_cast<uint64_t>(t * 1000 + i);
+            table.store(key, Move(E2, E4), i, 4, TTEntryType::EXACT);
+            TTEntry entry;
+            EXPECT_TRUE(table.probe(key, entry));
+            EXPECT_EQ(entry.get_score(), i);
+        }
+    });
+    for (auto& worker : workers) worker.join();
 }
 
 // Prefetch Test (verify it doesn't crash)

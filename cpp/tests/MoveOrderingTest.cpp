@@ -115,34 +115,19 @@ TEST_F(MoveOrderingTest, MVVLVABasicCaptures) {
 }
 
 TEST_F(MoveOrderingTest, MVVLVAOrdering) {
-    setupTacticalPosition();
-    
-    // Test different capture combinations with captured pieces
-    std::vector<std::pair<MoveGen, std::string>> captures = {
-        {createMove(B2, C3, MoveGen::MoveType::NORMAL, NO_PIECE, BLACK_KNIGHT), "Pawn x Knight"},
-        {createMove(F3, E5, MoveGen::MoveType::NORMAL, NO_PIECE, BLACK_PAWN), "Knight x Pawn"},
-        {createMove(D1, D8, MoveGen::MoveType::NORMAL, NO_PIECE, BLACK_QUEEN), "Queen x Queen"},
-        {createMove(E4, F5, MoveGen::MoveType::NORMAL, NO_PIECE, BLACK_BISHOP), "Pawn x Bishop"}
-    };
-    
-    for (auto& [move, desc] : captures) {
-        int score = move_ordering->score_move(move, 0);
-        // All captures should be in the capture range
-        EXPECT_GT(score, MoveOrdering::KILLER_MOVE_SCORE) << "Failed for " << desc;
-    }
+    board->setFromFEN("4k3/8/8/3qp3/4P3/8/8/4K3 w - - 0 1");
+    const MoveGen capture(E4, D5, MoveGen::MoveType::NORMAL, NO_PIECE, BLACK_QUEEN);
+    EXPECT_GT(move_ordering->score_move(capture, 0), MoveOrdering::KILLER_MOVE_SCORE);
+    tt->store(board->getZobristKey(), Move(E4, E5), 0, 3, TTEntryType::EXACT);
+    EXPECT_GT(move_ordering->score_move(MoveGen(E4, E5), 0), move_ordering->score_move(capture, 0));
 }
 
 TEST_F(MoveOrderingTest, BadCaptureDetection) {
-    setupTacticalPosition();
-    
-    // Create a clearly bad capture (Queen takes Pawn when Pawn is defended)
-    MoveGen bad_capture = createMove(D1, E4, MoveGen::MoveType::NORMAL, NO_PIECE, BLACK_PAWN);
-    
-    int score = move_ordering->score_move(bad_capture, 0);
-    
-    // Bad captures should score below good captures but above quiet moves
-    EXPECT_LT(score, MoveOrdering::GOOD_CAPTURE_BASE);
-    EXPECT_GT(score, MoveOrdering::KILLER_MOVE_SCORE);
+    board->setFromFEN("6k1/8/4p3/3p4/8/8/8/3Q2K1 w - - 0 1");
+    const MoveGen bad(D1, D5, MoveGen::MoveType::NORMAL, NO_PIECE, BLACK_PAWN);
+    const int score = move_ordering->score_move(bad, 0);
+    // A defended pawn is not worth a queen; losing exchanges follow quiet moves.
+    EXPECT_LT(score, move_ordering->score_move(MoveGen(D1, D2), 0));
 }
 
 // Killer Move Tests

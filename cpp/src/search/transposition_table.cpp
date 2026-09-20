@@ -36,7 +36,7 @@ TranspositionTable::TranspositionTable(size_t size_mb)
 }
 
 void TranspositionTable::store(uint64_t zobrist_key, Move move, int16_t score, 
-                              uint8_t depth, TTEntryType type) {
+                              uint8_t depth, TTEntryType type, uint8_t rule50) {
     stats.stores.fetch_add(1, std::memory_order_relaxed);
     
     size_t cluster_idx = get_cluster_index(zobrist_key);
@@ -45,7 +45,10 @@ void TranspositionTable::store(uint64_t zobrist_key, Move move, int16_t score,
     // Check if key already exists (update case)
     for (int i = 0; i < TTCluster::CLUSTER_SIZE; ++i) {
         if (cluster.entries[i].matches_key(zobrist_key)) {
-            cluster.entries[i].set_data(zobrist_key, move, score, depth, type, current_age);
+            // Preserve a deeper result from this search unless the new result is exact.
+            if (type != TTEntryType::EXACT && cluster.entries[i].get_age() == current_age &&
+                depth + 2 < cluster.entries[i].get_depth()) return;
+            cluster.entries[i].set_data(zobrist_key, move, score, depth, type, current_age, rule50);
             stats.overwrites.fetch_add(1, std::memory_order_relaxed);
             return;
         }
@@ -55,11 +58,11 @@ void TranspositionTable::store(uint64_t zobrist_key, Move move, int16_t score,
     int replace_idx = find_replace_index(cluster, zobrist_key, depth);
     
     // Check if we're replacing a valid entry
-    if (cluster.entries[replace_idx].get_key() != 0) {
+    if (!cluster.entries[replace_idx].is_empty()) {
         stats.collisions.fetch_add(1, std::memory_order_relaxed);
     }
     
-    cluster.entries[replace_idx].set_data(zobrist_key, move, score, depth, type, current_age);
+    cluster.entries[replace_idx].set_data(zobrist_key, move, score, depth, type, current_age, rule50);
 }
 
 bool TranspositionTable::probe(uint64_t zobrist_key, TTEntry& entry) const {
@@ -99,13 +102,13 @@ void TranspositionTable::clear() {
 }
 
 int TranspositionTable::find_replace_index(TTCluster& cluster, uint64_t /* zobrist_key */, 
-                                          uint8_t depth) const {
+                                          uint8_t /* depth */) const {
     int best_idx = 0;
     int lowest_priority = INT_MAX;
     
     for (int i = 0; i < TTCluster::CLUSTER_SIZE; ++i) {
         // Empty slot - use immediately
-        if (cluster.entries[i].get_key() == 0) {
+        if (cluster.entries[i].is_empty()) {
             return i;
         }
         
@@ -114,11 +117,11 @@ int TranspositionTable::find_replace_index(TTCluster& cluster, uint64_t /* zobri
         int priority = 0;
         
         // Prefer replacing older entries
-        uint8_t age_diff = (current_age - cluster.entries[i].get_age()) % 64;
-        priority += age_diff * 4;  // Age weight
+        int age_diff = (current_age - cluster.entries[i].get_age()) & 63;
+        priority -= age_diff * 4;
         
         // Prefer replacing shallower entries
-        priority += std::max(0, static_cast<int>(depth) - static_cast<int>(cluster.entries[i].get_depth()));
+        priority += cluster.entries[i].get_depth();
         
         if (priority < lowest_priority) {
             lowest_priority = priority;

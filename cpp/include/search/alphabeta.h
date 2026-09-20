@@ -89,12 +89,6 @@ private:
     std::vector<Move> pv_line;              // Principal variation
     std::vector<std::vector<Move>> pv_table; // PV table for all depths
     
-    // Killer moves (non-capture moves that cause beta cutoffs)
-    Move killer_moves[MAX_PLY][2];          // Two killer moves per ply
-    
-    // History heuristic (move success rates)
-    int history_table[64][64];              // From/to square history scores
-    
     // Search control
     std::chrono::high_resolution_clock::time_point search_start_time;
     uint64_t node_check_counter = 0;        // Counter for periodic stop checks
@@ -156,7 +150,7 @@ public:
      * @param is_pv_node True if this is a principal variation node
      * @return Position evaluation score
      */
-    int pvs(int depth, int ply, int alpha, int beta, bool is_pv_node);
+    int pvs(int depth, int ply, int alpha, int beta, bool is_pv_node, bool allow_null = true);
     
     /**
      * Quiescence search to resolve tactical sequences
@@ -248,21 +242,9 @@ private:
      */
     int get_extensions(const MoveGen& move, bool in_check, bool gives_check);
     
-    /**
-     * Update killer moves when a non-capture causes beta cutoff
-     * 
-     * @param move The move that caused the cutoff
-     * @param ply Current ply
-     */
-    void update_killers(const Move& move, int ply);
+
     
-    /**
-     * Update history heuristic scores
-     * 
-     * @param move The move that caused a cutoff
-     * @param depth Depth bonus for the move
-     */
-    void update_history(const Move& move, int depth);
+
     
     /**
      * Check if search should stop (time/node limits or stop flag)
@@ -271,13 +253,7 @@ private:
      */
     bool should_stop();
     
-    /**
-     * Convert internal Move to MoveGen for consistency
-     * 
-     * @param move The Move to convert
-     * @return Equivalent MoveGen
-     */
-    MoveGen move_to_movegen(const Move& move) const;
+
     
     /**
      * Convert MoveGen to internal Move
@@ -294,30 +270,13 @@ private:
      */
     void extract_pv(int ply);
     
-    /**
-     * Check if null move pruning is allowed in current position
-     * 
-     * @param in_check True if current position is in check
-     * @return True if null move is allowed
-     */
-    bool can_do_null_move(bool in_check) const;
+
     
-    /**
-     * Check if search should stop (time/external signal)
-     * 
-     * @return True if search should terminate
-     */
-    bool should_stop() const;
+
     
-    /**
-     * Make a null move (pass the turn to opponent)
-     */
-    void make_null_move();
+
     
-    /**
-     * Unmake the null move
-     */
-    void unmake_null_move();
+
     
 };
 

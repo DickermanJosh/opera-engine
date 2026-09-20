@@ -214,21 +214,21 @@ TEST_F(StaticExchangeTest, EnPassantCapture) {
     int see_value = see->evaluate(en_passant);
     
     // En passant should be handled correctly (capture pawn value)
-    EXPECT_EQ(see_value, 100); // Capture pawn, no recapture possible typically
+    EXPECT_EQ(see_value, 0); // exf6 en passant is met by exf6 or gxf6.
 }
 
 TEST_F(StaticExchangeTest, PromotionCapture) {
     setupPromotionCapture();
     
     // Set up promotion with capture
-    board->setFromFEN("rnbqkb1r/pppppP1p/5np1/8/8/8/PPPPP1PP/RNBQKBNR w KQkq - 0 1");
+    board->setFromFEN("k5r1/5P2/8/8/8/8/8/4K3 w - - 0 1");
     
     MoveGen promotion_capture = createMove(F7, G8, MoveGen::MoveType::PROMOTION, WHITE_QUEEN, BLACK_ROOK);
     
     int see_value = see->evaluate(promotion_capture);
     
     // Should account for promotion value (Queen - Pawn) + captured piece - recaptures
-    EXPECT_GT(see_value, 400); // At minimum queen promotion gain
+    EXPECT_EQ(see_value, 1300); // Rook (500) plus promotion (800), no recapture.
 }
 
 // Integration tests with move ordering

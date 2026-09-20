@@ -1,10 +1,10 @@
 # Play Opera in the Unity chess app
 
-The existing Unity project is `../chess`, using Unity 6000.0.54f1. Its integration branch is `opera-integration`, commit `d4ad557`; this repository's packaging/docs branch is `unity-integration`. `uci` is already merged and pushed to `main` as `bde03c3`.
+The existing Unity project is `../chess`, using Unity 6000.0.54f1 on `opera-integration`. Current engine development is on `engine-core`; `uci` is already merged and pushed to `main` as `bde03c3`.
 
 Open the chess app and choose **Play Opera**. Click a piece, then a highlighted destination. The game starts with you as White; **New game · Black** flips the board and lets Opera open. Thinking-time buttons select 0.25, 1 or 3 seconds for subsequent engine moves. Promotion offers queen, rook, bishop and knight. The panel reports check, checkmate, draws, resignation and engine errors. New game, Main menu and closing the app stop the owned engine process.
 
-The current engine uses its handcrafted evaluator, one thread and 16 MB hash, with no pondering or match clock. Search strength is unchanged. NN development and tuning come later.
+The app selects the improved handcrafted **Morphy style**, one thread and 16 MB hash, with no pondering or match clock. The general UCI default remains the standard handcrafted evaluator. See [core changes and measured results](core-engine-review.md); neural development and tuning come later.
 
 The Mac build was played through the visible UI as both colors. Legal-move highlighting, replies, board flipping, time selection, restarting during search, resignation and leaving/re-entering the game passed. Rule/client checks also pass independently of the rendered board. Promotion choices and terminal rules are covered by rule fixtures; a complete manual GUI game and a GUI promotion sequence have not yet been played in this session.
 

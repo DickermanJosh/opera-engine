@@ -85,6 +85,12 @@ public:
     void configure_options(const std::map<std::string, std::string>& options) override;
 
 protected:
+    struct EvaluationTerms {
+        int phase;
+        int material[2], king_safety[2], mobility[2], development[2];
+    };
+    int evaluate_with_terms(const Board& board, Color side_to_move, EvaluationTerms& terms);
+
     /**
      * @brief Evaluation configuration weights
      */
@@ -253,15 +259,16 @@ protected:
      * - Pawn chains and support
      * - Discourages edge pawns
      */
+    // A1-first, from White's perspective. Black uses rank reflection.
     static constexpr std::array<int, 64> PAWN_PST_OPENING = {
-         0,  0,  0,  0,  0,  0,  0,  0,  // Rank 1 (shouldn't be here)
-        50, 50, 50, 50, 50, 50, 50, 50,  // Rank 2
-        10, 10, 20, 30, 30, 20, 10, 10,  // Rank 3
-         5,  5, 10, 25, 25, 10,  5,  5,  // Rank 4
-         0,  0,  0, 20, 20,  0,  0,  0,  // Rank 5
-         5, -5,-10,  0,  0,-10, -5,  5,  // Rank 6
-         5, 10, 10,-20,-20, 10, 10,  5,  // Rank 7
-         0,  0,  0,  0,  0,  0,  0,  0   // Rank 8
+         0,  0,  0,  0,  0,  0,  0,  0,
+         5, 10, 10,-20,-20, 10, 10,  5,
+         5, -5,-10,  0,  0,-10, -5,  5,
+         0,  0,  0, 20, 20,  0,  0,  0,
+         5,  5, 10, 25, 25, 10,  5,  5,
+        10, 10, 20, 30, 30, 20, 10, 10,
+        50, 50, 50, 50, 50, 50, 50, 50,
+         0,  0,  0,  0,  0,  0,  0,  0
     };
 
     /**
@@ -273,14 +280,14 @@ protected:
      * - Central control
      */
     static constexpr std::array<int, 64> PAWN_PST_ENDGAME = {
-          0,  0,  0,  0,  0,  0,  0,  0,  // Rank 1
-         80, 80, 80, 80, 80, 80, 80, 80,  // Rank 2 - advanced
-         50, 50, 50, 50, 50, 50, 50, 50,  // Rank 3
-         30, 30, 30, 30, 30, 30, 30, 30,  // Rank 4
-         20, 20, 20, 20, 20, 20, 20, 20,  // Rank 5
-         10, 10, 10, 10, 10, 10, 10, 10,  // Rank 6
-          5,  5,  5,  5,  5,  5,  5,  5,  // Rank 7
-          0,  0,  0,  0,  0,  0,  0,  0   // Rank 8
+         0,  0,  0,  0,  0,  0,  0,  0,
+         5,  5,  5,  5,  5,  5,  5,  5,
+        10, 10, 10, 10, 10, 10, 10, 10,
+        20, 20, 20, 20, 20, 20, 20, 20,
+        30, 30, 30, 30, 30, 30, 30, 30,
+        50, 50, 50, 50, 50, 50, 50, 50,
+        80, 80, 80, 80, 80, 80, 80, 80,
+         0,  0,  0,  0,  0,  0,  0,  0
     };
 
     /**

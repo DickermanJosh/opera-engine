@@ -5,7 +5,7 @@
 namespace opera {
 
 MoveOrdering::MoveOrdering(Board& board, TranspositionTable& tt) 
-    : board(board), tt(tt) {
+    : board(board), tt(tt), see(board) {
     
     // Initialize killer moves to null moves
     for (int depth = 0; depth < MAX_SEARCH_DEPTH; ++depth) {
@@ -25,34 +25,30 @@ MoveOrdering::MoveOrdering(Board& board, TranspositionTable& tt)
 }
 
 int MoveOrdering::score_move(const MoveGen& move, int depth) {
-    // 1. Check for TT move (highest priority)
-    if (is_tt_move(move)) {
-        return TT_MOVE_SCORE;
+    return is_tt_move(move) ? TT_MOVE_SCORE : score_without_tt(move, depth);
+}
+
+bool MoveOrdering::matches(const MoveGen& move, const Move& candidate) {
+    return move.from() == candidate.from() && move.to() == candidate.to() &&
+           move.isPromotion() == candidate.isPromotion() &&
+           (!move.isPromotion() || typeOf(move.promotionPiece()) == candidate.promotionType());
+}
+
+int MoveOrdering::score_without_tt(const MoveGen& move, int depth) {
+    if (move.isCapture() || move.isPromotion()) {
+        const int exchange = see.evaluate(move);
+        const int promotion = move.isPromotion() ? get_piece_value(move.promotionPiece()) - 100 : 0;
+        return (exchange >= 0 ? GOOD_CAPTURE_BASE : BAD_CAPTURE_BASE) +
+               calculate_mvv_lva_score(move) + promotion;
     }
-    
-    // 2. Handle captures with MVV-LVA
-    if (move.isCapture()) {
-        if (is_good_capture(move)) {
-            return GOOD_CAPTURE_BASE + calculate_mvv_lva_score(move);
-        } else {
-            return BAD_CAPTURE_BASE + calculate_mvv_lva_score(move);
-        }
-    }
-    
-    // 3. Check for killer moves
-    if (is_killer_move(move, depth)) {
-        return KILLER_MOVE_SCORE;
-    }
-    
-    // 4. History heuristic for quiet moves
-    Color side = board.getSideToMove();
-    return get_history_score(move, side);
+    if (is_killer_move(move, depth)) return KILLER_MOVE_SCORE;
+    return get_history_score(move, board.getSideToMove());
 }
 
 int MoveOrdering::get_move_score(const MoveGen& move) const {
-    uint32_t key = move_to_key(move);
-    auto it = move_scores.find(key);
-    return (it != move_scores.end()) ? it->second : 0;
+    for (size_t i = 0; i < scored_count; ++i)
+        if (move_scores[i].move == move) return move_scores[i].score;
+    return 0;
 }
 
 void MoveOrdering::store_killer_move(const MoveGen& move, int depth) {
@@ -146,7 +142,7 @@ void MoveOrdering::clear_history() {
 void MoveOrdering::reset() {
     clear_killers();
     clear_history();
-    move_scores.clear();
+    scored_count = 0;
 }
 
 bool MoveOrdering::is_tt_move(const MoveGen& move) const {
@@ -155,7 +151,7 @@ bool MoveOrdering::is_tt_move(const MoveGen& move) const {
     
     if (tt.probe(zobrist_key, entry)) {
         Move tt_move = entry.get_move();
-        return (tt_move.from() == move.from() && tt_move.to() == move.to());
+        return matches(move, tt_move);
     }
     
     return false;

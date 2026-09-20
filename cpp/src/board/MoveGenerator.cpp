@@ -423,7 +423,7 @@ void generateAllLegalMoves(const Board& board, MoveGenList<>& moves, Color color
     // Filter out illegal moves (those that leave king in check)
     moves.clear();
     for (size_t i = 0; i < pseudoLegalMoves.size(); ++i) {
-        if (board.isLegalMove(pseudoLegalMoves[i], color)) {
+        if (board.isLegalGeneratedMove(pseudoLegalMoves[i], color)) {
             moves.add(pseudoLegalMoves[i]);
         }
     }

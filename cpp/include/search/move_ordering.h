@@ -3,7 +3,7 @@
 #include <array>
 #include <atomic>
 #include <algorithm>
-#include <unordered_map>
+#include "search/see.h"
 #include <thread>
 #include <mutex>
 #include "Board.h"
@@ -17,22 +17,17 @@ namespace opera {
  * Comprehensive move ordering system with multi-stage scoring for chess search optimization
  * 
  * Implements a hierarchical scoring system:
- * 1. TT (Transposition Table) moves - 10000+ points
- * 2. Good captures (MVV-LVA) - 8000+ points  
- * 3. Killer moves - 6000 points
- * 4. History heuristic - 0-1000 points
- * 5. Bad captures - negative points
- * 
- * Targets >40% best-move-first rate in tactical positions
+ * Hash move, non-losing captures/promotions, killers, quiet history, then
+ * losing captures. Fixed-capacity storage avoids per-node allocations.
  */
 class MoveOrdering {
 public:
     // Scoring constants - hierarchical ordering
-    static constexpr int TT_MOVE_SCORE = 10000;
-    static constexpr int GOOD_CAPTURE_BASE = 8000;
-    static constexpr int KILLER_MOVE_SCORE = 6000;
+    static constexpr int TT_MOVE_SCORE = 1000000;
+    static constexpr int GOOD_CAPTURE_BASE = 100000;
+    static constexpr int KILLER_MOVE_SCORE = 90000;
     static constexpr int HISTORY_MAX_SCORE = 1000;
-    static constexpr int BAD_CAPTURE_BASE = 7000;  // Between good captures and killers
+    static constexpr int BAD_CAPTURE_BASE = -100000;
     
     // Killer move configuration
     static constexpr int MAX_SEARCH_DEPTH = 64;
@@ -43,15 +38,7 @@ public:
     static constexpr int HISTORY_AGING_DIVISOR = 8;
     
     // Piece values for MVV-LVA (in centipawns)
-    static constexpr int PIECE_VALUES[7] = {
-        0,    // NO_PIECE_TYPE
-        100,  // PAWN
-        320,  // KNIGHT
-        330,  // BISHOP  
-        500,  // ROOK
-        900,  // QUEEN
-        20000 // KING (should never be captured)
-    };
+    static constexpr int PIECE_VALUES[7] = {100, 320, 330, 500, 900, 20000, 0};
 
 private:
     Board& board;
@@ -64,7 +51,12 @@ private:
     std::array<std::array<std::array<std::atomic<int>, 64>, 64>, 2> history_table;
     
     // Move scores for current move list (optimization to avoid recalculation)
-    std::unordered_map<uint32_t, int> move_scores;
+    struct ScoredMove { MoveGen move; int score; };
+    std::array<ScoredMove, 256> move_scores;
+    size_t scored_count = 0;
+    StaticExchangeEvaluator see;
+    int score_without_tt(const MoveGen& move, int depth);
+    static bool matches(const MoveGen& move, const Move& candidate);
     
     // Thread safety
     mutable std::mutex killer_mutex;
@@ -223,24 +215,24 @@ private:
 
 template<size_t MAX_MOVES>
 void MoveOrdering::score_moves(MoveGenList<MAX_MOVES>& moves, int depth) {
-    move_scores.clear();
-    
+    static_assert(MAX_MOVES <= 256, "Move-ordering capacity exceeded");
+    TTEntry entry;
+    const bool hit = tt.probe(board.getZobristKey(), entry);
+    const Move tt_move = hit ? entry.get_move() : Move();
+    scored_count = moves.size();
     for (size_t i = 0; i < moves.size(); ++i) {
-        const MoveGen& move = moves[i];
-        int score = score_move(move, depth);
-        move_scores[move_to_key(move)] = score;
+        move_scores[i] = {moves[i], hit && matches(moves[i], tt_move) ?
+                         TT_MOVE_SCORE : score_without_tt(moves[i], depth)};
     }
 }
 
 template<size_t MAX_MOVES>
 void MoveOrdering::sort_moves(MoveGenList<MAX_MOVES>& moves) {
-    // Sort using the stored move scores
-    std::sort(moves.begin(), moves.begin() + moves.size(), 
-              [this](const MoveGen& a, const MoveGen& b) {
-                  int score_a = get_move_score(a);
-                  int score_b = get_move_score(b);
-                  return score_a > score_b;  // Descending order
+    std::sort(move_scores.begin(), move_scores.begin() + scored_count,
+              [](const ScoredMove& a, const ScoredMove& b) {
+                  return a.score > b.score || (a.score == b.score && a.move.rawData() < b.move.rawData());
               });
+    for (size_t i = 0; i < scored_count; ++i) moves[i] = move_scores[i].move;
 }
 
 } // namespace opera

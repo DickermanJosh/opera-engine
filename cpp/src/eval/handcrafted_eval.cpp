@@ -38,6 +38,11 @@ HandcraftedEvaluator::HandcraftedEvaluator()
 // ============================================================================
 
 int HandcraftedEvaluator::evaluate(const Board& board, Color side_to_move) {
+    EvaluationTerms terms;
+    return evaluate_with_terms(board, side_to_move, terms);
+}
+
+int HandcraftedEvaluator::evaluate_with_terms(const Board& board, Color side_to_move, EvaluationTerms& terms) {
     // Calculate game phase for tapered evaluation
     int phase = calculate_phase(board);
 
@@ -83,6 +88,8 @@ int HandcraftedEvaluator::evaluate(const Board& board, Color side_to_move) {
     int white_development = evaluate_development(board, Color::WHITE, phase);
     int black_development = evaluate_development(board, Color::BLACK, phase);
 
+    terms = {phase, {white_material, black_material}, {white_king_safety, black_king_safety},
+             {white_mobility, black_mobility}, {white_development, black_development}};
     // Combine evaluations (from white's perspective)
     int material_score = white_material - black_material;
     int pst_score = white_pst - black_pst;
@@ -422,153 +429,80 @@ int HandcraftedEvaluator::evaluate_pawn_structure(const Board& board, Color colo
 // King Safety Evaluation
 
 int HandcraftedEvaluator::evaluate_king_safety(const Board& board, Color color, int phase) const {
-    int score = 0;
-
-    uint64_t king_bb = board.getPieceBitboard(color, KING);
-    if (!king_bb) return 0;
-
-    Square king_sq = static_cast<Square>(__builtin_ctzll(king_bb));
-    int king_file = king_sq % 8;
-    // int king_rank = king_sq / 8;  // Unused for now
-
-    // King safety is more important in opening (high phase)
-    // In endgame (low phase), king centralization is already handled by PST
-    // Note: Don't hard-disable for low phase - taper at the end instead
-
-    uint64_t friendly_pawns = board.getPieceBitboard(color, PAWN);
-
-    // Evaluate pawn shield (pawns in front of king)
-    // For white: check f2/g2/h2 if king on g1 (kingside castle)
-    // For black: check f7/g7/h7 if king on g8 (kingside castle)
-
-    int shield_score = 0;
-    int open_file_penalty = 0;
-
-    // Check files around king (king_file - 1, king_file, king_file + 1)
-    for (int file_offset = -1; file_offset <= 1; ++file_offset) {
-        int file = king_file + file_offset;
-        if (file < 0 || file > 7) continue;
-
-        uint64_t file_pawns = friendly_pawns & file_mask(file);
-
-        if (file_pawns == 0) {
-            // Open file near king - dangerous
-            open_file_penalty += weights_.open_file_near_king_penalty;
-        } else {
-            // Check if pawn shield is intact (on 2nd/3rd rank for white, 6th/7th for black)
-            // Only count pawns close to king, not ones that have advanced far away
-            int shield_rank_1 = (color == Color::WHITE) ? 1 : 6;  // 2nd/7th rank
-            int shield_rank_2 = (color == Color::WHITE) ? 2 : 5;  // 3rd/6th rank
-            int too_advanced = (color == Color::WHITE) ? 4 : 3;   // 5th/4th rank or beyond
-
-            bool has_shield = false;
-            bool too_far_advanced = false;
-
-            uint64_t temp_pawns = file_pawns;
-            while (temp_pawns) {
-                Square pawn_sq = static_cast<Square>(__builtin_ctzll(temp_pawns));
-                int pawn_rank = pawn_sq / 8;
-
-                if (pawn_rank == shield_rank_1 || pawn_rank == shield_rank_2) {
-                    has_shield = true;
-                } else if (color == Color::WHITE ? (pawn_rank >= too_advanced) : (pawn_rank <= too_advanced)) {
-                    too_far_advanced = true;
-                }
-
-                temp_pawns &= temp_pawns - 1;
-            }
-
-            if (has_shield) {
-                // Pawn on shield ranks (2nd/3rd or 6th/7th) - good
-                shield_score += weights_.pawn_shield_bonus;
-            } else if (too_far_advanced) {
-                // Pawn advanced too far - file is essentially open near king
-                open_file_penalty += weights_.open_file_near_king_penalty / 2;
-            }
+    if (!phase) return 0;
+    const Square king = board.getKingSquare(color);
+    if (king == NO_SQUARE) return 0;
+    const int file = fileOf(king), rank = rankOf(king);
+    const int relative_rank = color == WHITE ? rank : 7 - rank;
+    const Bitboard pawns = board.getPieceBitboard(color, PAWN);
+    int score = -relative_rank * 16;
+    for (int f = std::max(0, file - 1); f <= std::min(7, file + 1); ++f) {
+        Bitboard file_pawns = pawns & file_mask(f);
+        int distance = 8;
+        while (file_pawns) {
+            const Square pawn = static_cast<Square>(__builtin_ctzll(file_pawns));
+            file_pawns &= file_pawns - 1;
+            const int ahead = color == WHITE ? rankOf(pawn) - rank : rank - rankOf(pawn);
+            if (ahead > 0) distance = std::min(distance, ahead);
         }
+        if (distance == 1) score += weights_.pawn_shield_bonus;
+        else if (distance == 2) score += weights_.pawn_shield_bonus / 2;
+        else score -= weights_.open_file_near_king_penalty;
+    }
+    // Keep the option to castle; walking out of the centre must not erase its cost.
+    if (file >= 3 && file <= 5) {
+        const bool rights = board.canCastleKingside(color) || board.canCastleQueenside(color);
+        score -= rights ? 12 : 32;
     }
 
-    score += shield_score;
-    score -= open_file_penalty;
-
-    // Scale king safety by phase (more important in opening)
-    score = (score * phase) / 256;
-
-    return score;
+    // Coordinated pressure on the king's neighbourhood, using actual attacks.
+    const Bitboard zone = board.getKingAttacks(king) | (1ULL << king);
+    const Bitboard occupancy = board.getOccupiedBitboard();
+    int attackers = 0, pressure = 0;
+    for (int pt = KNIGHT; pt <= QUEEN; ++pt) {
+        Bitboard pieces = board.getPieceBitboard(~color, static_cast<PieceType>(pt));
+        while (pieces) {
+            const Square sq = static_cast<Square>(__builtin_ctzll(pieces));
+            pieces &= pieces - 1;
+            const Bitboard attacks = pt == KNIGHT ? board.getKnightAttacks(sq) :
+                pt == BISHOP ? board.getBishopAttacks(sq, occupancy) :
+                pt == ROOK ? board.getRookAttacks(sq, occupancy) : board.getQueenAttacks(sq, occupancy);
+            const int hits = __builtin_popcountll(attacks & zone);
+            if (hits) { ++attackers; pressure += hits * (pt == QUEEN ? 4 : 2); }
+        }
+    }
+    score -= pressure * std::min(attackers, 4);
+    return score * phase / 256;
 }
 
-// Piece Mobility Evaluation
-
 int HandcraftedEvaluator::evaluate_mobility(const Board& board, Color color) const {
-    int score = 0;
-
-    // This is a simplified mobility calculation
-    // Full mobility would require generating pseudo-legal moves for each piece
-    // For now, we'll use piece positioning and bitboard analysis
-
-    // Knight mobility: knights in center have more squares
-    // (Already captured by PST, but we can add bonus for open squares)
-    uint64_t knights = board.getPieceBitboard(color, KNIGHT);
-    int knight_count = __builtin_popcountll(knights);
-    if (knight_count > 0) {
-        // Central knights get bonus (e4, d4, e5, d5, c4, c5, f4, f5)
-        uint64_t center = 0x00003C3C3C3C0000ULL;
-        int central_knights = __builtin_popcountll(knights & center);
-        score += central_knights * weights_.knight_mobility_bonus;
+    const Bitboard own = board.getColorBitboard(color);
+    const Bitboard occupancy = board.getOccupiedBitboard();
+    const Bitboard our_pawns = board.getPieceBitboard(color, PAWN);
+    const Bitboard enemy_pawns = board.getPieceBitboard(~color, PAWN);
+    Bitboard pawn_attacks = 0, pawns = enemy_pawns;
+    while (pawns) {
+        const Square sq = static_cast<Square>(__builtin_ctzll(pawns));
+        pawns &= pawns - 1;
+        pawn_attacks |= board.getPawnAttacks(sq, ~color);
     }
-
-    // Bishop mobility: bishops prefer open diagonals
-    uint64_t bishops = board.getPieceBitboard(color, BISHOP);
-    uint64_t all_pawns = board.getPieceBitboard(Color::WHITE, PAWN) |
-                         board.getPieceBitboard(Color::BLACK, PAWN);
-    int bishop_count = __builtin_popcountll(bishops);
-    if (bishop_count > 0) {
-        // Bishops not blocked by center pawns get bonus
-        uint64_t center_pawns = all_pawns & 0x0000001818000000ULL;  // e4/d4/e5/d5
-        if (__builtin_popcountll(center_pawns) < 2) {
-            // Open center - good for bishops
-            score += bishop_count * weights_.bishop_mobility_bonus;
+    const Bitboard safe = ~own & ~pawn_attacks;
+    const int weights[] = {0, weights_.knight_mobility_bonus, weights_.bishop_mobility_bonus,
+                           weights_.rook_mobility_bonus, weights_.queen_mobility_bonus};
+    int score = __builtin_popcountll(board.getPieceBitboard(color, BISHOP)) >= 2 ? 25 : 0;
+    for (int pt = KNIGHT; pt <= QUEEN; ++pt) {
+        Bitboard pieces = board.getPieceBitboard(color, static_cast<PieceType>(pt));
+        while (pieces) {
+            const Square sq = static_cast<Square>(__builtin_ctzll(pieces));
+            pieces &= pieces - 1;
+            const Bitboard attacks = pt == KNIGHT ? board.getKnightAttacks(sq) :
+                pt == BISHOP ? board.getBishopAttacks(sq, occupancy) :
+                pt == ROOK ? board.getRookAttacks(sq, occupancy) : board.getQueenAttacks(sq, occupancy);
+            score += __builtin_popcountll(attacks & safe) * weights[pt];
+            if (pt == ROOK && !(our_pawns & file_mask(fileOf(sq))))
+                score += (enemy_pawns & file_mask(fileOf(sq))) ? weights_.rook_open_file / 2 : weights_.rook_open_file;
         }
     }
-
-    // Rook mobility: rooks on open/semi-open files
-    uint64_t rooks = board.getPieceBitboard(color, ROOK);
-    uint64_t friendly_pawns = board.getPieceBitboard(color, PAWN);
-    uint64_t enemy_pawns = board.getPieceBitboard(~color, PAWN);
-
-    uint64_t rook_bb = rooks;
-    while (rook_bb) {
-        Square sq = static_cast<Square>(__builtin_ctzll(rook_bb));
-        int file = sq % 8;
-
-        uint64_t file_bb = file_mask(file);
-        bool friendly_pawn_on_file = (friendly_pawns & file_bb) != 0;
-        bool enemy_pawn_on_file = (enemy_pawns & file_bb) != 0;
-
-        if (!friendly_pawn_on_file && !enemy_pawn_on_file) {
-            // Open file - excellent for rook
-            score += weights_.rook_open_file;
-        } else if (!friendly_pawn_on_file && enemy_pawn_on_file) {
-            // Semi-open file - still good
-            score += weights_.rook_open_file / 2;
-        }
-
-        rook_bb &= rook_bb - 1;
-    }
-
-    // Queen mobility: active queen gets bonus
-    uint64_t queen = board.getPieceBitboard(color, QUEEN);
-    if (queen) {
-        Square queen_sq = static_cast<Square>(__builtin_ctzll(queen));
-        int queen_rank = queen_sq / 8;
-
-        // Queen on 4th rank or beyond gets activity bonus
-        bool queen_active = (color == Color::WHITE) ? (queen_rank >= 3) : (queen_rank <= 4);
-        if (queen_active) {
-            score += weights_.queen_mobility_bonus * 10;  // Small bonus for active queen
-        }
-    }
-
     return score;
 }
 
@@ -577,11 +511,8 @@ int HandcraftedEvaluator::evaluate_mobility(const Board& board, Color color) con
 int HandcraftedEvaluator::evaluate_development(const Board& board, Color color, int phase) const {
     int score = 0;
 
-    // Development only matters in opening phase
-    if (phase < 128) {
-        // Middlegame/endgame: development doesn't matter
-        return 0;
-    }
+    // Fade continuously as pieces are exchanged.
+    if (!phase) return 0;
 
     // Check minor piece development (off back rank)
     int back_rank = (color == Color::WHITE) ? 0 : 7;

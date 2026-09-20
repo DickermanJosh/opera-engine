@@ -49,12 +49,12 @@
 //! ## Usage
 //!
 //! ```no_run
-//! use opera_uci::{UCIEngine, UCIError};
+//! use opera_uci::UCIError;
+//! use opera_uci::uci::event_loop::{run_uci_event_loop, EventLoopConfig};
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), UCIError> {
-//!     let engine = UCIEngine::new().await?;
-//!     engine.run().await
+//!     run_uci_event_loop(EventLoopConfig::default()).await
 //! }
 //! ```
 

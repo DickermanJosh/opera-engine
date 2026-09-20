@@ -36,6 +36,7 @@ impl Board {
     ///
     /// let board = Board::new()?;
     /// assert_eq!(board.get_fen()?, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    /// # Ok::<(), opera_uci::UCIError>(())
     /// ```
     #[instrument(level = "debug")]
     pub fn new() -> UCIResult<Self> {
@@ -72,6 +73,7 @@ impl Board {
     ///
     /// let mut board = Board::new()?;
     /// board.set_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")?;
+    /// # Ok::<(), opera_uci::UCIError>(())
     /// ```
     #[instrument(level = "debug", skip(self))]
     pub fn set_from_fen(&mut self, fen: &str) -> UCIResult<()> {
@@ -119,6 +121,7 @@ impl Board {
     /// let board = Board::new()?;
     /// let fen = board.get_fen()?;
     /// assert!(fen.contains("rnbqkbnr/pppppppp"));
+    /// # Ok::<(), opera_uci::UCIError>(())
     /// ```
     #[instrument(level = "debug", skip(self))]
     pub fn get_fen(&self) -> UCIResult<String> {
@@ -155,6 +158,7 @@ impl Board {
     /// let mut board = Board::new()?;
     /// board.make_move("e2e4")?;  // King's pawn opening
     /// board.make_move("e7e5")?;  // King's pawn defense
+    /// # Ok::<(), opera_uci::UCIError>(())
     /// ```
     #[instrument(level = "debug", skip(self))]
     pub fn make_move(&mut self, move_str: &str) -> UCIResult<()> {
@@ -207,6 +211,7 @@ impl Board {
     /// let board = Board::new()?;
     /// assert!(board.is_valid_move("e2e4")?);
     /// assert!(!board.is_valid_move("e2e5")?);  // Invalid pawn move
+    /// # Ok::<(), opera_uci::UCIError>(())
     /// ```
     #[instrument(level = "debug", skip(self))]
     pub fn is_valid_move(&self, move_str: &str) -> UCIResult<bool> {
@@ -240,6 +245,7 @@ impl Board {
     /// board.make_move("e2e4")?;
     /// board.reset();
     /// assert_eq!(board.get_fen()?, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    /// # Ok::<(), opera_uci::UCIError>(())
     /// ```
     #[instrument(level = "debug", skip(self))]
     pub fn reset(&mut self) {
@@ -263,6 +269,7 @@ impl Board {
     ///
     /// let board = Board::new()?;
     /// assert!(!board.is_in_check()?);  // Starting position is not check
+    /// # Ok::<(), opera_uci::UCIError>(())
     /// ```
     #[instrument(level = "debug", skip(self))]
     pub fn is_in_check(&self) -> UCIResult<bool> {
@@ -288,6 +295,7 @@ impl Board {
     ///
     /// let board = Board::new()?;
     /// assert!(!board.is_checkmate()?);  // Starting position is not mate
+    /// # Ok::<(), opera_uci::UCIError>(())
     /// ```
     #[instrument(level = "debug", skip(self))]
     pub fn is_checkmate(&self) -> UCIResult<bool> {
@@ -313,6 +321,7 @@ impl Board {
     ///
     /// let board = Board::new()?;
     /// assert!(!board.is_stalemate()?);  // Starting position is not stalemate
+    /// # Ok::<(), opera_uci::UCIError>(())
     /// ```
     #[instrument(level = "debug", skip(self))]
     pub fn is_stalemate(&self) -> UCIResult<bool> {

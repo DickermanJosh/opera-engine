@@ -143,16 +143,16 @@ TEST_F(BoardTest, MakeUnmakeMove) {
 }
 
 TEST_F(BoardTest, CaptureMove) {
-    std::string fen = "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2";
+    std::string fen = "rnbqkbnr/pppp1ppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2";
     Board testBoard(fen);
     uint64_t originalKey = testBoard.getZobristKey();
     
     // Capture move: exd5
-    Move captureMove(E4, E5, NORMAL);
+    Move captureMove(E4, D5, NORMAL);
     testBoard.makeMove(captureMove);
     
     EXPECT_EQ(testBoard.getPiece(E4), NO_PIECE);
-    EXPECT_EQ(testBoard.getPiece(E5), WHITE_PAWN);
+    EXPECT_EQ(testBoard.getPiece(D5), WHITE_PAWN);
     EXPECT_EQ(testBoard.getSideToMove(), BLACK);
     EXPECT_EQ(testBoard.getHalfmoveClock(), 0); // Reset on capture
     
@@ -160,7 +160,7 @@ TEST_F(BoardTest, CaptureMove) {
     testBoard.unmakeMove(captureMove);
     
     EXPECT_EQ(testBoard.getPiece(E4), WHITE_PAWN);
-    EXPECT_EQ(testBoard.getPiece(E5), BLACK_PAWN);
+    EXPECT_EQ(testBoard.getPiece(D5), BLACK_PAWN);
     EXPECT_EQ(testBoard.getSideToMove(), WHITE);
     EXPECT_EQ(testBoard.getZobristKey(), originalKey);
 }
@@ -235,18 +235,18 @@ TEST_F(BoardTest, CapturingPromotion) {
     std::string fen = "rnbqkbnr/ppppppP1/8/8/8/8/PPPPPPP1/RNBQKBNR w KQkq - 0 1";
     Board testBoard(fen);
     
-    // Promote to queen by capturing knight
-    Move promoteMove(G7, G8, PROMOTION, QUEEN);
+    // Promote to queen by capturing rook
+    Move promoteMove(G7, H8, PROMOTION, QUEEN);
     testBoard.makeMove(promoteMove);
     
     EXPECT_EQ(testBoard.getPiece(G7), NO_PIECE);
-    EXPECT_EQ(testBoard.getPiece(G8), WHITE_QUEEN);
+    EXPECT_EQ(testBoard.getPiece(H8), WHITE_QUEEN);
     
-    // Unmake promotion - should restore both pawn and captured knight
+    // Unmake promotion - should restore both pawn and captured rook
     testBoard.unmakeMove(promoteMove);
     
     EXPECT_EQ(testBoard.getPiece(G7), WHITE_PAWN);
-    EXPECT_EQ(testBoard.getPiece(G8), BLACK_KNIGHT); // Captured piece restored
+    EXPECT_EQ(testBoard.getPiece(H8), BLACK_ROOK); // Captured piece restored
 }
 
 // Test attack/defend queries

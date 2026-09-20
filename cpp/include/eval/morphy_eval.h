@@ -92,7 +92,7 @@ private:
      * @param material_deficit Material disadvantage in centipawns (negative)
      * @return Compensation bonus (0-100cp)
      */
-    int calculate_sacrifice_compensation(const Board& board, Color color, int material_deficit) const;
+    int calculate_sacrifice_compensation(const Board& board, Color color, int material_deficit, const EvaluationTerms& terms) const;
 
     /**
      * @brief Detect if enemy king is uncastled in opening/middlegame
@@ -117,7 +117,7 @@ private:
      * @param color The side to evaluate
      * @return Initiative score (0-100cp)
      */
-    int calculate_initiative(const Board& board, Color color) const;
+    int calculate_initiative(const Board& board, Color color, const EvaluationTerms& terms) const;
 
     // Morphy-specific bias multipliers (scaled by morphy_bias_)
     static constexpr double DEVELOPMENT_BIAS = 1.2;    ///< Development weight multiplier

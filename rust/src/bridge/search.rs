@@ -194,6 +194,7 @@ impl SearchEngine {
     /// let mut board = Board::new()?;
     /// let mut engine = SearchEngine::new(&mut board)?;
     /// let result = engine.search(SearchLimits::depth(5))?;
+    /// # Ok::<(), opera_uci::UCIError>(())
     /// ```
     #[instrument(level = "debug", skip(board))]
     pub fn new(board: &mut Board) -> UCIResult<Self> {
@@ -229,8 +230,12 @@ impl SearchEngine {
     /// # Examples
     ///
     /// ```
-    /// let result = engine.search(SearchLimits::depth(10))?;
+    /// # use opera_uci::bridge::{Board, SearchEngine, SearchLimits};
+    /// # let mut board = Board::new()?;
+    /// # let mut engine = SearchEngine::new(&mut board)?;
+    /// let result = engine.search(SearchLimits::depth(3))?;
     /// println!("Best move: {}", result.best_move);
+    /// # Ok::<(), opera_uci::UCIError>(())
     /// ```
     #[instrument(level = "debug", skip(self))]
     pub fn search(&mut self, limits: SearchLimits) -> UCIResult<SearchResult> {
@@ -314,7 +319,11 @@ impl SearchEngine {
     /// # Examples
     ///
     /// ```
+    /// # use opera_uci::bridge::{Board, SearchEngine, SearchLimits};
+    /// # let mut board = Board::new()?;
+    /// # let mut engine = SearchEngine::new(&mut board)?;
     /// engine.stop();
+    /// # Ok::<(), opera_uci::UCIError>(())
     /// ```
     #[instrument(level = "debug", skip(self))]
     pub fn stop(&mut self) {
@@ -333,9 +342,13 @@ impl SearchEngine {
     /// # Examples
     ///
     /// ```
+    /// # use opera_uci::bridge::{Board, SearchEngine, SearchLimits};
+    /// # let mut board = Board::new()?;
+    /// # let mut engine = SearchEngine::new(&mut board)?;
     /// if engine.is_searching() {
     ///     engine.stop();
     /// }
+    /// # Ok::<(), opera_uci::UCIError>(())
     /// ```
     pub fn is_searching(&self) -> bool {
         ffi::search_engine_is_searching(&*self.inner)
@@ -351,9 +364,13 @@ impl SearchEngine {
     /// # Examples
     ///
     /// ```
+    /// # use opera_uci::bridge::{Board, SearchEngine, SearchLimits};
+    /// # let mut board = Board::new()?;
+    /// # let mut engine = SearchEngine::new(&mut board)?;
     /// if let Some(result) = engine.get_last_result() {
     ///     println!("Last best move: {}", result.best_move);
     /// }
+    /// # Ok::<(), opera_uci::UCIError>(())
     /// ```
     pub fn get_last_result(&self) -> Option<&SearchResult> {
         self.last_result.as_ref()
@@ -361,13 +378,17 @@ impl SearchEngine {
 
     /// Reset the search engine statistics for a new game
     ///
-    /// This clears transposition tables, history heuristics, and other
-    /// search statistics. Call this when starting a new game.
+    /// This resets reported search statistics and the cached result. UCI
+    /// `ucinewgame` separately recreates the worker search state.
     ///
     /// # Examples
     ///
     /// ```
+    /// # use opera_uci::bridge::{Board, SearchEngine, SearchLimits};
+    /// # let mut board = Board::new()?;
+    /// # let mut engine = SearchEngine::new(&mut board)?;
     /// engine.reset();
+    /// # Ok::<(), opera_uci::UCIError>(())
     /// ```
     #[instrument(level = "debug", skip(self))]
     pub fn reset(&mut self) {

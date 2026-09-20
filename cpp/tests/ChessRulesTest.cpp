@@ -166,8 +166,8 @@ TEST_F(PerftTest, Position6) {
 // ============================================================================
 
 TEST_F(ChessRulesTest, FiftyMoveRuleBasic) {
-    // Set up position with 50 half-moves without pawn move or capture
-    board.setFromFEN("8/8/8/8/8/8/8/K6k w - - 50 25");
+    // Set up position with 100 half-moves without pawn move or capture
+    board.setFromFEN("8/8/8/8/8/8/8/K6k w - - 100 51");
     
     // Board should detect 50-move rule
     EXPECT_TRUE(board.isFiftyMoveRule());
@@ -178,7 +178,7 @@ TEST_F(ChessRulesTest, FiftyMoveRuleBasic) {
 
 TEST_F(ChessRulesTest, FiftyMoveRuleReset) {
     // Position just before 50-move rule triggers
-    board.setFromFEN("8/7P/8/8/8/8/8/K6k w - - 49 25");
+    board.setFromFEN("8/7P/8/8/8/8/8/K6k w - - 99 50");
     
     EXPECT_FALSE(board.isFiftyMoveRule());
     

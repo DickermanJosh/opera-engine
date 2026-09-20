@@ -81,7 +81,7 @@ TEST_F(PerformanceBenchmarkTest, StartingPositionSearch) {
     auto end = high_resolution_clock::now();
 
     auto duration = duration_cast<milliseconds>(end - start);
-    uint64_t nps = duration.count() > 0 ? (result.nodes * 1000) / duration.count() : 0;
+    uint64_t nps = static_cast<uint64_t>(result.nodes / std::max(1e-9, std::chrono::duration<double>(end - start).count()));
 
     BenchmarkResult bench{
         "Starting Position (depth 5)",
@@ -111,7 +111,7 @@ TEST_F(PerformanceBenchmarkTest, ComplexMiddlegameSearch) {
     auto end = high_resolution_clock::now();
 
     auto duration = duration_cast<milliseconds>(end - start);
-    uint64_t nps = duration.count() > 0 ? (result.nodes * 1000) / duration.count() : 0;
+    uint64_t nps = static_cast<uint64_t>(result.nodes / std::max(1e-9, std::chrono::duration<double>(end - start).count()));
 
     BenchmarkResult bench{
         "Complex Middlegame (depth 5)",
@@ -141,7 +141,7 @@ TEST_F(PerformanceBenchmarkTest, TacticalPositionSearch) {
     auto end = high_resolution_clock::now();
 
     auto duration = duration_cast<milliseconds>(end - start);
-    uint64_t nps = duration.count() > 0 ? (result.nodes * 1000) / duration.count() : 0;
+    uint64_t nps = static_cast<uint64_t>(result.nodes / std::max(1e-9, std::chrono::duration<double>(end - start).count()));
 
     BenchmarkResult bench{
         "Tactical Position (depth 5)",
@@ -170,7 +170,7 @@ TEST_F(PerformanceBenchmarkTest, EndgameSearch) {
     auto end = high_resolution_clock::now();
 
     auto duration = duration_cast<milliseconds>(end - start);
-    uint64_t nps = duration.count() > 0 ? (result.nodes * 1000) / duration.count() : 0;
+    uint64_t nps = static_cast<uint64_t>(result.nodes / std::max(1e-9, std::chrono::duration<double>(end - start).count()));
 
     BenchmarkResult bench{
         "Endgame Position (depth 6)",
@@ -331,7 +331,7 @@ TEST_F(PerformanceBenchmarkTest, SearchNodeScaling) {
         auto end = high_resolution_clock::now();
 
         auto duration = duration_cast<milliseconds>(end - start);
-        uint64_t nps = duration.count() > 0 ? (result.nodes * 1000) / duration.count() : 0;
+        uint64_t nps = static_cast<uint64_t>(result.nodes / std::max(1e-9, std::chrono::duration<double>(end - start).count()));
 
         std::cout << "  " << std::setw(5) << depth << " | ";
         std::cout << std::setw(10) << result.nodes << " | ";
@@ -373,7 +373,7 @@ TEST_F(PerformanceBenchmarkTest, ConsistentPerformance) {
         auto end = high_resolution_clock::now();
 
         auto duration = duration_cast<milliseconds>(end - start);
-        uint64_t nps = duration.count() > 0 ? (result.nodes * 1000) / duration.count() : 0;
+        uint64_t nps = static_cast<uint64_t>(result.nodes / std::max(1e-9, std::chrono::duration<double>(end - start).count()));
 
         total_nps += nps;
         position_count++;

@@ -96,6 +96,8 @@ impl SearchParams {
 /// Information about the current position for time management decisions
 #[derive(Debug, Clone, Default)]
 pub struct PositionInfo {
+    /// Select Black's clock and increment; defaults to White.
+    pub black_to_move: bool,
     /// Number of legal moves in the position
     pub legal_moves: usize,
 

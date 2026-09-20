@@ -21,7 +21,7 @@ enum class TTEntryType : uint8_t {
  * 128 bits total, designed for cache-friendly access
  */
 struct TTEntry {
-    uint64_t key_and_data;     // Upper 32 bits: partial key, lower 32 bits: packed data
+    uint64_t key_and_data;     // Full position key (including zero).
     uint64_t move_and_eval;    // Upper 32 bits: move, lower 32 bits: score/depth/type/age
     
     // Constructor
@@ -34,24 +34,24 @@ struct TTEntry {
     TTEntryType get_type() const { return static_cast<TTEntryType>((move_and_eval >> 24) & 0x3); }
     uint8_t get_age() const { return static_cast<uint8_t>((move_and_eval >> 26) & 0x3F); }
     Move get_move() const { 
-        uint32_t move_data = static_cast<uint32_t>(move_and_eval >> 32);
-        return Move(static_cast<Square>(move_data & 0x3F), 
-                   static_cast<Square>((move_data >> 6) & 0x3F));
+        Move move;
+        move.data = static_cast<uint32_t>(move_and_eval >> 32) & 0x1FFFF;
+        return move;
     }
+    bool is_empty() const { return (move_and_eval >> 63) == 0; }
+    uint8_t get_rule50() const { return (move_and_eval >> 49) & 0x7F; }
     
     // Mutators for packed data
     void set_data(uint64_t zobrist_key, Move move, int16_t score, uint8_t depth, 
-                  TTEntryType type, uint8_t age) {
-        // Store upper 32 bits of zobrist key
-        key_and_data = (zobrist_key & 0xFFFFFFFF00000000ULL) | 
-                       static_cast<uint64_t>(depth);
+                  TTEntryType type, uint8_t age, uint8_t rule50 = 0) {
+        key_and_data = zobrist_key;
         
         // Pack move into upper 32 bits
-        uint32_t move_data = (static_cast<uint32_t>(move.to()) << 6) | 
-                            static_cast<uint32_t>(move.from());
+        uint32_t move_data = move.data | 0x80000000U; // Valid entry marker.
         
         // Pack score, depth, type, age into lower 32 bits
         move_and_eval = (static_cast<uint64_t>(move_data) << 32) |
+                       (static_cast<uint64_t>(rule50 & 0x7F) << 49) |
                        (static_cast<uint64_t>(age & 0x3F) << 26) |
                        (static_cast<uint64_t>(type) << 24) |
                        (static_cast<uint64_t>(depth) << 16) |
@@ -59,7 +59,7 @@ struct TTEntry {
     }
     
     bool matches_key(uint64_t zobrist_key) const {
-        return get_key() == static_cast<uint32_t>(zobrist_key >> 32);
+        return !is_empty() && key_and_data == zobrist_key;
     }
 };
 
@@ -98,7 +98,8 @@ struct TTStats {
 };
 
 /**
- * High-performance transposition table with clustering and replacement strategy
+ * Transposition table owned by one search worker. Entries are not synchronized;
+ * parallel search must use separate tables until a shared-table protocol exists.
  */
 class TranspositionTable {
 private:
@@ -140,7 +141,7 @@ public:
      * @param depth Search depth
      * @param type Entry type (exact, lower bound, upper bound)
      */
-    void store(uint64_t zobrist_key, Move move, int16_t score, uint8_t depth, TTEntryType type);
+    void store(uint64_t zobrist_key, Move move, int16_t score, uint8_t depth, TTEntryType type, uint8_t rule50 = 0);
     
     /**
      * Probe transposition table for position

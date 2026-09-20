@@ -56,7 +56,7 @@ Invalid FEN/moves preserve the previous position. Unknown/invalid commands repor
 | Hash | 1–128 MB; default 16 | Sizes the worker's C++ transposition table |
 | Threads | 1 only | One search worker; parallel search is not implemented |
 | Ponder | true/false; default false | Includes an available PV reply in bestmove; GUI requests pondering using go ponder |
-| MorphyStyle | true/false; default false | Selects the existing Morphy or handcrafted evaluator; no new strength/style work |
+| MorphyStyle | true/false; default false | Selects Morphy activity/king-pressure adjustments or the standard handcrafted evaluator; see [core review](core-engine-review.md) |
 | Move Overhead | 0–5000 ms; default 10 | Reserves time from movetime/remaining clock budget |
 | Clear Hash | button | Stops/drops the current worker; every search starts with a fresh table |
 

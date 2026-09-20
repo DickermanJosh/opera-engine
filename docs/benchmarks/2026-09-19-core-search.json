@@ -1,0 +1,397 @@
+{
+  "date": "2026-09-19",
+  "baseline_revision": "2b4353b",
+  "candidate_branch": "engine-core",
+  "depth": 6,
+  "threads": 1,
+  "hash_mb": 16,
+  "note": "Wall-clock fixed-depth comparison; selective search and node-count semantics changed. Not an Elo estimate.",
+  "evaluators": {
+    "handcrafted": {
+      "baseline_sha256": "e0971eefbaf3c2d2e0b833631876a8378136fb1e30e142277d29b080fb831feb",
+      "candidate_sha256": "c45b7a494f7dffe21ae0590595f5cab325c1c873e9f49dc10cd5c9ecdd0fbaa3",
+      "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+      "total_speedup": 2.256395985569809,
+      "positions": [
+        {
+          "position": "start",
+          "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+          "baseline_ms": 148.31989600133966,
+          "candidate_ms": 16.053042003477458,
+          "speedup": 9.23936385198582,
+          "baseline_move": "Nc3",
+          "candidate_move": "Nc3",
+          "baseline_samples_ms": [
+            159.2869169980986,
+            137.3528750045807
+          ],
+          "candidate_samples_ms": [
+            16.97995800350327,
+            16.053042003477458,
+            16.04100000258768
+          ]
+        },
+        {
+          "position": "e4",
+          "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+          "baseline_ms": 76.09977099855314,
+          "candidate_ms": 21.49104099953547,
+          "speedup": 3.5409997589320144,
+          "baseline_move": "Nc6",
+          "candidate_move": "Nc6",
+          "baseline_samples_ms": [
+            81.64224999927683,
+            70.55729199782945
+          ],
+          "candidate_samples_ms": [
+            21.838665998075157,
+            21.49104099953547,
+            21.474374996614642
+          ]
+        },
+        {
+          "position": "italian_castling",
+          "fen": "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 1 5",
+          "baseline_ms": 196.78593749995343,
+          "candidate_ms": 61.95787500473671,
+          "speedup": 3.17612470545365,
+          "baseline_move": "Nc3",
+          "candidate_move": "Nc3",
+          "baseline_samples_ms": [
+            210.8197499983362,
+            182.75212500157068
+          ],
+          "candidate_samples_ms": [
+            61.95787500473671,
+            61.89799999992829,
+            62.25874999654479
+          ]
+        },
+        {
+          "position": "four_knights_pin",
+          "fen": "r2qkb1r/pppbnppp/3p1n2/1B1Pp3/4P3/2N2N2/PPP2PPP/R1BQ1RK1 b kq - 3 7",
+          "baseline_ms": 63.05631250506849,
+          "candidate_ms": 19.21062500332482,
+          "speedup": 3.2823665286348156,
+          "baseline_move": "Bxb5",
+          "candidate_move": "Bxb5",
+          "baseline_samples_ms": [
+            66.93037500372157,
+            59.182250006415416
+          ],
+          "candidate_samples_ms": [
+            19.21062500332482,
+            18.92783399671316,
+            19.22408300015377
+          ]
+        },
+        {
+          "position": "london",
+          "fen": "rnbq1rk1/ppp2ppp/3bpn2/3p4/3P4/3BPNB1/PPP2PPP/RN1QK2R b KQ - 4 6",
+          "baseline_ms": 85.94397900014883,
+          "candidate_ms": 32.72574999573408,
+          "speedup": 2.626188216048584,
+          "baseline_move": "Bxg3",
+          "candidate_move": "Nc6",
+          "baseline_samples_ms": [
+            90.38608300033957,
+            81.50187499995809
+          ],
+          "candidate_samples_ms": [
+            32.91975000320235,
+            32.56945900648134,
+            32.72574999573408
+          ]
+        },
+        {
+          "position": "london_centre",
+          "fen": "r1bqk2r/pp3ppp/2nbpn2/2pp4/3P1B2/2P1PN2/PP1N1PPP/R2QKB1R w KQkq - 2 7",
+          "baseline_ms": 106.45331249907031,
+          "candidate_ms": 45.88812500151107,
+          "speedup": 2.3198444585732116,
+          "baseline_move": "Bb5",
+          "candidate_move": "dxc5",
+          "baseline_samples_ms": [
+            113.4562909937813,
+            99.45033400435932
+          ],
+          "candidate_samples_ms": [
+            45.88812500151107,
+            45.91716599679785,
+            45.58145799819613
+          ]
+        },
+        {
+          "position": "kiwipete",
+          "fen": "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+          "baseline_ms": 497.6126874971669,
+          "candidate_ms": 322.1458330008318,
+          "speedup": 1.5446814346839064,
+          "baseline_move": "dxe6",
+          "candidate_move": "Bxa6",
+          "baseline_samples_ms": [
+            513.0297079958837,
+            482.1956669984502
+          ],
+          "candidate_samples_ms": [
+            317.71416700212285,
+            322.61054199625505,
+            322.1458330008318
+          ]
+        },
+        {
+          "position": "rook_ending",
+          "fen": "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+          "baseline_ms": 35.417187500570435,
+          "candidate_ms": 13.480166999215726,
+          "speedup": 2.6273552473519803,
+          "baseline_move": "Rxf4+",
+          "candidate_move": "Rxf4+",
+          "baseline_samples_ms": [
+            34.25654199963901,
+            36.57783300150186
+          ],
+          "candidate_samples_ms": [
+            13.48241700179642,
+            13.480166999215726,
+            13.291916999150999
+          ]
+        },
+        {
+          "position": "promotion",
+          "fen": "4k3/P7/8/8/8/8/7p/4K3 w - - 0 1",
+          "baseline_ms": 23.125396503019147,
+          "candidate_ms": 15.383208003186155,
+          "speedup": 1.5032882931979752,
+          "baseline_move": "a8=Q+",
+          "candidate_move": "a8=Q+",
+          "baseline_samples_ms": [
+            22.19445900118444,
+            24.056334004853852
+          ],
+          "candidate_samples_ms": [
+            15.383208003186155,
+            15.500082998187281,
+            15.37191600073129
+          ]
+        },
+        {
+          "position": "knight_fork",
+          "fen": "r3k3/pp3ppp/8/3N4/8/8/PPP2PPP/4K3 w q - 0 1",
+          "baseline_ms": 31.858895999903325,
+          "candidate_ms": 12.148124995292164,
+          "speedup": 2.6225360713896007,
+          "baseline_move": "Nc7+",
+          "candidate_move": "Nc7+",
+          "baseline_samples_ms": [
+            28.745666997565422,
+            34.97212500224123
+          ],
+          "candidate_samples_ms": [
+            12.148124995292164,
+            12.202624995552469,
+            12.074624995875638
+          ]
+        }
+      ]
+    },
+    "morphy": {
+      "baseline_sha256": "e0971eefbaf3c2d2e0b833631876a8378136fb1e30e142277d29b080fb831feb",
+      "candidate_sha256": "c45b7a494f7dffe21ae0590595f5cab325c1c873e9f49dc10cd5c9ecdd0fbaa3",
+      "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+      "total_speedup": 2.038165634169803,
+      "positions": [
+        {
+          "position": "start",
+          "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+          "baseline_ms": 123.10341600095853,
+          "candidate_ms": 15.29766600287985,
+          "speedup": 8.047202493359693,
+          "baseline_move": "Nc3",
+          "candidate_move": "Nc3",
+          "baseline_samples_ms": [
+            123.10341600095853,
+            123.64625000191154,
+            121.93770799785852
+          ],
+          "candidate_samples_ms": [
+            17.76104199961992,
+            15.29766600287985,
+            15.261374996043742
+          ]
+        },
+        {
+          "position": "e4",
+          "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+          "baseline_ms": 79.88516699697357,
+          "candidate_ms": 20.262332996935584,
+          "speedup": 3.9425453628195317,
+          "baseline_move": "Nc6",
+          "candidate_move": "Nc6",
+          "baseline_samples_ms": [
+            79.19558299909113,
+            81.28808400215348,
+            79.88516699697357
+          ],
+          "candidate_samples_ms": [
+            20.0353330001235,
+            20.78412500122795,
+            20.262332996935584
+          ]
+        },
+        {
+          "position": "italian_castling",
+          "fen": "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 1 5",
+          "baseline_ms": 143.84379200055264,
+          "candidate_ms": 76.61879200168187,
+          "speedup": 1.8773957177162897,
+          "baseline_move": "O-O",
+          "candidate_move": "O-O",
+          "baseline_samples_ms": [
+            146.4772079998511,
+            143.84379200055264,
+            138.71845799440052
+          ],
+          "candidate_samples_ms": [
+            76.46791700244648,
+            77.04345799720613,
+            76.61879200168187
+          ]
+        },
+        {
+          "position": "four_knights_pin",
+          "fen": "r2qkb1r/pppbnppp/3p1n2/1B1Pp3/4P3/2N2N2/PPP2PPP/R1BQ1RK1 b kq - 3 7",
+          "baseline_ms": 62.89587500214111,
+          "candidate_ms": 19.37829199596308,
+          "speedup": 3.2456872367927825,
+          "baseline_move": "Bxb5",
+          "candidate_move": "Bxb5",
+          "baseline_samples_ms": [
+            63.428791996557266,
+            62.89587500214111,
+            61.106540997570846
+          ],
+          "candidate_samples_ms": [
+            19.37829199596308,
+            19.46954199956963,
+            18.989500000316184
+          ]
+        },
+        {
+          "position": "london",
+          "fen": "rnbq1rk1/ppp2ppp/3bpn2/3p4/3P4/3BPNB1/PPP2PPP/RN1QK2R b KQ - 4 6",
+          "baseline_ms": 130.70600000355626,
+          "candidate_ms": 39.61600000184262,
+          "speedup": 3.299323505590591,
+          "baseline_move": "Bxg3",
+          "candidate_move": "Nc6",
+          "baseline_samples_ms": [
+            123.2617079949705,
+            130.70600000355626,
+            132.78050000371877
+          ],
+          "candidate_samples_ms": [
+            40.07149999961257,
+            39.61600000184262,
+            39.44483300438151
+          ]
+        },
+        {
+          "position": "london_centre",
+          "fen": "r1bqk2r/pp3ppp/2nbpn2/2pp4/3P1B2/2P1PN2/PP1N1PPP/R2QKB1R w KQkq - 2 7",
+          "baseline_ms": 96.25916699587833,
+          "candidate_ms": 46.33720799756702,
+          "speedup": 2.0773622571505066,
+          "baseline_move": "Bxd6",
+          "candidate_move": "Bb5",
+          "baseline_samples_ms": [
+            95.75541599770077,
+            96.25916699587833,
+            96.25954199873377
+          ],
+          "candidate_samples_ms": [
+            45.93387500062818,
+            46.33720799756702,
+            46.791499997198116
+          ]
+        },
+        {
+          "position": "kiwipete",
+          "fen": "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+          "baseline_ms": 864.2391659959685,
+          "candidate_ms": 528.7559589996818,
+          "speedup": 1.634476456078084,
+          "baseline_move": "dxe6",
+          "candidate_move": "Bxa6",
+          "baseline_samples_ms": [
+            852.9945410045912,
+            864.2391659959685,
+            865.6945840048138
+          ],
+          "candidate_samples_ms": [
+            528.7559589996818,
+            531.5603749986622,
+            524.0299169963691
+          ]
+        },
+        {
+          "position": "rook_ending",
+          "fen": "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+          "baseline_ms": 41.69325000111712,
+          "candidate_ms": 13.926040999649558,
+          "speedup": 2.993905446793264,
+          "baseline_move": "Rxf4+",
+          "candidate_move": "Rxf4+",
+          "baseline_samples_ms": [
+            41.512625000905246,
+            41.69325000111712,
+            42.016541003249586
+          ],
+          "candidate_samples_ms": [
+            13.926040999649558,
+            14.104624999163207,
+            13.66766700084554
+          ]
+        },
+        {
+          "position": "promotion",
+          "fen": "4k3/P7/8/8/8/8/7p/4K3 w - - 0 1",
+          "baseline_ms": 25.96099999936996,
+          "candidate_ms": 14.065166004002094,
+          "speedup": 1.8457656306355028,
+          "baseline_move": "a8=Q+",
+          "candidate_move": "a8=Q+",
+          "baseline_samples_ms": [
+            22.705790994223207,
+            26.131958002224565,
+            25.96099999936996
+          ],
+          "candidate_samples_ms": [
+            14.327749995572958,
+            14.065166004002094,
+            13.686917001905385
+          ]
+        },
+        {
+          "position": "knight_fork",
+          "fen": "r3k3/pp3ppp/8/3N4/8/8/PPP2PPP/4K3 w q - 0 1",
+          "baseline_ms": 33.9888329981477,
+          "candidate_ms": 12.025874995742925,
+          "speedup": 2.826308523095368,
+          "baseline_move": "Nc7+",
+          "candidate_move": "Nc7+",
+          "baseline_samples_ms": [
+            33.30604099755874,
+            33.9888329981477,
+            34.312791998672765
+          ],
+          "candidate_samples_ms": [
+            12.025874995742925,
+            12.138624995714054,
+            11.796917002357077
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # Development roadmap — 2026-09-19
 
-Target operating systems: macOS, Windows and Linux. At the owner's request, integrate the current engine into the existing Unity chess app first so it can be played by hand. Then finish the engine core before building and tuning neural evaluation.
+Target operating systems: macOS, Windows and Linux. The Unity playtest is connected. Current work on `engine-core` addresses sound, active Morphy-inspired play and search speed before building and tuning neural evaluation. See the [core review and recorded evidence](core-engine-review.md).
 
 ## 1. Play the current engine in Unity
 
@@ -21,14 +21,14 @@ UCI release acceptance does not claim a strong or complete chess engine. The kno
 
 ## 3. Finish core correctness and establish strength
 
-Start on `engine-core` with bounded, reproducible failing positions. The latest UCI review fixed an evaluator-perspective error: both evaluators report White-relative scores, while negamax requires the current side's perspective. Keep odd/even-depth and both-color capture regressions in the release gate.
+The first core pass is implemented on `engine-core`: the full C++/Rust suites pass, the king/pawn evaluation and tactical search defects have reproducible regressions, and benchmark/paired-game results are recorded. Continue with broader held-out tactics, longer paired matches and user feedback before tuning weights or adding more pruning. The earlier UCI review fixed evaluator perspective; retain those odd/even-depth and both-colour capture regressions.
 
 Prioritize:
 
 1. Audit board restoration, hashing, repetition and draw handling, quiescence terminal positions, check evasions, and mate distance/score propagation. Compare move generation against independent perft/reference positions.
 2. Audit transposition-table score/bound handling and replacement, aspiration-window completion, move ordering, extensions and pruning. Establish a simple correct search baseline before optimizing it.
 3. Audit piece-square orientation, tapered evaluation, material/tempo perspective, pawn structure and king safety. Reconcile remaining tactical/style tests with valid positions and stated score conventions.
-4. Resolve the legacy time-policy failures and decide whether to remove the unused path or adopt it behind the active coordinator's tested deadline contract.
+4. Legacy time-policy failures are resolved and clock/limit edge cases covered. Keep the active coordinator's tested deadline contract; the standalone policy remains separate.
 5. Establish repeatable fixed-node tactical results, timed games and a strength baseline with saved openings, seeds, opponents and hardware. Measure changes through paired matches; node-count floors alone do not establish search quality.
 
 Completion evidence: correctness regressions pass; all remaining suite failures are fixed or individually justified and replaced with meaningful checks; complete timed matches remain legal and within budget; strength and speed results are recorded. Defer parallel search and optional style controls until they serve a measured need.

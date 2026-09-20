@@ -98,11 +98,11 @@ TEST_F(AdvancedEvalTest, PassedPawnBonus) {
  */
 TEST_F(AdvancedEvalTest, AdvancedPassedPawnBonusScales) {
     // White passed pawn on 6th rank (equal material)
-    board->setFromFEN("rnbqkbnr/pp1p1ppp/4P3/8/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+    board->setFromFEN("4k3/ppp3pp/4P3/8/8/8/PPP3PP/4K3 w KQkq - 0 1");
     int sixth_rank_score = evaluator->evaluate(*board, Color::WHITE);
 
     // White passed pawn on 5th rank (equal material)
-    board->setFromFEN("rnbqkbnr/pp1p1ppp/8/4P3/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+    board->setFromFEN("4k3/ppp3pp/8/4P3/8/8/PPP3PP/4K3 w KQkq - 0 1");
     int fifth_rank_score = evaluator->evaluate(*board, Color::WHITE);
 
     // 6th rank passed pawn should be worth more than 5th rank
@@ -187,7 +187,7 @@ TEST_F(AdvancedEvalTest, OpenFilesNearKing) {
  */
 TEST_F(AdvancedEvalTest, KingSafetyPhaseDependent) {
     // Opening: central king is bad (equal material - both missing bishops)
-    board->setFromFEN("rnbqk2r/pppppppp/8/8/4K3/8/PPPPPPPP/RNBQ2NR w kq - 0 1");
+    board->setFromFEN("rnbqk2r/pppppppp/8/8/4K3/8/PPPPPPPP/RNBQ1R2 w kq - 0 1");
     int opening_central_king = evaluator->evaluate(*board, Color::WHITE);
 
     // Opening: castled king is good (equal material - both missing bishops)
@@ -225,11 +225,11 @@ TEST_F(AdvancedEvalTest, KnightMobilityBonus) {
  */
 TEST_F(AdvancedEvalTest, BishopMobilityBonus) {
     // Bishop on open diagonal (e2 pawn moved, d7 also moved - equal material)
-    board->setFromFEN("rnbqkbnr/ppp1pppp/8/3P4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+    board->setFromFEN("4k3/ppp3pp/8/8/8/4P3/PPP2PPP/R1B1K3 w KQkq - 0 1");
     int open_bishop = evaluator->evaluate(*board, Color::WHITE);
 
     // Bishop blocked by own pawns (center closed, equal material)
-    board->setFromFEN("rnbqkbnr/ppp1pppp/8/3P4/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    board->setFromFEN("4k3/ppp3pp/8/8/8/8/PPPP1PPP/R1B1K3 w KQkq - 0 1");
     int blocked_bishop = evaluator->evaluate(*board, Color::WHITE);
 
     // Open bishop should have mobility bonus
@@ -386,7 +386,7 @@ TEST_F(AdvancedEvalTest, PositionalCompensationForMaterial) {
  */
 TEST_F(AdvancedEvalTest, PhaseDependentKingEvaluation) {
     // Opening: King in center (equal material - both missing bishops)
-    board->setFromFEN("rnbqk2r/pppppppp/8/8/8/4K3/PPPPPPPP/RNBQ2NR w kq - 0 1");
+    board->setFromFEN("rnbqk2r/pppppppp/8/8/8/4K3/PPPPPPPP/RNBQ1R2 w kq - 0 1");
     int opening_center_king = evaluator->evaluate(*board, Color::WHITE);
 
     // Opening: King castled (equal material - both missing bishops)
@@ -394,11 +394,11 @@ TEST_F(AdvancedEvalTest, PhaseDependentKingEvaluation) {
     int opening_safe_king = evaluator->evaluate(*board, Color::WHITE);
 
     // Endgame: King in center
-    board->setFromFEN("8/8/8/4k3/4K3/8/8/8 w - - 0 1");
+    board->setFromFEN("4k3/8/8/8/4K3/8/8/8 w - - 0 1");
     int endgame_center_king = evaluator->evaluate(*board, Color::WHITE);
 
     // Endgame: King on edge
-    board->setFromFEN("7K/8/8/4k3/8/8/8/8 w - - 0 1");
+    board->setFromFEN("4k3/8/8/8/8/8/8/K7 w - - 0 1");
     int endgame_edge_king = evaluator->evaluate(*board, Color::WHITE);
 
     // Opening: castled king should be much better than center

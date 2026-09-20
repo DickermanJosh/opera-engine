@@ -2,7 +2,7 @@
 
 A C++ chess search/evaluation core with a Rust UCI executable, intended to support Morphy-inspired play.
 
-## Current status — 2026-09-18
+## Current status — 2026-09-19
 
 The Rust executable now handles persistent UCI commands and real asynchronous search. It supports positions/FEN/moves, depth/node/time limits, infinite analysis, pondering, cancellation, and supported options. It is ready for basic process-level integration experiments; playing strength and full production acceptance remain unfinished.
 
@@ -15,9 +15,11 @@ bash launch.sh --uci
 
 Use the Rust binary for GUI/game integration. The C++ `opera-engine` executable remains a board demo. See the [UCI usage and Unity adapter boundary](docs/rust_uci_usage.md) for commands, options, supported limits and verification.
 
-Validation on macOS ARM64: 21 process tests, 281 Rust library/search/protocol tests, and 40 C++ search/control/evaluator integration tests pass. Docker/Linux ARM64 also passes the process suite. An independent Stockfish oracle checks bestmoves, every reported PV and ponder replies across 176 positions on both platforms. The C++ bridge also passes these process/oracle suites with address and undefined-behavior sanitizers on macOS. The broader engine suite still has failures; see the [dated baseline](docs/current-baseline.md) for evidence and limitations.
+The first `engine-core` pass fixes pawn-table orientation, exposed-king evaluation, exchange calculation, promotion/draw/mate handling and search-cache/ordering defects. It preserves forcing sacrifices and adds measured search optimizations. Across ten depth-six positions, search was about 2.26× faster with the standard evaluator and 2.04× with Morphy. The updated Morphy engine won eight short paired games against the saved integration build; this is not an Elo estimate. Read the [core review, benchmark data and games](docs/core-engine-review.md).
 
-Native UCI CI is configured for Linux, macOS and Windows, including downloadable executables. Windows uses clang-cl for the C++ bridge. Repository Actions is disabled, so native Windows checks remain unverified. An external python-chess client passes protocol checks and timed Stockfish games locally. `uci` is merged into `main`; the existing Unity chess app now supports local games against Opera on this Mac. See [play instructions and packaging](docs/unity-integration.md). Cargo dependencies are pinned in `rust/Cargo.lock`. The [development roadmap](docs/development-roadmap.md) puts hands-on Unity playtesting before further engine-core and neural evaluation/tuning work.
+Validation on macOS ARM64: 474 C++ tests, 346 Rust library/integration tests, 16 documentation examples, 21 process tests and 1,016 independent Stockfish-oracle positions pass. Selected C++ ASan/UBSan checks pass (68 tests). Docker/Linux ARM64 passes release process/oracle/client acceptance. See the [dated baseline](docs/current-baseline.md) for scope and limitations.
+
+Native UCI CI is configured for Linux, macOS and Windows, including downloadable executables. Windows uses clang-cl for the C++ bridge. Repository Actions is disabled, so native Windows checks remain unverified. An external python-chess client passes protocol checks and timed Stockfish games locally. `uci` is merged into `main`; current engine work is on `engine-core`. The Unity app selects Morphy style for local play. See [play instructions and packaging](docs/unity-integration.md). Cargo dependencies are pinned in `rust/Cargo.lock`. The [development roadmap](docs/development-roadmap.md) keeps further core validation ahead of neural evaluation/training.
 
 A separate [two-game Stockfish 17.1 match](docs/games/2026-09-18-stockfish-match.md), with equal 30+0.25 clocks and Opera playing each color, ended 0–2 by checkmate on moves 26 and 28. Both games were legal and within their clocks. [Download the PGN](docs/games/2026-09-18-stockfish-match.pgn), including move-by-move clock annotations. This is a development snapshot, not an Elo estimate.
 

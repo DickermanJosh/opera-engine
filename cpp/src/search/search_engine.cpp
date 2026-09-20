@@ -77,6 +77,8 @@ SearchResult SearchEngine::search(const SearchLimits& limits) {
     stop_flag.store(false);  // Reset stop flag
 
     alphabeta->reset();
+    tt->new_search();
+    move_ordering->age_history();
     pv_line.clear();
     alphabeta->stop_check = [this]() {
         if (external_stop && external_stop()) { stop_flag.store(true); return true; }
@@ -194,22 +196,10 @@ SearchResult SearchEngine::iterative_deepening() {
         uint64_t elapsed_before = get_elapsed_time_ms();
         uint64_t current_nodes = nodes_searched;
 
-        // For time limits, be extremely conservative to guarantee response
-        if (current_limits.max_time_ms != UINT64_MAX &&
-            elapsed_before >= current_limits.max_time_ms * 0.3) {  // Stop at 30% of limit
-            break;
-        }
-
-        // For node limits, allow getting closer
-        if (current_nodes >= current_limits.max_nodes || stop_flag.load()) {
-            break;
-        }
-
-        // Set stop flag if we're approaching time limit (very aggressive)
-        if (current_limits.max_time_ms != UINT64_MAX &&
-            elapsed_before >= current_limits.max_time_ms * 0.5) {
-            stop_flag.store(true);  // Signal search to stop
-        }
+        // Leave room for a longer next iteration; the callback enforces the hard deadline.
+        if (!current_limits.infinite && current_limits.max_time_ms != UINT64_MAX &&
+            elapsed_before >= current_limits.max_time_ms * 0.65) break;
+        if (current_nodes >= current_limits.max_nodes || stop_flag.load()) break;
 
         // Perform search at current depth with time monitoring
         int score = aspiration_search(depth, prev_score);
@@ -242,11 +232,7 @@ SearchResult SearchEngine::iterative_deepening() {
         // Set best move from PV if available, otherwise use first legal move
         if (!ab_pv.empty()) {
             best_result.best_move = ab_pv[0];
-        } else if (legal_moves.size() > 0) {
-            const MoveGen& mg = legal_moves[0];
-            best_result.best_move = Move(mg.from(), mg.to(), mg.isPromotion() ? PROMOTION : NORMAL,
-                mg.isPromotion() ? typeOf(mg.promotionPiece()) : NO_PIECE_TYPE);
-        }
+        } // Otherwise retain the previous legal result (including searchmoves).
 
         // Update search info
         update_search_info(depth, score, nodes_searched);
@@ -301,7 +287,7 @@ int SearchEngine::aspiration_search(int depth, int prev_score) {
     nodes_searched += alphabeta->get_stats().nodes;
 
     // Handle aspiration window failures with progressive widening
-    while ((score <= alpha || score >= beta) && window < MAX_WINDOW && !should_stop_search()) {
+    while ((score <= alpha || score >= beta) && !should_stop_search()) {
         window *= WINDOW_MULTIPLIER;  // Double the window size
 
         if (score <= alpha) {
@@ -314,6 +300,7 @@ int SearchEngine::aspiration_search(int depth, int prev_score) {
             beta = std::min(prev_score + window, INFINITY_SCORE);
         }
 
+        if (window >= MAX_WINDOW) { alpha = -INFINITY_SCORE; beta = INFINITY_SCORE; }
         // Re-search with widened window
         score = alphabeta->search(depth, alpha, beta);
         nodes_searched += alphabeta->get_stats().nodes;
@@ -511,6 +498,7 @@ int SearchEngine::get_min_depth_for_razoring() const {
 
 // Evaluator configuration methods
 void SearchEngine::set_morphy_bias(double bias) {
+    tt->clear();
     if (morphy_evaluator) {
         std::map<std::string, std::string> options;
         options["MorphyBias"] = std::to_string(bias);
@@ -532,6 +520,7 @@ void SearchEngine::set_pawn_hash_size(int size_mb) {
 }
 
 void SearchEngine::set_use_morphy_style(bool use_morphy) {
+    if (use_morphy != use_morphy_style) tt->clear();
     use_morphy_style = use_morphy;
 
     // Switch evaluator in AlphaBetaSearch

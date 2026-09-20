@@ -5,6 +5,7 @@
 #include <random>
 #include <algorithm>
 #include <cassert>
+#include <mutex>
 
 namespace opera {
 
@@ -16,7 +17,8 @@ uint64_t Board::zobristEnPassant[64];
 bool Board::zobristInitialized = false;
 
 void Board::initializeZobrist() {
-    if (zobristInitialized) return;
+    static std::once_flag initialized;
+    std::call_once(initialized, [] {
     
     std::mt19937_64 rng(0x1234567890ABCDEFULL); // Fixed seed for reproducibility
     
@@ -39,6 +41,7 @@ void Board::initializeZobrist() {
     }
     
     zobristInitialized = true;
+    });
 }
 
 // Constructors
@@ -140,12 +143,15 @@ std::string Board::toFEN() const {
 void Board::setPiece(Square sq, Piece piece) {
     if (piece != NO_PIECE) {
         setBit(pieces[piece], sq);
+        zobristKey ^= zobristPieces[sq][piece];
     }
 }
 
 void Board::removePiece(Square sq) {
-    for (int piece = WHITE_PAWN; piece <= BLACK_KING; ++piece) {
+    const Piece piece = getPiece(sq);
+    if (piece != NO_PIECE) {
         clearBit(pieces[piece], sq);
+        zobristKey ^= zobristPieces[sq][piece];
     }
 }
 
@@ -207,7 +213,7 @@ void Board::updateOccupancyAndZobrist() {
         zobristKey ^= zobristSideToMove;
     }
     zobristKey ^= zobristCastling[castling];
-    if (enPassant != NO_SQUARE) {
+    if (hasLegalEnPassant()) {
         zobristKey ^= zobristEnPassant[fileOf(enPassant)];
     }
 }
@@ -233,7 +239,7 @@ uint64_t Board::computeZobristKey() const {
     key ^= zobristCastling[castling];
     
     // Add en passant file
-    if (enPassant != NO_SQUARE) {
+    if (hasLegalEnPassant()) {
         key ^= zobristEnPassant[fileOf(enPassant)];
     }
     
@@ -471,42 +477,30 @@ Bitboard Board::getPawnAttacks(Square sq, Color color) const {
     return attacks;
 }
 
-Bitboard Board::getKnightAttacks(Square sq) const {
-    static const int knightMoves[] = {-17, -15, -10, -6, 6, 10, 15, 17};
-    Bitboard attacks = EMPTY_BB;
-    
-    for (int move : knightMoves) {
-        Square target = sq + move;
-        if (target >= A1 && target <= H8) {
-            int fileDistance = abs(fileOf(target) - fileOf(sq));
-            int rankDistance = abs(rankOf(target) - rankOf(sq));
-            
-            if ((fileDistance == 2 && rankDistance == 1) || (fileDistance == 1 && rankDistance == 2)) {
-                setBit(attacks, target);
-            }
+namespace {
+const std::array<Bitboard, 64> knight_attacks = [] {
+    std::array<Bitboard, 64> table{};
+    for (int from = 0; from < 64; ++from)
+        for (int to = 0; to < 64; ++to) {
+            int df = abs(fileOf(from) - fileOf(to)), dr = abs(rankOf(from) - rankOf(to));
+            if (df * dr == 2) table[from] |= 1ULL << to;
         }
-    }
-    
-    return attacks;
+    return table;
+}();
+const std::array<Bitboard, 64> king_attacks = [] {
+    std::array<Bitboard, 64> table{};
+    for (int from = 0; from < 64; ++from)
+        for (int to = 0; to < 64; ++to)
+            if (from != to && abs(fileOf(from) - fileOf(to)) <= 1 && abs(rankOf(from) - rankOf(to)) <= 1)
+                table[from] |= 1ULL << to;
+    return table;
+}();
 }
-
+Bitboard Board::getKnightAttacks(Square sq) const {
+    return isValidSquare(sq) ? knight_attacks[sq] : 0;
+}
 Bitboard Board::getKingAttacks(Square sq) const {
-    static const int kingMoves[] = {-9, -8, -7, -1, 1, 7, 8, 9};
-    Bitboard attacks = EMPTY_BB;
-    
-    for (int move : kingMoves) {
-        Square target = sq + move;
-        if (target >= A1 && target <= H8) {
-            int fileDistance = abs(fileOf(target) - fileOf(sq));
-            int rankDistance = abs(rankOf(target) - rankOf(sq));
-            
-            if (fileDistance <= 1 && rankDistance <= 1) {
-                setBit(attacks, target);
-            }
-        }
-    }
-    
-    return attacks;
+    return isValidSquare(sq) ? king_attacks[sq] : 0;
 }
 
 Bitboard Board::generateSlidingAttacks(Square sq, const int* directions, int numDirs, Bitboard occupied) const {
@@ -819,80 +813,23 @@ bool Board::isStalemate(Color color) const {
 }
 
 bool Board::isDraw() const {
+    if (isInCheck(sideToMove) && !hasLegalMovesForColor(sideToMove)) return false;
     return isFiftyMoveRule() || isInsufficientMaterial() || isThreefoldRepetition() || 
            isStalemate(sideToMove);
 }
 
 bool Board::isFiftyMoveRule() const {
-    return halfmoveClock >= 50; // 50 half-moves for 50-move rule
+    return halfmoveClock >= 100;
 }
 
 bool Board::isInsufficientMaterial() const {
-    // Count pieces for both sides
-    int whitePieces = 0, blackPieces = 0;
-    int whiteBishops = 0, blackBishops = 0;
-    int whiteKnights = 0, blackKnights = 0;
-    bool whiteBishopOnLight = false, whiteBishopOnDark = false;
-    bool blackBishopOnLight = false, blackBishopOnDark = false;
-    
-    for (int sq = A1; sq <= H8; ++sq) {
-        Piece piece = getPiece(static_cast<Square>(sq));
-        if (piece == NO_PIECE) continue;
-        
-        Color pieceColor = colorOf(piece);
-        PieceType pieceType = typeOf(piece);
-        
-        if (pieceColor == WHITE) {
-            whitePieces++;
-            if (pieceType == BISHOP) {
-                whiteBishops++;
-                if ((fileOf(static_cast<Square>(sq)) + rankOf(static_cast<Square>(sq))) % 2 == 0) {
-                    whiteBishopOnDark = true;
-                } else {
-                    whiteBishopOnLight = true;
-                }
-            } else if (pieceType == KNIGHT) {
-                whiteKnights++;
-            } else if (pieceType == PAWN || pieceType == ROOK || pieceType == QUEEN) {
-                return false; // These pieces can force mate
-            }
-        } else {
-            blackPieces++;
-            if (pieceType == BISHOP) {
-                blackBishops++;
-                if ((fileOf(static_cast<Square>(sq)) + rankOf(static_cast<Square>(sq))) % 2 == 0) {
-                    blackBishopOnDark = true;
-                } else {
-                    blackBishopOnLight = true;
-                }
-            } else if (pieceType == KNIGHT) {
-                blackKnights++;
-            } else if (pieceType == PAWN || pieceType == ROOK || pieceType == QUEEN) {
-                return false; // These pieces can force mate
-            }
-        }
-    }
-    
-    // King vs King
-    if (whitePieces == 1 && blackPieces == 1) {
-        return true;
-    }
-    
-    // King and Bishop/Knight vs King
-    if ((whitePieces == 2 && blackPieces == 1 && (whiteBishops == 1 || whiteKnights == 1)) ||
-        (blackPieces == 2 && whitePieces == 1 && (blackBishops == 1 || blackKnights == 1))) {
-        return true;
-    }
-    
-    // King and Bishop vs King and Bishop (same color squares)
-    if (whitePieces == 2 && blackPieces == 2 && whiteBishops == 1 && blackBishops == 1) {
-        if ((whiteBishopOnLight && blackBishopOnLight) || 
-            (whiteBishopOnDark && blackBishopOnDark)) {
-            return true;
-        }
-    }
-    
-    return false;
+    if (pieces[WHITE_PAWN] | pieces[BLACK_PAWN] | pieces[WHITE_ROOK] |
+        pieces[BLACK_ROOK] | pieces[WHITE_QUEEN] | pieces[BLACK_QUEEN]) return false;
+    const Bitboard bishops = pieces[WHITE_BISHOP] | pieces[BLACK_BISHOP];
+    const Bitboard knights = pieces[WHITE_KNIGHT] | pieces[BLACK_KNIGHT];
+    if (__builtin_popcountll(bishops | knights) <= 1) return true;
+    constexpr Bitboard dark = 0xAA55AA55AA55AA55ULL;
+    return !knights && (!(bishops & dark) || !(bishops & ~dark));
 }
 
 bool Board::isThreefoldRepetition() const {
@@ -900,81 +837,149 @@ bool Board::isThreefoldRepetition() const {
     int repetitions = 1; // Current position counts as 1
     uint64_t currentKey = zobristKey;
     
-    // Check against all positions in history
-    for (const auto& state : history) {
-        if (state.zobristKey == currentKey) {
-            repetitions++;
-            if (repetitions >= 3) {
-                return true;
-            }
-        }
+    // Only positions with the same side to move since the last irreversible move.
+    const int count = static_cast<int>(history.size());
+    const int earliest = std::max(0, count - halfmoveClock);
+    for (int i = count - 2; i >= earliest; i -= 2) {
+        if (history[i].zobristKey == currentKey && ++repetitions >= 3) return true;
     }
-    
+
+    return false;
+}
+
+bool Board::canCastle(Color color, bool kingside) const {
+    if (!(kingside ? canCastleKingside(color) : canCastleQueenside(color))) return false;
+    const Square king = color == WHITE ? E1 : E8;
+    const Square rook = kingside ? king + 3 : king - 4;
+    if (getPiece(king) != makePiece(color, KING) || getPiece(rook) != makePiece(color, ROOK)) return false;
+    const int step = kingside ? 1 : -1;
+    for (Square square = king + step; square != rook; square += step)
+        if (!isEmpty(square)) return false;
+    for (int i = 0; i <= 2; ++i)
+        if (isSquareAttacked(king + step * i, ~color)) return false;
+    return true;
+}
+
+bool Board::hasLegalEnPassant() const {
+    if (enPassant == NO_SQUARE) return false;
+    Bitboard candidates = getPawnAttacks(enPassant, ~sideToMove) & getPieceBitboard(sideToMove, PAWN);
+    while (candidates) {
+        Square from = static_cast<Square>(__builtin_ctzll(candidates));
+        candidates &= candidates - 1;
+        if (isLegalMove(MoveGen(from, enPassant, MoveGen::MoveType::EN_PASSANT,
+                               NO_PIECE, makePiece(~sideToMove, PAWN)), sideToMove)) return true;
+    }
     return false;
 }
 
 bool Board::isLegalMove(const MoveGen& move, Color color) const {
-    // Make the move on a temporary board
-    Board tempBoard = *this;
-    
-    // Try to make the move using MoveGen system directly
-    // Temporarily allow illegal moves for testing check
-    tempBoard.sideToMove = color;
-    Square from = move.from();
-    Square to = move.to();
-    
-    // Execute move without legality check for testing
-    Piece movingPiece = tempBoard.getPiece(from);
-    
-    tempBoard.removePiece(from);
-    
-    // Handle special en passant case
-    if (move.isEnPassant()) {
-        // En passant: captured pawn is not on destination square
-        Square capturedSquare = to + (color == WHITE ? SOUTH : NORTH);
-        tempBoard.removePiece(capturedSquare);
-        tempBoard.setPiece(to, movingPiece);
-    } else {
-        // Normal move or capture
-        Piece capturedPiece = tempBoard.getPiece(to);
-        if (capturedPiece != NO_PIECE) {
-            tempBoard.removePiece(to);
+    const Square from = move.from(), to = move.to();
+    if (!isValidSquare(from) || !isValidSquare(to) || from == to) return false;
+    const Piece piece = getPiece(from), victim = getPiece(to);
+    if (piece == NO_PIECE || colorOf(piece) != color ||
+        (victim != NO_PIECE && (colorOf(victim) == color || typeOf(victim) == KING))) return false;
+
+    const PieceType type = typeOf(piece);
+    const Bitboard target = 1ULL << to;
+    Square captured = victim != NO_PIECE ? to : NO_SQUARE;
+    if (move.isCastling()) {
+        const Square home = color == WHITE ? E1 : E8;
+        if (type != KING || from != home || (to != home + 2 && to != home - 2) ||
+            !canCastle(color, to > from)) return false;
+    } else if (type == PAWN) {
+        const int forward = color == WHITE ? NORTH : SOUTH;
+        const bool last_rank = rankOf(to) == (color == WHITE ? 7 : 0);
+        if (last_rank != move.isPromotion()) return false;
+        if (move.isPromotion() && (colorOf(move.promotionPiece()) != color ||
+            typeOf(move.promotionPiece()) < KNIGHT || typeOf(move.promotionPiece()) > QUEEN)) return false;
+        if (move.isEnPassant()) {
+            if (to != enPassant || victim != NO_PIECE) return false;
+            captured = to - forward;
+            if (getPiece(captured) != makePiece(~color, PAWN)) return false;
         }
-        tempBoard.setPiece(to, movingPiece);
+        if (captured != NO_SQUARE) {
+            if (!(getPawnAttacks(from, color) & target)) return false;
+        } else if (to != from + forward) {
+            if (to != from + 2 * forward || rankOf(from) != (color == WHITE ? 1 : 6) ||
+                !isEmpty(from + forward)) return false;
+        }
+    } else {
+        if (move.isPromotion() || move.isEnPassant() || move.isDoublePawnPush()) return false;
+        Bitboard attacks = type == KNIGHT ? getKnightAttacks(from) :
+                           type == BISHOP ? getBishopAttacks(from, occupied[2]) :
+                           type == ROOK ? getRookAttacks(from, occupied[2]) :
+                           type == QUEEN ? getQueenAttacks(from, occupied[2]) : getKingAttacks(from);
+        if (!(attacks & target)) return false;
     }
-    
-    tempBoard.updateOccupancy();
-    
-    // Check if the king is in check after the move
-    return !tempBoard.isInCheck(color);
+
+    return isLegalGeneratedMove(move, color);
+}
+
+bool Board::isLegalGeneratedMove(const MoveGen& move, Color color) const {
+    const Square from = move.from(), to = move.to();
+    const bool king_move = testBit(getPieceBitboard(color, KING), from);
+    if (testBit(getPieceBitboard(~color, KING), to)) return false;
+    const Square captured = move.isEnPassant() ? to + (color == WHITE ? SOUTH : NORTH) : to;
+    const Bitboard target = 1ULL << to;
+    // Test the resulting king attacks with local occupancy; no Board/history copy.
+    Bitboard remaining = captured == NO_SQUARE ? ~0ULL : ~(1ULL << captured);
+    Bitboard occupancy = (occupied[2] & ~(1ULL << from) & remaining) | target;
+    if (move.isCastling()) {
+        const Square rook_from = to > from ? from + 3 : from - 4;
+        const Square rook_to = to > from ? from + 1 : from - 1;
+        occupancy = (occupancy & ~(1ULL << rook_from)) | (1ULL << rook_to);
+    }
+    const Square king = king_move ? to : getKingSquare(color);
+    if (king == NO_SQUARE) return false;
+    const Color enemy = ~color;
+    return !(remaining & (
+        (getPawnAttacks(king, color) & getPieceBitboard(enemy, PAWN)) |
+        (getKnightAttacks(king) & getPieceBitboard(enemy, KNIGHT)) |
+        (getKingAttacks(king) & getPieceBitboard(enemy, KING)) |
+        (getBishopAttacks(king, occupancy) & (getPieceBitboard(enemy, BISHOP) | getPieceBitboard(enemy, QUEEN))) |
+        (getRookAttacks(king, occupancy) & (getPieceBitboard(enemy, ROOK) | getPieceBitboard(enemy, QUEEN)))));
 }
 
 bool Board::wouldBeInCheck(const MoveGen& move, Color color) const {
-    Board tempBoard = *this;
-    
-    // Execute move directly for testing
-    Square from = move.from();
-    Square to = move.to();
-    
-    Piece movingPiece = tempBoard.getPiece(from);
-    Piece capturedPiece = tempBoard.getPiece(to);
-    
-    tempBoard.removePiece(from);
-    if (capturedPiece != NO_PIECE) {
-        tempBoard.removePiece(to);
-    }
-    tempBoard.setPiece(to, movingPiece);
-    tempBoard.updateOccupancy();
-    
-    return tempBoard.isInCheck(color);
+    return !isLegalMove(move, color);
+}
+
+void Board::makeNullMove() {
+    BoardState state;
+    state.castling = castling;
+    state.enPassant = enPassant;
+    state.halfmoveClock = halfmoveClock;
+    state.fullmoveNumber = fullmoveNumber;
+    state.sideToMove = sideToMove;
+    state.zobristKey = zobristKey;
+    history.push_back(state);
+    if (hasLegalEnPassant()) zobristKey ^= zobristEnPassant[fileOf(enPassant)];
+    enPassant = NO_SQUARE;
+    sideToMove = ~sideToMove;
+    zobristKey ^= zobristSideToMove;
+    halfmoveClock = 0;
+}
+
+void Board::unmakeNullMove() {
+    const BoardState state = history.back();
+    history.pop_back();
+    castling = state.castling;
+    enPassant = state.enPassant;
+    halfmoveClock = state.halfmoveClock;
+    fullmoveNumber = state.fullmoveNumber;
+    sideToMove = state.sideToMove;
+    zobristKey = state.zobristKey;
 }
 
 bool Board::makeMove(const MoveGen& move) {
-    // Check if move is legal first
-    if (!isLegalMove(move, sideToMove)) {
-        return false;
-    }
-    
+    return isLegalMove(move, sideToMove) && doMove(move);
+}
+
+bool Board::makeGeneratedMove(const MoveGen& move) {
+    return isLegalGeneratedMove(move, sideToMove) && doMove(move);
+}
+
+bool Board::doMove(const MoveGen& move) {
     // Save current state for undo
     BoardState state;
     state.castling = castling;
@@ -986,6 +991,8 @@ bool Board::makeMove(const MoveGen& move) {
     state.capturedPiece = getPiece(move.to());
     
     history.push_back(state);
+    if (hasLegalEnPassant()) zobristKey ^= zobristEnPassant[fileOf(enPassant)];
+    zobristKey ^= zobristCastling[castling];
     
     Square from = move.from();
     Square to = move.to();
@@ -1015,7 +1022,7 @@ bool Board::makeMove(const MoveGen& move) {
     enPassant = NO_SQUARE;
     
     // Check for double pawn push
-    if (move.isDoublePawnPush()) {
+    if (typeOf(movingPiece) == PAWN && abs(to - from) == 16) {
         enPassant = static_cast<Square>((from + to) / 2); // En passant target square
     }
     
@@ -1033,7 +1040,8 @@ bool Board::makeMove(const MoveGen& move) {
     sideToMove = ~sideToMove;
     
     updateOccupancy();
-    zobristKey = computeZobristKey();
+    zobristKey ^= zobristSideToMove ^ zobristCastling[castling];
+    if (hasLegalEnPassant()) zobristKey ^= zobristEnPassant[fileOf(enPassant)];
     return true;
 }
 
@@ -1049,7 +1057,6 @@ void Board::unmakeMove(const MoveGen& move) {
     halfmoveClock = state.halfmoveClock;
     fullmoveNumber = state.fullmoveNumber;
     sideToMove = state.sideToMove;
-    zobristKey = state.zobristKey;
     
     Square from = move.from();
     Square to = move.to();
@@ -1074,6 +1081,7 @@ void Board::unmakeMove(const MoveGen& move) {
     }
     
     updateOccupancy();
+    zobristKey = state.zobristKey;
 }
 
 // Helper methods
@@ -1090,7 +1098,7 @@ bool Board::hasLegalMovesForColor(Color color) const {
     
     // Check if any move is legal
     for (size_t i = 0; i < moves.size(); ++i) {
-        if (isLegalMove(moves[i], color)) {
+        if (isLegalGeneratedMove(moves[i], color)) {
             return true;
         }
     }

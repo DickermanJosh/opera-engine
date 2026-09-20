@@ -78,12 +78,17 @@ impl TimePolicy for StandardTimePolicy {
         }
 
         // Handle time controls with remaining time
-        if let (Some(our_time), our_inc) = (params.wtime.or(params.btime), params.winc.or(params.binc)) {
+        let (our_time, our_inc) = if position_info.black_to_move {
+            (params.btime, params.binc)
+        } else {
+            (params.wtime, params.winc)
+        };
+        if let Some(our_time) = our_time {
             // Ensure we have enough time for safety margin
             if our_time <= self.safety_margin_ms {
                 // Emergency: use minimal time
                 return TimeLimits {
-                    soft_limit: Duration::from_millis(10),
+                    soft_limit: Duration::from_millis(10.min(our_time.saturating_sub(10))),
                     hard_limit: Duration::from_millis(our_time.saturating_sub(10)),
                 };
             }
@@ -92,7 +97,7 @@ impl TimePolicy for StandardTimePolicy {
             let increment = our_inc.unwrap_or(0);
 
             // Calculate base time allocation
-            let moves_remaining = params.movestogo.unwrap_or_else(|| {
+            let moves_remaining = params.movestogo.filter(|moves| *moves > 0).unwrap_or_else(|| {
                 self.estimate_moves_remaining(position_info)
             });
 
@@ -106,7 +111,7 @@ impl TimePolicy for StandardTimePolicy {
             let hard_ms = ((base_time as f64) * self.max_time_factor).min(available_time as f64) as u64;
 
             return TimeLimits {
-                soft_limit: Duration::from_millis(soft_ms),
+                soft_limit: Duration::from_millis(soft_ms.min(hard_ms)),
                 hard_limit: Duration::from_millis(hard_ms),
             };
         }
@@ -492,8 +497,8 @@ mod tests {
         let limits = policy.calculate_time_limit(&params, &position_info);
 
         // Should handle zero time gracefully
-        assert_eq!(limits.soft_limit_ms(), 10);
-        assert_eq!(limits.hard_limit_ms(), 0); // 0 - 10 saturating
+        assert_eq!(limits.soft_limit_ms(), 0);
+        assert_eq!(limits.hard_limit_ms(), 0);
     }
 
     #[test]

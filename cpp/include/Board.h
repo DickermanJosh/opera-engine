@@ -54,6 +54,8 @@ private:
     // Zobrist key management
     void updateZobristKey();
     uint64_t computeZobristKey() const;
+    bool hasLegalEnPassant() const;
+    bool doMove(const MoveGen& move);
     
     // FEN parsing helpers
     void parsePiecePlacement(const std::string& placement);
@@ -119,6 +121,12 @@ public:
     // Move operations (primary MoveGen system)
     bool makeMove(const MoveGen& move);  // Returns true if move is legal  
     void unmakeMove(const MoveGen& move);
+    // Fast path: caller must supply a move from generateAllMoves for this board.
+    bool isLegalGeneratedMove(const MoveGen& move, Color color) const;
+    bool makeGeneratedMove(const MoveGen& move);
+    // Search-only pass. Repetition and fifty-move claims do not cross a null move.
+    void makeNullMove();
+    void unmakeNullMove();
     
     // Temporary compatibility for existing tests (deprecated)
     bool makeMove(const Move& move);

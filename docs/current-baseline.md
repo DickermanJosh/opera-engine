@@ -1,5 +1,11 @@
 # Current execution baseline — 2026-09-19
 
+## Core search and style — 2026-09-19
+
+Current work is on `engine-core`. The [core review](core-engine-review.md) records the corrected king/pawn evaluation, exchange and terminal handling, hash/move-ordering fixes, selective-search work and measured performance. C++ Release passes 474 tests; Rust passes 346 library/integration tests and 16 documentation examples. Native process acceptance, 1,016 independent oracle positions, selected C++ sanitizer checks and Docker/Linux acceptance pass. Windows execution remains open.
+
+The updated Morphy engine won all eight short paired games against saved integration build `2b4353b`; this is a small regression sample, not an Elo estimate. Fixed-depth search time improved about 2.26× in handcrafted mode and 2.04× in Morphy mode over the ten-position suite. The Unity client now requests Morphy style. Raw measurements, games and limitations are linked from the review. Earlier results below are historical and are not the current core test status.
+
 ## Merge and Unity integration — 2026-09-19
 
 At the owner's explicit request, `uci` was merged into `main` as `bde03c3` and pushed to `origin/main`. Current work is on `unity-integration`, paired with `opera-integration` in the sibling Unity `chess` repository. The owner moved Unity playtesting ahead of core/NN development to experience the current strength. Search and evaluation are unchanged by the integration.

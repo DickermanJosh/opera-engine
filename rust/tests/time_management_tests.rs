@@ -15,6 +15,26 @@ use std::time::Duration;
 // StandardTimePolicy Integration Tests
 
 #[test]
+fn standard_policy_selects_own_clock_and_bounds_edge_cases() {
+    let policy = StandardTimePolicy::default_policy();
+    let white = PositionInfo::default();
+    let black = PositionInfo { black_to_move: true, ..Default::default() };
+    for remaining in [0, 1, 9, 10, 40, 100, 1000, 60_000] {
+        for moves in [0, 1, 30] {
+            let params = SearchParams {
+                wtime: Some(120_000), btime: Some(remaining),
+                winc: Some(0), binc: Some(60_000), movestogo: Some(moves),
+                ..Default::default()
+            };
+            let limits = policy.calculate_time_limit(&params, &black);
+            assert!(limits.soft_limit <= limits.hard_limit);
+            assert!(limits.hard_limit_ms() <= remaining);
+            assert!(policy.calculate_time_limit(&params, &white).hard_limit_ms() > 0);
+        }
+    }
+}
+
+#[test]
 fn test_standard_policy_full_game_simulation() {
     let policy = StandardTimePolicy::new(50, 0.35);
 
@@ -61,8 +81,10 @@ fn test_standard_policy_full_game_simulation() {
     };
 
     let endgame_limits = policy.calculate_time_limit(&endgame_params, &endgame_info);
-    // Endgame should allocate more time per move (fewer moves remaining)
-    assert!(endgame_limits.soft_limit_ms() > middle_limits.soft_limit_ms());
+    // Compare phases at the same remaining clock. Less total time can still
+    // produce a smaller absolute budget than the earlier middlegame.
+    let same_clock_middle = policy.calculate_time_limit(&endgame_params, &middle_info);
+    assert!(endgame_limits.soft_limit_ms() > same_clock_middle.soft_limit_ms());
 }
 
 #[test]
@@ -78,9 +100,8 @@ fn test_standard_policy_time_trouble() {
 
     let limits = policy.calculate_time_limit(&params, &position_info);
 
-    // Should be in emergency mode
-    assert_eq!(limits.soft_limit_ms(), 10);
-    assert!(limits.hard_limit_ms() <= 90);
+    assert!(limits.soft_limit_ms() <= limits.hard_limit_ms());
+    assert!(limits.hard_limit_ms() <= 50); // Preserve the configured reserve.
 }
 
 #[test]
@@ -98,9 +119,9 @@ fn test_standard_policy_movestogo_sudden_death() {
     let limits = policy.calculate_time_limit(&params, &position_info);
 
     // Should divide time evenly among 40 moves
-    // (7200000 - 50) / 40 = 179987
-    // soft = 179987 * 0.35 = 62995
-    assert_eq!(limits.soft_limit_ms(), 62995);
+    // (7200000 - 50) / 40 = 179998 (integer division)
+    // soft = floor(179998 * 0.35) = 62999
+    assert_eq!(limits.soft_limit_ms(), 62999);
 }
 
 #[test]
@@ -265,8 +286,8 @@ fn test_negative_time_safety() {
 
     let limits = policy.calculate_time_limit(&params, &position_info);
 
-    // Should handle gracefully with minimal time
-    assert_eq!(limits.soft_limit_ms(), 10);
+    // A zero hard budget must also have a zero soft budget.
+    assert_eq!(limits.soft_limit_ms(), 0);
     assert_eq!(limits.hard_limit_ms(), 0); // 10 - 10 = 0 (saturating)
 }
 

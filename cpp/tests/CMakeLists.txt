@@ -9,6 +9,7 @@ include_directories(../include)
 
 # Test sources
 set(TEST_SOURCES
+    CoreRegressionTest.cpp
     BoardTest.cpp
     MoveGenTest.cpp
     PawnMoveTest.cpp
@@ -48,13 +49,14 @@ target_link_libraries(opera_tests
     GTest::gtest_main
 )
 
-# Add compiler flags for testing
-target_compile_options(opera_tests PRIVATE
-    -Wall -Wextra -g -O0 --coverage
-)
-
-# Link flags for coverage
-target_link_options(opera_tests PRIVATE --coverage)
+# Keep the selected build configuration. Instrumentation is opt-in so Release
+# benchmarks measure Release code, and MSVC never receives GNU coverage flags.
+option(OPERA_COVERAGE "Instrument the core and tests for gcov coverage" OFF)
+if(OPERA_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang" AND NOT MSVC)
+    target_compile_options(opera_core PRIVATE -O0 -g --coverage)
+    target_link_options(opera_core INTERFACE --coverage)
+    target_compile_options(opera_tests PRIVATE -O0 -g --coverage)
+endif()
 
 # Register tests with CTest
 include(GoogleTest)

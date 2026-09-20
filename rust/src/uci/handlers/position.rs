@@ -515,7 +515,7 @@ mod tests {
         let mut handler = PositionCommandHandler::new().unwrap();
 
         // Set up position where pawn can promote
-        let promotion_fen = "8/P7/8/8/8/8/8/8 w - - 0 1";
+        let promotion_fen = "7k/P7/8/8/8/8/8/7K w - - 0 1";
         let cmd = UCICommand::Position {
             position: Position::Fen(promotion_fen),
             moves: vec![ChessMove {
