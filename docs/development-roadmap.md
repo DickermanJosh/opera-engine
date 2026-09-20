@@ -1,12 +1,14 @@
-# Development roadmap — 2026-09-19
+# Development roadmap — 2026-09-20
 
-Target operating systems: macOS, Windows and Linux. The Unity playtest is connected. Current work on `engine-core` addresses sound, active Morphy-inspired play and search speed before building and tuning neural evaluation. See the [core review and recorded evidence](core-engine-review.md).
+Target operating systems: macOS, Windows and Linux. The Unity playtest is connected. Current work on `engine-core` addresses sound, active Morphy-inspired play and search speed before building and tuning neural evaluation. See the [core review](core-engine-review.md) and [development/game-review update](development-and-review.md).
 
 ## 1. Play the current engine in Unity
 
-The owner authorized merging `uci` into `main`; merge `bde03c3` is pushed to `origin/main`. Integration work is on `unity-integration` in this repository and `opera-integration` in the sibling `chess` repository. Keep search and evaluation unchanged during this milestone.
+The owner authorized merging `uci` into `main`; merge `bde03c3` is pushed to `origin/main`. Integration work is on `unity-integration` in this repository and `opera-integration` in the sibling `chess` repository. That initial integration milestone is complete; current engine changes remain on `engine-core`.
 
 Connect the existing board through an owned UCI child process with background pipe readers, selectable human color and move time, promotion selection, game-end display and reliable restart/shutdown. Check the app's board rules against independent positions, then build and playtest the local macOS ARM64 app. See [Unity setup](unity-integration.md).
+
+The follow-up app pass adds full SAN history, review and resume with an archive of the original game, PGN export, and independently cancellable evaluation/candidate lines. Use exported games to reproduce further playing-style issues.
 
 ## 2. Finish platform acceptance
 
@@ -21,7 +23,7 @@ UCI release acceptance does not claim a strong or complete chess engine. The kno
 
 ## 3. Finish core correctness and establish strength
 
-The first core pass is implemented on `engine-core`: the full C++/Rust suites pass, the king/pawn evaluation and tactical search defects have reproducible regressions, and benchmark/paired-game results are recorded. Continue with broader held-out tactics, longer paired matches and user feedback before tuning weights or adding more pruning. The earlier UCI review fixed evaluator perspective; retain those odd/even-depth and both-colour capture regressions.
+The first core pass is implemented on `engine-core`: the full C++/Rust suites pass, the king/pawn evaluation and tactical search defects have reproducible regressions, and benchmark/paired-game results are recorded. Continue with broader held-out tactics, longer paired matches and user feedback alongside the requested development-weight changes, and before adding more pruning. The earlier UCI review fixed evaluator perspective; retain those odd/even-depth and both-colour capture regressions.
 
 Prioritize:
 

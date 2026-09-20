@@ -3,7 +3,7 @@
  * @brief Morphy-style chess evaluator with aggressive, sacrificial playing style
  *
  * Implements Paul Morphy's characteristic playing style through bias multipliers:
- * - Rapid development emphasis (1.2x weight in opening)
+ * - Heavy emphasis on developing distinct, active pieces in the opening
  * - Aggressive king attacks (1.5x king safety weight)
  * - Initiative and tempo prioritization (1.1x mobility weight)
  * - Material sacrifice compensation (up to 100cp for initiative)
@@ -29,12 +29,12 @@ namespace eval {
  * @brief Morphy-style evaluator with aggressive playing characteristics
  *
  * Extends HandcraftedEvaluator by applying bias multipliers to:
- * - Development bonuses (1.2x in opening)
+ * - Whole-army development, open bishop diagonals and central pawn footholds
  * - King safety evaluation (1.5x for attacks)
  * - Mobility and initiative (1.1x for active pieces)
  * - Material sacrifice compensation (up to 100cp)
  *
- * The bias can be configured via UCI options (MorphyBias: 0.0-2.0)
+ * The C++ API accepts MorphyBias (0.0-2.0); UCI selects this evaluator with MorphyStyle.
  */
 class MorphyEvaluator : public HandcraftedEvaluator {
 public:
@@ -78,6 +78,10 @@ public:
     double get_morphy_bias() const { return morphy_bias_; }
 
 private:
+    // Position-only features: safe to cache in the transposition table. No move
+    // counters or history-dependent penalties for moving a piece twice.
+    int development_activity(const Board& board, Color color, int phase, const MobilityDetails& activity) const;
+
     /**
      * @brief Calculate material sacrifice compensation based on initiative
      *
@@ -120,7 +124,6 @@ private:
     int calculate_initiative(const Board& board, Color color, const EvaluationTerms& terms) const;
 
     // Morphy-specific bias multipliers (scaled by morphy_bias_)
-    static constexpr double DEVELOPMENT_BIAS = 1.2;    ///< Development weight multiplier
     static constexpr double KING_SAFETY_BIAS = 1.5;    ///< King attack weight multiplier
     static constexpr double MOBILITY_BIAS = 1.1;       ///< Mobility/initiative multiplier
     static constexpr int SACRIFICE_COMPENSATION = 100; ///< Max compensation for sacrifices (cp)

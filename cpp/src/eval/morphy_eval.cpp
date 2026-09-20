@@ -25,7 +25,7 @@ MorphyEvaluator::MorphyEvaluator(double morphy_bias)
 int MorphyEvaluator::evaluate(const Board& board, Color side_to_move) {
     // Start with base handcrafted evaluation
     EvaluationTerms terms;
-    int base_score = evaluate_with_terms(board, side_to_move, terms);
+    int base_score = evaluate_with_terms(board, side_to_move, terms, morphy_bias_ >= 0.01);
 
     // If Morphy bias is 0, just return base score (normal play)
     if (morphy_bias_ < 0.01) {
@@ -45,17 +45,11 @@ int MorphyEvaluator::evaluate(const Board& board, Color side_to_move) {
 
     int morphy_adjustment = 0;
 
-    // 1. Development Bias (1.2x in opening, fades in endgame)
-    if (phase > 0) {  // Opening/middlegame
-        int white_dev = terms.development[WHITE];
-        int black_dev = terms.development[BLACK];
-        int dev_advantage = white_dev - black_dev;
-
-        // Apply development bias (extra 0.2x scaled by morphy_bias)
-        double dev_multiplier = 1.0 + (DEVELOPMENT_BIAS - 1.0) * morphy_bias_;
-        int dev_bonus = static_cast<int>(dev_advantage * (dev_multiplier - 1.0));
-        morphy_adjustment += dev_bonus;
-    }
+    // Reward participation by additional pieces, not repeated activity by one
+    // knight. These opening features fade out before the endgame.
+    morphy_adjustment += static_cast<int>(morphy_bias_ *
+        (development_activity(board, WHITE, phase, terms.activity[WHITE]) -
+         development_activity(board, BLACK, phase, terms.activity[BLACK])));
 
     // 2. King Safety Aggression Bias (1.5x for attacking enemy king)
     {
@@ -135,6 +129,55 @@ void MorphyEvaluator::configure_options(const std::map<std::string, std::string>
 // ============================================================================
 // Private Helper Methods
 // ============================================================================
+
+int MorphyEvaluator::development_activity(const Board& board, Color color, int phase, const MobilityDetails& activity) const {
+    const int opening = std::clamp((phase - 128) * 2, 0, 256);
+    if (!opening) return 0;
+    const Bitboard occupied = board.getOccupiedBitboard();
+    const Bitboard pawns = board.getPieceBitboard(color, PAWN);
+    const Bitboard enemy_pawns = board.getPieceBitboard(~color, PAWN);
+    const Bitboard home = color == WHITE ? 0xffULL : 0xff00000000000000ULL;
+    const Bitboard minors = board.getPieceBitboard(color, KNIGHT) | board.getPieceBitboard(color, BISHOP);
+    const int waiting = __builtin_popcountll(minors & home);
+    auto pawn_attacks = [](Bitboard p, Color c) {
+        constexpr Bitboard not_a = 0xfefefefefefefefeULL, not_h = 0x7f7f7f7f7f7f7f7fULL;
+        return c == WHITE ? ((p & not_a) << 7) | ((p & not_h) << 9)
+                          : ((p & not_a) >> 9) | ((p & not_h) >> 7);
+    };
+    const Bitboard enemy_attacks = pawn_attacks(enemy_pawns, ~color);
+    // One legal-shaped pawn push can gain a tempo. Exclude occupied and
+    // pawn-controlled destinations; pins and tactical exceptions remain search's job.
+    Bitboard pushes = (color == WHITE ? enemy_pawns >> 8 : enemy_pawns << 8) & ~occupied;
+    const Bitboard intermediate = pushes & (color == WHITE ? 0x0000ff0000000000ULL : 0x0000000000ff0000ULL);
+    pushes |= (color == WHITE ? intermediate >> 8 : intermediate << 8) & ~occupied;
+    pushes &= ~pawn_attacks(pawns, color);
+    const Bitboard pawn_kicks = pawn_attacks(pushes, ~color);
+    constexpr Bitboard centre = 0x0000001818000000ULL;
+    int developed = __builtin_popcountll(minors & ~home);
+    int score = 44 * developed + 4 * activity.minor_safe_squares + 4 * activity.minor_centre_control;
+    score += 12 * __builtin_popcountll(minors & centre);
+    score += 12 * __builtin_popcountll(board.getPieceBitboard(color, BISHOP) & ~home);
+    score -= 24 * __builtin_popcountll(minors & ~home & enemy_attacks);
+    score -= 10 * waiting * __builtin_popcountll(board.getPieceBitboard(color, KNIGHT) & ~home & pawn_kicks);
+    // Knights can move immediately; bishops need a pawn move first. Without
+    // this readiness cost, larger development bonuses exaggerate knight-only play.
+    score += 6 * activity.bishop_exits - 48 * activity.blocked_bishops;
+    developed = std::min(4, developed);
+    score += 2 * developed * (developed - 1);
+    // Central footholds free the bishops and contest space. Further pawn
+    // advances do not keep accumulating development credit.
+    Bitboard central_pawns = pawns & 0x1818181818181818ULL;
+    while (central_pawns) {
+        const int sq = __builtin_ctzll(central_pawns);
+        central_pawns &= central_pawns - 1;
+        const int rank = color == WHITE ? sq / 8 : 7 - sq / 8;
+        if (rank == 2) score += 20;              // Opens a bishop diagonal.
+        if (rank == 3 || rank == 4) score += 50; // Occupies d4/e4/d5/e5.
+    }
+    if (board.getPieceBitboard(color, QUEEN) & ~home) score -= 8 * waiting;
+    score += 18 * activity.connected_rook_pairs;
+    return score * opening / 256;
+}
 
 int MorphyEvaluator::calculate_sacrifice_compensation(
     const Board& board, Color color, int material_deficit, const EvaluationTerms& terms) const {

@@ -23,7 +23,9 @@ def main():
     parser.add_argument("candidate", type=pathlib.Path)
     parser.add_argument("baseline", type=pathlib.Path)
     parser.add_argument("--movetime", type=float, default=0.1)
-    parser.add_argument("--morphy", action="store_true", help="Candidate's style; baseline remains default")
+    parser.add_argument("--morphy", action="store_true", help="Candidate's style")
+    parser.add_argument("--baseline-morphy", action="store_true", help="Enable Morphy style in the saved baseline too")
+    parser.add_argument("--baseline-name", default="Baseline")
     parser.add_argument("--max-plies", type=int, default=240)
     parser.add_argument("--output", type=pathlib.Path, required=True, help="Output prefix for .pgn and .json")
     args = parser.parse_args()
@@ -32,7 +34,7 @@ def main():
         engines = [stack.enter_context(chess.engine.SimpleEngine.popen_uci(str(path.resolve()), timeout=10))
                    for path in (args.candidate, args.baseline)]
         for index, engine in enumerate(engines):
-            engine.configure({"Hash": 16, "Threads": 1, "MorphyStyle": args.morphy if index == 0 else False})
+            engine.configure({"Hash": 16, "Threads": 1, "MorphyStyle": args.morphy if index == 0 else args.baseline_morphy})
         for name, opening in OPENINGS.items():
             for candidate_color in (chess.WHITE, chess.BLACK):
                 board = chess.Board()
@@ -61,10 +63,11 @@ def main():
                                     "win" if outcome.winner == candidate_color else "loss") if outcome else "unfinished"
                 game = chess.pgn.Game.from_board(board)
                 game.headers.update({"Event": "Opera core paired regression match", "Opening": name,
-                                     "White": "Candidate" if candidate_color else "Baseline 2b4353b",
-                                     "Black": "Baseline 2b4353b" if candidate_color else "Candidate",
+                                     "White": "Candidate" if candidate_color else args.baseline_name,
+                                     "Black": args.baseline_name if candidate_color else "Candidate",
                                      "Result": result_text, "MoveTime": str(args.movetime),
                                      "CandidateMorphy": str(args.morphy).lower(),
+                                     "BaselineMorphy": str(args.baseline_morphy).lower(),
                                      "Termination": outcome.termination.name if outcome else "Ply limit (not adjudicated)"})
                 games.append(str(game))
                 row = {"opening": name, "candidate_color": "white" if candidate_color else "black",
@@ -74,7 +77,7 @@ def main():
                 print(json.dumps(row), flush=True)
     report = {"candidate_sha256": hashlib.sha256(args.candidate.read_bytes()).hexdigest(),
               "baseline_sha256": hashlib.sha256(args.baseline.read_bytes()).hexdigest(),
-              "morphy": args.morphy, "movetime": args.movetime,
+              "morphy": args.morphy, "baseline_morphy": args.baseline_morphy, "baseline_name": args.baseline_name, "movetime": args.movetime,
               "summary": {result: sum(row["candidate_result"] == result for row in rows)
                           for result in ("win", "draw", "loss", "unfinished")}, "games": rows}
     args.output.parent.mkdir(parents=True, exist_ok=True)

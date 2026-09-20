@@ -4,7 +4,7 @@
  *
  * Validates that MorphyEvaluator properly applies Paul Morphy's playing style:
  * - Aggressive king attacks (1.5x king safety weight)
- * - Rapid development (1.2x development weight)
+ * - Heavy whole-army development and bishop readiness
  * - Initiative and tempo (1.1x mobility weight)
  * - Material sacrifice tolerance (100cp compensation)
  * - Uncastled king exploitation (50cp penalty)
@@ -34,7 +34,7 @@ protected:
 };
 
 // ============================================================================
-// Development Bias Tests (1.2x weight in opening)
+// Opening Development Tests
 // ============================================================================
 
 /**
@@ -54,7 +54,7 @@ TEST_F(MorphyEvalTest, DevelopmentBiasInOpening) {
     int morphy_start = morphy_eval->evaluate(*board, Color::WHITE);
     int normal_start = normal_eval->evaluate(*board, Color::WHITE);
 
-    // Development bonus difference should be larger for Morphy (1.2x vs 1.0x)
+    // Development bonus difference should be larger for Morphy
     int morphy_dev_bonus = morphy_developed - morphy_start;
     int normal_dev_bonus = normal_developed - normal_start;
     EXPECT_GT(morphy_dev_bonus, normal_dev_bonus);

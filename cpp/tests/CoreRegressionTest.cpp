@@ -212,6 +212,73 @@ TEST(CoreEvaluationTest, PawnsBehindKingDoNotProvideShelter) {
     EXPECT_EQ(eval.evaluate_king_safety(exposed, WHITE, 0), 0);
 }
 
+int styleBonus(const char* fen) {
+    Board board(fen);
+    eval::HandcraftedEvaluator normal;
+    eval::MorphyEvaluator morphy;
+    return morphy.evaluate(board, board.getSideToMove()) - normal.evaluate(board, board.getSideToMove());
+}
+
+TEST(CoreDevelopmentTest, RewardsAnotherActivePieceOverAnotherKnightMove) {
+    // 1.e4 e5 2.Nf3 Nc6 followed by Bc4 or Ng5. Material is identical;
+    // Morphy's extra preference must strongly favour involving the bishop.
+    const char* army = "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3";
+    const char* solo = "r1bqkbnr/pppp1ppp/2n5/4p1N1/4P3/8/PPPP1PPP/RNBQKB1R b KQkq - 3 3";
+    EXPECT_GT(styleBonus(army) - styleBonus(solo), 60);
+}
+
+TEST(CoreDevelopmentTest, OpeningBishopDiagonalsMattersBeforeBishopMoves) {
+    const char* open = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1";
+    EXPECT_GT(styleBonus(open) - styleBonus(STARTING_FEN), 70);
+}
+
+TEST(CoreDevelopmentTest, EarlyKnightCanBeChasedByCentralPawn) {
+    const char* ready_to_kick = "rnbqkb1r/pppppppp/5n2/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 1 2";
+    const char* not_yet = "rnbqkb1r/pppppppp/5n2/8/8/4P3/PPPP1PPP/RNBQKBNR w KQkq - 1 2";
+    EXPECT_GT(styleBonus(ready_to_kick) - styleBonus(not_yet), 20);
+}
+
+TEST(CoreDevelopmentTest, ContestsTheCentreRatherThanOnlyOpeningADiagonal) {
+    const char* centre = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1";
+    const char* diagonal_only = "rnbqkbnr/pppppppp/8/8/8/4P3/PPPP1PPP/RNBQKBNR b KQkq - 0 1";
+    EXPECT_GT(styleBonus(centre) - styleBonus(diagonal_only), 15);
+}
+
+TEST(CoreDevelopmentTest, StyleIsColorSymmetricAndIndependentOfMoveNumber) {
+    const char* white = "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3";
+    const char* black = "rnbqk2r/pppp1ppp/5n2/2b1p3/4P3/2N5/PPPP1PPP/R1BQKBNR w KQkq - 3 3";
+    EXPECT_EQ(styleBonus(white), -styleBonus(black));
+    EXPECT_EQ(styleBonus(white), styleBonus("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 40"));
+}
+
+TEST(CoreDevelopmentTest, BiasZeroStillUsesExactNormalEvaluation) {
+    Board board("rnbqkb1r/pppppppp/5n2/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 1 2");
+    eval::HandcraftedEvaluator normal;
+    eval::MorphyEvaluator disabled(0);
+    EXPECT_EQ(disabled.evaluate(board, WHITE), normal.evaluate(board, WHITE));
+}
+
+TEST_F(CoreSearchTest, DevelopmentDoesNotOverrideWinningAFreeQueen) {
+    board.setFromFEN("rnb1kbnr/ppp2ppp/8/3pp3/3q4/4P3/PPPP1PPP/RNBQKBNR w KQkq - 0 4");
+    eval::MorphyEvaluator evaluator;
+    search.set_evaluator(&evaluator);
+    search.search(4);
+    ASSERT_FALSE(search.get_principal_variation().empty());
+    EXPECT_EQ(search.get_principal_variation().front().toString(), "e3d4");
+}
+
+TEST_F(CoreSearchTest, OpensLinesForBishopsInsteadOfDevelopingOnlyKnights) {
+    // After 1.e4 Nc6 2.d4, don't bring out the other knight and invite d5/e5
+    // while both bishops are still locked behind their starting pawns.
+    board.setFromFEN("r1bqkbnr/pppppppp/2n5/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2");
+    eval::MorphyEvaluator evaluator;
+    search.set_evaluator(&evaluator);
+    search.search(5);
+    ASSERT_FALSE(search.get_principal_variation().empty());
+    const auto move = search.get_principal_variation().front().toString();
+    EXPECT_TRUE(move == "e7e5" || move == "e7e6" || move == "d7d5" || move == "d7d6") << move;
+}
+
 TEST(CoreExchangeTest, SideMayDeclineALosingRecapture) {
     Board board("6k1/8/3q4/3p4/4P3/8/8/3R2K1 w - - 0 1");
     StaticExchangeEvaluator see(board);

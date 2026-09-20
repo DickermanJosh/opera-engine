@@ -110,8 +110,8 @@ TEST_F(MorphyStyleValidationTest, DevelopmentOverMaterial) {
  */
 TEST_F(MorphyStyleValidationTest, EarlyDevelopmentBonus) {
     // Both sides equal material, White has better development
-    std::string developed = "rnbqkb1r/pppp1ppp/5n2/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1";
-    std::string undeveloped = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1";
+    std::string developed = "rnbqkbnr/pppp1ppp/8/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3";
+    std::string undeveloped = "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2";
 
     auto dev_comp = compare_evaluators(developed, 1.5);
     auto undev_comp = compare_evaluators(undeveloped, 1.5);
@@ -236,7 +236,8 @@ TEST_F(MorphyStyleValidationTest, AggressiveMovePreference) {
  * Test 10: Bias scaling validation
  */
 TEST_F(MorphyStyleValidationTest, BiasScaling) {
-    std::string test_pos = "r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1";
+    // A real development lead, rather than two developed pieces on each side.
+    std::string test_pos = "rnbqkbnr/pppp1ppp/8/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3";
 
     // Test multiple bias levels
     auto bias_0 = compare_evaluators(test_pos, 0.0);

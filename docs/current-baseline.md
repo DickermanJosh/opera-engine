@@ -1,4 +1,12 @@
-# Current execution baseline — 2026-09-19
+# Current execution baseline — 2026-09-20
+
+## Development and game review — 2026-09-20
+
+Current work remains on `engine-core`, paired with `opera-integration` in the Unity repository. Morphy now strongly values separate active minor pieces, opening bishop diagonals, central pawn footholds and connected rooks. An early knight that can be chased by a pawn is less attractive while the other minors remain at home. The normal evaluator remains available; style calculations reuse mobility attack lookups. See [development and review evidence](development-and-review.md) for the weights, games, measurements and limits.
+
+C++ Release passes **482/482** tests. Native UCI acceptance passes **21/21**, and the final independent Stockfish oracle passes **416 positions, 4,551 PV moves and 408 ponder replies**. The eight paired 100 ms games against saved Morphy build `352954a` ended **4 wins, 3 draws, 1 loss**. This is a style regression sample, not an Elo estimate. The ten-position, three-repeat depth-six sample takes about **9.8% more total time**; individual opening trees vary substantially. Earlier core improvements below remain historical evidence.
+
+The Unity app adds full clickable SAN history, first/previous/next/live navigation, resuming a reviewed position with an automatic archive of the original line, PGN export, and toggleable evaluation/candidate lines on either turn and while reviewing. Unity checks cover 603 independent SAN fixtures in addition to the existing 494 rules fixtures, special-move rights, repetition, branching, results, score perspective and real UCI analysis/cancellation. Desktop UI checks cover review during search, resume, keyboard navigation, visibility and export. PGNs include the engine identity/hash and reviewed position. Fresh Docker/Linux ARM64 engine acceptance passes 21 process tests, 176 oracle positions and the external client checks. Windows and Linux Unity execution remain unverified.
 
 ## Core search and style — 2026-09-19
 

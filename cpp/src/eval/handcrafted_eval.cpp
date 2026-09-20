@@ -42,7 +42,7 @@ int HandcraftedEvaluator::evaluate(const Board& board, Color side_to_move) {
     return evaluate_with_terms(board, side_to_move, terms);
 }
 
-int HandcraftedEvaluator::evaluate_with_terms(const Board& board, Color side_to_move, EvaluationTerms& terms) {
+int HandcraftedEvaluator::evaluate_with_terms(const Board& board, Color side_to_move, EvaluationTerms& terms, bool collect_activity) {
     // Calculate game phase for tapered evaluation
     int phase = calculate_phase(board);
 
@@ -82,14 +82,16 @@ int HandcraftedEvaluator::evaluate_with_terms(const Board& board, Color side_to_
     int white_king_safety = evaluate_king_safety(board, Color::WHITE, phase);
     int black_king_safety = evaluate_king_safety(board, Color::BLACK, phase);
 
-    int white_mobility = evaluate_mobility(board, Color::WHITE);
-    int black_mobility = evaluate_mobility(board, Color::BLACK);
+    MobilityDetails activity[2];
+    collect_activity = collect_activity && phase > 128;
+    int white_mobility = evaluate_mobility(board, Color::WHITE, collect_activity ? &activity[WHITE] : nullptr);
+    int black_mobility = evaluate_mobility(board, Color::BLACK, collect_activity ? &activity[BLACK] : nullptr);
 
     int white_development = evaluate_development(board, Color::WHITE, phase);
     int black_development = evaluate_development(board, Color::BLACK, phase);
 
     terms = {phase, {white_material, black_material}, {white_king_safety, black_king_safety},
-             {white_mobility, black_mobility}, {white_development, black_development}};
+             {white_mobility, black_mobility}, {white_development, black_development}, {activity[WHITE], activity[BLACK]}};
     // Combine evaluations (from white's perspective)
     int material_score = white_material - black_material;
     int pst_score = white_pst - black_pst;
@@ -475,7 +477,7 @@ int HandcraftedEvaluator::evaluate_king_safety(const Board& board, Color color, 
     return score * phase / 256;
 }
 
-int HandcraftedEvaluator::evaluate_mobility(const Board& board, Color color) const {
+int HandcraftedEvaluator::evaluate_mobility(const Board& board, Color color, MobilityDetails* details) const {
     const Bitboard own = board.getColorBitboard(color);
     const Bitboard occupancy = board.getOccupiedBitboard();
     const Bitboard our_pawns = board.getPieceBitboard(color, PAWN);
@@ -499,6 +501,26 @@ int HandcraftedEvaluator::evaluate_mobility(const Board& board, Color color) con
                 pt == BISHOP ? board.getBishopAttacks(sq, occupancy) :
                 pt == ROOK ? board.getRookAttacks(sq, occupancy) : board.getQueenAttacks(sq, occupancy);
             score += __builtin_popcountll(attacks & safe) * weights[pt];
+            // Collect opening activity from the same attack lookup. Morphy's
+            // richer evaluation need not generate these sliding rays twice.
+            if (details) {
+                const Bitboard home = color == WHITE ? 0xffULL : 0xff00000000000000ULL;
+                if (pt == KNIGHT || pt == BISHOP) {
+                    const Bitboard useful = attacks & safe & ~home;
+                    const int count = __builtin_popcountll(useful);
+                    if ((1ULL << sq) & home) {
+                        if (pt == BISHOP) {
+                            details->bishop_exits += std::min(3, count);
+                            details->blocked_bishops += count == 0;
+                        }
+                    } else {
+                        details->minor_safe_squares += std::min(4, count);
+                        details->minor_centre_control += __builtin_popcountll(useful & 0x0000001818000000ULL);
+                    }
+                } else if (pt == ROOK && (attacks & pieces)) {
+                    ++details->connected_rook_pairs;
+                }
+            }
             if (pt == ROOK && !(our_pawns & file_mask(fileOf(sq))))
                 score += (enemy_pawns & file_mask(fileOf(sq))) ? weights_.rook_open_file / 2 : weights_.rook_open_file;
         }

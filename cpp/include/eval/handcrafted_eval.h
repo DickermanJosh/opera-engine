@@ -85,11 +85,16 @@ public:
     void configure_options(const std::map<std::string, std::string>& options) override;
 
 protected:
+    struct MobilityDetails {
+        int bishop_exits = 0, blocked_bishops = 0;
+        int minor_safe_squares = 0, minor_centre_control = 0, connected_rook_pairs = 0;
+    };
     struct EvaluationTerms {
         int phase;
         int material[2], king_safety[2], mobility[2], development[2];
+        MobilityDetails activity[2];
     };
-    int evaluate_with_terms(const Board& board, Color side_to_move, EvaluationTerms& terms);
+    int evaluate_with_terms(const Board& board, Color side_to_move, EvaluationTerms& terms, bool collect_activity = false);
 
     /**
      * @brief Evaluation configuration weights
@@ -203,7 +208,7 @@ protected:
      * @param color The color to evaluate for
      * @return Mobility score in centipawns
      */
-    int evaluate_mobility(const Board& board, Color color) const;
+    int evaluate_mobility(const Board& board, Color color, MobilityDetails* details = nullptr) const;
 
     /**
      * @brief Evaluate piece development for a color
