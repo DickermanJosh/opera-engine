@@ -79,19 +79,24 @@ int HandcraftedEvaluator::evaluate_with_terms(const Board& board, Color side_to_
         store_pawn_hash(pawn_key, pawn_score_diff, pawn_score_diff, 0, 0, 0);
     }
 
-    int white_king_safety = evaluate_king_safety(board, Color::WHITE, phase);
-    int black_king_safety = evaluate_king_safety(board, Color::BLACK, phase);
+    // Reuse the same sliding rays for mobility, pressure and usable defenders.
+    const AttackInfo attacks = analyze_attacks(board);
+    int white_king_safety = evaluate_king_safety(board, Color::WHITE, phase, attacks);
+    int black_king_safety = evaluate_king_safety(board, Color::BLACK, phase, attacks);
 
     MobilityDetails activity[2];
     collect_activity = collect_activity && phase > 128;
-    int white_mobility = evaluate_mobility(board, Color::WHITE, collect_activity ? &activity[WHITE] : nullptr);
-    int black_mobility = evaluate_mobility(board, Color::BLACK, collect_activity ? &activity[BLACK] : nullptr);
+    int white_mobility = evaluate_mobility(board, Color::WHITE, collect_activity ? &activity[WHITE] : nullptr, attacks);
+    int black_mobility = evaluate_mobility(board, Color::BLACK, collect_activity ? &activity[BLACK] : nullptr, attacks);
 
     int white_development = evaluate_development(board, Color::WHITE, phase);
     int black_development = evaluate_development(board, Color::BLACK, phase);
+    const int white_threats = evaluate_threats(board, WHITE, attacks);
+    const int black_threats = evaluate_threats(board, BLACK, attacks);
 
     terms = {phase, {white_material, black_material}, {white_king_safety, black_king_safety},
-             {white_mobility, black_mobility}, {white_development, black_development}, {activity[WHITE], activity[BLACK]}};
+             {white_mobility, black_mobility}, {white_development, black_development},
+             {white_threats, black_threats}, {activity[WHITE], activity[BLACK]}};
     // Combine evaluations (from white's perspective)
     int material_score = white_material - black_material;
     int pst_score = white_pst - black_pst;
@@ -107,7 +112,7 @@ int HandcraftedEvaluator::evaluate_with_terms(const Board& board, Color side_to_
         pawn_structure_score * weights_.pawn_structure_weight +
         king_safety_score * weights_.king_safety_weight +
         mobility_score * weights_.mobility_weight +
-        development_score * weights_.development_weight
+        development_score * weights_.development_weight + white_threats - black_threats
     );
 
     // Add tempo bonus for side to move (only if there's material on board)
@@ -428,9 +433,76 @@ int HandcraftedEvaluator::evaluate_pawn_structure(const Board& board, Color colo
     return score;
 }
 
+// Attack maps distinguish usable moves/defenders from geometric king attacks.
+HandcraftedEvaluator::AttackInfo HandcraftedEvaluator::analyze_attacks(const Board& board) const {
+    AttackInfo result;
+    Bitboard pin_lines[64]; // Read only for squares set in pinned[].
+    const Bitboard occupied = board.getOccupiedBitboard();
+    for (Color color : {WHITE, BLACK}) {
+        const Square king = board.getKingSquare(color);
+        if (king == NO_SQUARE) continue;
+        const Bitboard own = board.getColorBitboard(color);
+        const Bitboard queens = board.getPieceBitboard(~color, QUEEN);
+        Bitboard pinners = (board.getBishopAttacks(king, occupied & ~own) &
+                            (queens | board.getPieceBitboard(~color, BISHOP))) |
+                           (board.getRookAttacks(king, occupied & ~own) &
+                            (queens | board.getPieceBitboard(~color, ROOK)));
+        while (pinners) {
+            const Square pinner = static_cast<Square>(__builtin_ctzll(pinners));
+            pinners &= pinners - 1;
+            const int df = (fileOf(pinner) > fileOf(king)) - (fileOf(pinner) < fileOf(king));
+            const int dr = (rankOf(pinner) > rankOf(king)) - (rankOf(pinner) < rankOf(king));
+            const int step = dr * 8 + df;
+            Bitboard between = 0;
+            for (int sq = king + step; sq != pinner; sq += step) between |= 1ULL << sq;
+            const Bitboard blockers = between & occupied;
+            if (blockers && !(blockers & (blockers - 1)) && (blockers & own)) {
+                result.pinned[color] |= blockers;
+                pin_lines[__builtin_ctzll(blockers)] = between | (1ULL << pinner);
+            }
+        }
+    }
+    for (Color color : {WHITE, BLACK}) {
+        const Bitboard enemy_king = board.getPieceBitboard(~color, KING);
+        for (int pt = PAWN; pt <= KING; ++pt) {
+            Bitboard pieces = board.getPieceBitboard(color, static_cast<PieceType>(pt));
+            while (pieces) {
+                const Square sq = static_cast<Square>(__builtin_ctzll(pieces));
+                const Bitboard bit = 1ULL << sq;
+                pieces &= pieces - 1;
+                Bitboard raw = pt == PAWN ? board.getPawnAttacks(sq, color) :
+                    pt == KNIGHT ? board.getKnightAttacks(sq) :
+                    pt == BISHOP ? board.getBishopAttacks(sq, occupied) :
+                    pt == ROOK ? board.getRookAttacks(sq, occupied) :
+                    pt == QUEEN ? board.getQueenAttacks(sq, occupied) : board.getKingAttacks(sq);
+                // A king cannot escape along a checking ray by hiding behind
+                // the square it just vacated. This map also retains pinned attacks.
+                Bitboard danger = raw;
+                if ((raw & enemy_king) && pt >= BISHOP && pt <= QUEEN) {
+                    const Bitboard without_king = occupied & ~enemy_king;
+                    danger = pt == BISHOP ? board.getBishopAttacks(sq, without_king) :
+                             pt == ROOK ? board.getRookAttacks(sq, without_king) :
+                                          board.getQueenAttacks(sq, without_king);
+                }
+                result.king_danger[color] |= danger;
+                if (result.pinned[color] & bit) raw &= pin_lines[sq];
+                result.piece[sq] = raw;
+                result.twice[color] |= result.all[color] & raw;
+                result.all[color] |= raw;
+                result.by_type[color][pt] |= raw;
+            }
+        }
+    }
+    return result;
+}
+
 // King Safety Evaluation
 
 int HandcraftedEvaluator::evaluate_king_safety(const Board& board, Color color, int phase) const {
+    return evaluate_king_safety(board, color, phase, analyze_attacks(board));
+}
+
+int HandcraftedEvaluator::evaluate_king_safety(const Board& board, Color color, int phase, const AttackInfo& attacks) const {
     if (!phase) return 0;
     const Square king = board.getKingSquare(color);
     if (king == NO_SQUARE) return 0;
@@ -457,37 +529,71 @@ int HandcraftedEvaluator::evaluate_king_safety(const Board& board, Color color, 
         score -= rights ? 12 : 32;
     }
 
-    // Coordinated pressure on the king's neighbourhood, using actual attacks.
-    const Bitboard zone = board.getKingAttacks(king) | (1ULL << king);
+    // Include the next rank in front of the king: a rook lift or an invading
+    // rook can matter before it attacks the king's immediately adjacent squares.
+    const Color enemy = ~color;
+    const Bitboard adjacent = board.getKingAttacks(king);
+    const Bitboard zone = adjacent | (1ULL << king) |
+        (color == WHITE ? adjacent << 8 : adjacent >> 8);
     const Bitboard occupancy = board.getOccupiedBitboard();
-    int attackers = 0, pressure = 0;
+    const Bitboard own = board.getColorBitboard(color);
+    const Bitboard non_king_defense = attacks.by_type[color][PAWN] | attacks.by_type[color][KNIGHT] |
+        attacks.by_type[color][BISHOP] | attacks.by_type[color][ROOK] | attacks.by_type[color][QUEEN];
+    const Bitboard check_safe = ~attacks.all[color] |
+        (attacks.twice[enemy] & attacks.by_type[color][KING] & ~non_king_defense);
+    const Bitboard check_targets = check_safe & ~board.getColorBitboard(enemy);
+    const Bitboard diagonal_checks = board.getBishopAttacks(king, occupancy);
+    const Bitboard straight_checks = board.getRookAttacks(king, occupancy);
+    const Bitboard knight_checks = board.getKnightAttacks(king);
+    const int pressure_weight[] = {0, 4, 3, 4, 6};
+    const int check_weight[] = {0, 12, 8, 14, 10};
+    int attackers = 0, pressure = 0, checking_access = 0;
     for (int pt = KNIGHT; pt <= QUEEN; ++pt) {
-        Bitboard pieces = board.getPieceBitboard(~color, static_cast<PieceType>(pt));
+        Bitboard pieces = board.getPieceBitboard(enemy, static_cast<PieceType>(pt));
+        Bitboard checks_for_type = 0;
         while (pieces) {
             const Square sq = static_cast<Square>(__builtin_ctzll(pieces));
             pieces &= pieces - 1;
-            const Bitboard attacks = pt == KNIGHT ? board.getKnightAttacks(sq) :
-                pt == BISHOP ? board.getBishopAttacks(sq, occupancy) :
-                pt == ROOK ? board.getRookAttacks(sq, occupancy) : board.getQueenAttacks(sq, occupancy);
-            const int hits = __builtin_popcountll(attacks & zone);
-            if (hits) { ++attackers; pressure += hits * (pt == QUEEN ? 4 : 2); }
+            const Bitboard usable = attacks.piece[sq];
+            const int hits = __builtin_popcountll(usable & zone);
+            const Bitboard checks = usable & check_targets & (pt == KNIGHT ? knight_checks :
+                pt == BISHOP ? diagonal_checks : pt == ROOK ? straight_checks : diagonal_checks | straight_checks);
+            if (hits || checks) ++attackers;
+            pressure += std::min(4, hits) * pressure_weight[pt];
+            checks_for_type |= checks;
         }
+        checking_access += std::min(2, __builtin_popcountll(checks_for_type)) * check_weight[pt];
     }
-    score -= pressure * std::min(attackers, 4);
-    return score * phase / 256;
+    int danger = (pressure + checking_access) * phase / 256;
+    if (attackers >= 2) {
+        const Bitboard useful_defense = attacks.by_type[color][PAWN] | attacks.by_type[color][KNIGHT] |
+            attacks.by_type[color][BISHOP] | attacks.by_type[color][ROOK];
+        const int weak = __builtin_popcountll(zone & attacks.all[enemy] & ~attacks.twice[color] & ~useful_defense);
+        const int flights = __builtin_popcountll(adjacent & ~own & ~attacks.king_danger[enemy]);
+        const int units = pressure + checking_access + 3 * attackers + 4 * weak + 6 * std::max(0, 2 - flights);
+        const Bitboard denied = adjacent & ~own & attacks.king_danger[enemy];
+        // Potential checking squares alone do not establish a mating net.
+        // Preserve nonlinear danger in thin positions only when the attackers
+        // actually constrain escape; otherwise king activity must remain viable.
+        if (flights <= 1 && denied) danger += std::min(400, units * units / 32);
+        // Enemy control of every available escape is a more concrete mating
+        // constraint than a king temporarily boxed in only by its own pieces.
+        if (flights == 0 && denied) danger += 24;
+    }
+    // Shelter and potential pressure fade with phase. A constrained mating net
+    // must not disappear simply because unrelated pieces have been exchanged.
+    return score * phase / 256 - danger;
 }
 
 int HandcraftedEvaluator::evaluate_mobility(const Board& board, Color color, MobilityDetails* details) const {
+    return evaluate_mobility(board, color, details, analyze_attacks(board));
+}
+
+int HandcraftedEvaluator::evaluate_mobility(const Board& board, Color color, MobilityDetails* details, const AttackInfo& attacks) const {
     const Bitboard own = board.getColorBitboard(color);
-    const Bitboard occupancy = board.getOccupiedBitboard();
     const Bitboard our_pawns = board.getPieceBitboard(color, PAWN);
     const Bitboard enemy_pawns = board.getPieceBitboard(~color, PAWN);
-    Bitboard pawn_attacks = 0, pawns = enemy_pawns;
-    while (pawns) {
-        const Square sq = static_cast<Square>(__builtin_ctzll(pawns));
-        pawns &= pawns - 1;
-        pawn_attacks |= board.getPawnAttacks(sq, ~color);
-    }
+    const Bitboard pawn_attacks = attacks.by_type[~color][PAWN];
     const Bitboard safe = ~own & ~pawn_attacks;
     const int weights[] = {0, weights_.knight_mobility_bonus, weights_.bishop_mobility_bonus,
                            weights_.rook_mobility_bonus, weights_.queen_mobility_bonus};
@@ -497,16 +603,14 @@ int HandcraftedEvaluator::evaluate_mobility(const Board& board, Color color, Mob
         while (pieces) {
             const Square sq = static_cast<Square>(__builtin_ctzll(pieces));
             pieces &= pieces - 1;
-            const Bitboard attacks = pt == KNIGHT ? board.getKnightAttacks(sq) :
-                pt == BISHOP ? board.getBishopAttacks(sq, occupancy) :
-                pt == ROOK ? board.getRookAttacks(sq, occupancy) : board.getQueenAttacks(sq, occupancy);
-            score += __builtin_popcountll(attacks & safe) * weights[pt];
+            const Bitboard usable = attacks.piece[sq];
+            score += __builtin_popcountll(usable & safe) * weights[pt];
             // Collect opening activity from the same attack lookup. Morphy's
             // richer evaluation need not generate these sliding rays twice.
             if (details) {
                 const Bitboard home = color == WHITE ? 0xffULL : 0xff00000000000000ULL;
                 if (pt == KNIGHT || pt == BISHOP) {
-                    const Bitboard useful = attacks & safe & ~home;
+                    const Bitboard useful = usable & safe & ~home;
                     const int count = __builtin_popcountll(useful);
                     if ((1ULL << sq) & home) {
                         if (pt == BISHOP) {
@@ -517,15 +621,49 @@ int HandcraftedEvaluator::evaluate_mobility(const Board& board, Color color, Mob
                         details->minor_safe_squares += std::min(4, count);
                         details->minor_centre_control += __builtin_popcountll(useful & 0x0000001818000000ULL);
                     }
-                } else if (pt == ROOK && (attacks & pieces)) {
+                } else if (pt == ROOK && (usable & pieces)) {
                     ++details->connected_rook_pairs;
                 }
             }
-            if (pt == ROOK && !(our_pawns & file_mask(fileOf(sq))))
-                score += (enemy_pawns & file_mask(fileOf(sq))) ? weights_.rook_open_file / 2 : weights_.rook_open_file;
+            if (pt == ROOK) {
+                if (!(our_pawns & file_mask(fileOf(sq)))) {
+                    score += (enemy_pawns & file_mask(fileOf(sq))) ? weights_.rook_open_file / 2 : weights_.rook_open_file;
+                    if (usable & board.getPieceBitboard(~color, ROOK)) score += 8;
+                }
+                const Square enemy_king = board.getKingSquare(~color);
+                const int relative_rank = color == WHITE ? rankOf(sq) : 7 - rankOf(sq);
+                const int king_rank = enemy_king == NO_SQUARE ? 0 :
+                    (color == WHITE ? rankOf(enemy_king) : 7 - rankOf(enemy_king));
+                if (relative_rank == 6 && king_rank >= 6 && !(pawn_attacks & (1ULL << sq))) score += 16;
+            }
         }
     }
     return score;
+}
+
+int HandcraftedEvaluator::evaluate_threats(const Board& board, Color color, const AttackInfo& attacks) const {
+    // Threats can gain a useful tempo without giving check. Pay once per target,
+    // not once per attacking piece; these modest terms are not material wins.
+    const Color enemy = ~color;
+    // Attacking a pawn can invite it to advance and chase the attacking piece.
+    // Search accounts for winning pawns; this term rewards pressure on pieces.
+    Bitboard targets = board.getColorBitboard(enemy) &
+        ~(board.getPieceBitboard(enemy, KING) | board.getPieceBitboard(enemy, PAWN)) & attacks.all[color];
+    int score = 0;
+    while (targets) {
+        const Square sq = static_cast<Square>(__builtin_ctzll(targets));
+        const Bitboard bit = 1ULL << sq;
+        targets &= targets - 1;
+        const PieceType type = typeOf(board.getPiece(sq));
+        int threat = 0;
+        if (!(attacks.all[enemy] & bit)) threat = type == QUEEN ? 35 : 20;
+        if (attacks.by_type[color][PAWN] & bit) threat = std::max(threat, 30);
+        if (type >= ROOK && ((attacks.by_type[color][KNIGHT] | attacks.by_type[color][BISHOP]) & bit))
+            threat = std::max(threat, type == QUEEN ? 30 : 20);
+        if (type == QUEEN && (attacks.by_type[color][ROOK] & bit)) threat = std::max(threat, 25);
+        score += threat;
+    }
+    return std::min(120, score);
 }
 
 // Development Evaluation

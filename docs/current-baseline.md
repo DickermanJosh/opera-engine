@@ -1,4 +1,30 @@
-# Current execution baseline — 2026-09-20
+# Current execution baseline — 2026-09-21
+
+## Attacking principles — 2026-09-21
+
+Current engine work builds on `main` at `dd001bd`. The [implementation report](attacking-principles.md) records shared pin-aware attack/defender maps, constrained king-net evaluation, rook participation, material threats, bounded quiet checks and development-aware move ordering. Ordinary checking potential now fades toward the endgame; a constrained net retains its weight. Earlier candidates that overvalued speculative attacks were measured, rejected and retained as diagnostic artifacts.
+
+Final macOS ARM64 binary SHA-256: `bd00e3b1c4b24126c1468e04ce825d3fe9b00746038eab9db4e8bc88a127a0e2`.
+
+| Current check | Result |
+| --- | --- |
+| Full C++ Release suite | 495/495 pass, including 13 new attacking-principle regressions |
+| Rust library/integration tests | 346/346 pass |
+| Rust documentation examples | 16/16 pass |
+| Real UCI process acceptance | 21/21 pass |
+| Independent Stockfish legality oracle | 416 positions, 4,586 PV moves, 411 ponder replies pass |
+| UndefinedBehaviorSanitizer, selected C++ core/search/exchange/attack tests | 94/94 pass |
+| AddressSanitizer | Unverified: installed CLT runtime hangs before main, also reproduced by a standalone minimal program; engine startup also timed out outside the sandbox |
+| Final paired games at 250 ms, Morphy on both sides | Development set 3 wins / 3 draws / 2 losses; new-opening confirmation 2 / 5 / 1; all completed under chess rules |
+| Final ten-position, three-repeat depth-six sample | +25.4% elapsed time, +13.3% nodes versus the same-toolchain baseline |
+
+The revised engine finds the quiet `a3!` mate in two and retains `Nb5+` in the 2103-target game. It chooses an active `Bxf7+` rather than `bxa6` in the 2700-target game; independent analysis still prefers activating a rook there. It continues to misjudge the exposed king later in that loss. These are measured improvements and remaining limits, not a claim of complete core strength, reliable Elo gain, or universally faster search.
+
+All 17 Opera Game decisions were rechecked; 14 match the historical moves, including the knight, rook and queen sacrifices and the final mating sequence. This is a style/tactics diagnostic, not a move-memorization target. Opponent adaptation and neural evaluation remain unimplemented. The planned opponent experiment will have an explicit UCI toggle, initially off, with position evaluation and transposition scores independent of opponent history.
+
+The release build uses the separately installed Command Line Tools clang 17 because the default Xcode toolchain requests license acceptance. The license and global developer-directory setting were not changed. This pass executes on macOS ARM64; previous Linux checks below remain historical, and Windows execution remains unverified.
+
+The verified binary is installed in `rust/target/release/opera-uci`, the Unity project's `Assets/StreamingAssets/Opera/macOS-arm64`, and the existing `../chess/build/Opera Desktop/Opera Chess.app`. All three hashes match. The Mac app was re-signed and passed strict/deep signature verification; its packaged UCI executable returned the quiet `a3` mate in two with a legal PV. Existing files were backed up before installation. No Unity source or interface changes were made in this pass; the existing bot-match working tree remains intact. Start a new game to launch the updated engine.
 
 ## Development and game review — 2026-09-20
 

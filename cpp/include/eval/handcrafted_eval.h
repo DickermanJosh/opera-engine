@@ -85,13 +85,20 @@ public:
     void configure_options(const std::map<std::string, std::string>& options) override;
 
 protected:
+    struct AttackInfo {
+        Bitboard piece[64]{};              // Usable attacks, restricted by absolute pins.
+        Bitboard by_type[2][6]{};
+        Bitboard all[2]{}, twice[2]{}, pinned[2]{};
+        Bitboard king_danger[2]{};         // Geometric attacks; pinned pieces still count.
+    };
+    AttackInfo analyze_attacks(const Board& board) const;
     struct MobilityDetails {
         int bishop_exits = 0, blocked_bishops = 0;
         int minor_safe_squares = 0, minor_centre_control = 0, connected_rook_pairs = 0;
     };
     struct EvaluationTerms {
         int phase;
-        int material[2], king_safety[2], mobility[2], development[2];
+        int material[2], king_safety[2], mobility[2], development[2], threats[2];
         MobilityDetails activity[2];
     };
     int evaluate_with_terms(const Board& board, Color side_to_move, EvaluationTerms& terms, bool collect_activity = false);
@@ -194,6 +201,7 @@ protected:
      * @return King safety score in centipawns
      */
     int evaluate_king_safety(const Board& board, Color color, int phase) const;
+    int evaluate_king_safety(const Board& board, Color color, int phase, const AttackInfo& attacks) const;
 
     /**
      * @brief Evaluate piece mobility for a color
@@ -209,6 +217,8 @@ protected:
      * @return Mobility score in centipawns
      */
     int evaluate_mobility(const Board& board, Color color, MobilityDetails* details = nullptr) const;
+    int evaluate_mobility(const Board& board, Color color, MobilityDetails* details, const AttackInfo& attacks) const;
+    int evaluate_threats(const Board& board, Color color, const AttackInfo& attacks) const;
 
     /**
      * @brief Evaluate piece development for a color

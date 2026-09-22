@@ -1,5 +1,6 @@
 #include "search/move_ordering.h"
 #include <algorithm>
+#include <cstdlib>
 #include <cstring>
 
 namespace opera {
@@ -42,7 +43,29 @@ int MoveOrdering::score_without_tt(const MoveGen& move, int depth) {
                calculate_mvv_lva_score(move) + promotion;
     }
     if (is_killer_move(move, depth)) return KILLER_MOVE_SCORE;
-    return get_history_score(move, board.getSideToMove());
+    // Prioritize forcing root continuations before history has warmed up.
+    // Deeper nodes use TT/killers/history; rechecking every horizon move here
+    // duplicates quiescence's work and reduces time available for actual search.
+    if (depth <= 2 && board.givesCheck(move)) return CHECK_MOVE_SCORE;
+    int priority = 0;
+    const Color us = board.getSideToMove();
+    const int home_rank = us == WHITE ? 0 : 7;
+    const PieceType piece = typeOf(board.getPiece(move.from()));
+    // Seed quiet ordering with useful development before history has evidence.
+    // This changes search order, not the value of the resulting position.
+    if (move.isCastling()) priority = 48;
+    else if (rankOf(move.from()) == home_rank && rankOf(move.to()) != home_rank) {
+        if (piece == BISHOP) priority = 24;
+        if (piece == KNIGHT) priority = 16;
+    } else if (piece == PAWN && rankOf(move.from()) == (us == WHITE ? 1 : 6)) {
+        const int file = fileOf(move.from());
+        if (file == 3 || file == 4) {
+            const Square bishop = static_cast<Square>(home_rank * 8 + (file == 3 ? 2 : 5));
+            if (board.getPiece(bishop) == makePiece(us, BISHOP))
+                priority = 24 + (std::abs(rankOf(move.to()) - rankOf(move.from())) == 2 ? 16 : 0);
+        }
+    }
+    return std::min(HISTORY_MAX_SCORE, get_history_score(move, us) + priority);
 }
 
 int MoveOrdering::get_move_score(const MoveGen& move) const {

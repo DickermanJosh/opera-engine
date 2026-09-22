@@ -1,0 +1,172 @@
+{
+  "candidate_sha256": "bd00e3b1c4b24126c1468e04ce825d3fe9b00746038eab9db4e8bc88a127a0e2",
+  "baseline_sha256": "d6801f08e41ab3e77c6dacf41aa6baf5cfd44576e1e713568fb637d189f03bc2",
+  "morphy": true,
+  "baseline_morphy": true,
+  "baseline_name": "Opera dd001bd",
+  "movetime": 0.25,
+  "openings": {
+    "English": "c4 e5 Nc3 Nf6 g3 d5 cxd5 Nxd5",
+    "Reti": "Nf3 d5 c4 dxc4 e3 Nf6 Bxc4 e6",
+    "Scotch": "e4 e5 Nf3 Nc6 d4 exd4 Nxd4 Bc5",
+    "King's Indian": "d4 Nf6 c4 g6 Nc3 Bg7 e4 d6"
+  },
+  "summary": {
+    "win": 3,
+    "draw": 3,
+    "loss": 2,
+    "unfinished": 0
+  },
+  "games": [
+    {
+      "opening": "English",
+      "candidate_color": "white",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 68,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 11,
+          "san": "O-O-O+"
+        }
+      ]
+    },
+    {
+      "opening": "English",
+      "candidate_color": "black",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 75,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 9,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Reti",
+      "candidate_color": "white",
+      "result": "1-0",
+      "candidate_result": "win",
+      "plies": 161,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 5,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 7,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Reti",
+      "candidate_color": "black",
+      "result": "0-1",
+      "candidate_result": "win",
+      "plies": 120,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 6,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 7,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Scotch",
+      "candidate_color": "white",
+      "result": "0-1",
+      "candidate_result": "loss",
+      "plies": 144,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 9,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 9,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Scotch",
+      "candidate_color": "black",
+      "result": "0-1",
+      "candidate_result": "win",
+      "plies": 118,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 12,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 13,
+          "san": "O-O-O"
+        }
+      ]
+    },
+    {
+      "opening": "King's Indian",
+      "candidate_color": "white",
+      "result": "0-1",
+      "candidate_result": "loss",
+      "plies": 168,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 7,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 7,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "King's Indian",
+      "candidate_color": "black",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 71,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 7,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 7,
+          "san": "O-O"
+        }
+      ]
+    }
+  ]
+}

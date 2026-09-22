@@ -27,15 +27,25 @@ def main():
     parser.add_argument("--baseline-morphy", action="store_true", help="Enable Morphy style in the saved baseline too")
     parser.add_argument("--baseline-name", default="Baseline")
     parser.add_argument("--max-plies", type=int, default=240)
+    parser.add_argument("--openings-file", type=pathlib.Path, help="JSON object mapping opening names to SAN move strings")
     parser.add_argument("--output", type=pathlib.Path, required=True, help="Output prefix for .pgn and .json")
     args = parser.parse_args()
+    openings = OPENINGS
+    if args.openings_file:
+        try:
+            openings = json.loads(args.openings_file.read_text())
+        except (OSError, json.JSONDecodeError) as error:
+            parser.error(str(error))
+        if not isinstance(openings, dict) or not openings or not all(
+                isinstance(name, str) and isinstance(moves, str) for name, moves in openings.items()):
+            parser.error("--openings-file must contain a nonempty object of opening names and SAN strings")
     rows, games = [], []
     with ExitStack() as stack:
         engines = [stack.enter_context(chess.engine.SimpleEngine.popen_uci(str(path.resolve()), timeout=10))
                    for path in (args.candidate, args.baseline)]
         for index, engine in enumerate(engines):
             engine.configure({"Hash": 16, "Threads": 1, "MorphyStyle": args.morphy if index == 0 else args.baseline_morphy})
-        for name, opening in OPENINGS.items():
+        for name, opening in openings.items():
             for candidate_color in (chess.WHITE, chess.BLACK):
                 board = chess.Board()
                 for san in opening.split():
@@ -78,6 +88,7 @@ def main():
     report = {"candidate_sha256": hashlib.sha256(args.candidate.read_bytes()).hexdigest(),
               "baseline_sha256": hashlib.sha256(args.baseline.read_bytes()).hexdigest(),
               "morphy": args.morphy, "baseline_morphy": args.baseline_morphy, "baseline_name": args.baseline_name, "movetime": args.movetime,
+              "openings": openings,
               "summary": {result: sum(row["candidate_result"] == result for row in rows)
                           for result in ("win", "draw", "loss", "unfinished")}, "games": rows}
     args.output.parent.mkdir(parents=True, exist_ok=True)

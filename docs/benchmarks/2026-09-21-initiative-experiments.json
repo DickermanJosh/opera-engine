@@ -1,0 +1,1723 @@
+{
+  "scope": "Diagnostic ablation, not a second implementation candidate or a rating estimate",
+  "initial_complete_candidate": {
+    "binary": "f25fd3a2303fbaa1e5ddcd9f944f7b7deb7899a807713bf4d132ff039e5f3596",
+    "summary": {
+      "win": 5,
+      "draw": 3,
+      "loss": 8
+    },
+    "notes": "Original king-danger quadratic capped at 600, divided by 16; new evaluation, ordering, bounded quiet checks"
+  },
+  "evaluation_only": {
+    "notes": "Earlier new-evaluation build before search/ordering edits; also still rewards undefended pawn targets by 8cp. This is not a perfectly isolated single-variable ablation.",
+    "report": {
+      "candidate_sha256": "fcdb6b2f527e636ea8ae7053bee50c7da49d2838b60b7da4b00dc99c107c1f46",
+      "baseline_sha256": "d6801f08e41ab3e77c6dacf41aa6baf5cfd44576e1e713568fb637d189f03bc2",
+      "morphy": true,
+      "baseline_morphy": true,
+      "baseline_name": "Opera dd001bd",
+      "movetime": 0.1,
+      "summary": {
+        "win": 4,
+        "draw": 4,
+        "loss": 8,
+        "unfinished": 0
+      },
+      "games": [
+        {
+          "opening": "Open game",
+          "candidate_color": "white",
+          "result": "1-0",
+          "candidate_result": "win",
+          "plies": 53,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 6,
+              "san": "O-O"
+            },
+            {
+              "side": "baseline",
+              "move": 6,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Open game",
+          "candidate_color": "black",
+          "result": "1-0",
+          "candidate_result": "loss",
+          "plies": 189,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 6,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 6,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "London",
+          "candidate_color": "white",
+          "result": "0-1",
+          "candidate_result": "loss",
+          "plies": 94,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 8,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 11,
+              "san": "O-O-O"
+            }
+          ]
+        },
+        {
+          "opening": "London",
+          "candidate_color": "black",
+          "result": "1-0",
+          "candidate_result": "loss",
+          "plies": 109,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 6,
+              "san": "O-O"
+            },
+            {
+              "side": "baseline",
+              "move": 8,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Queen's gambit",
+          "candidate_color": "white",
+          "result": "0-1",
+          "candidate_result": "loss",
+          "plies": 128,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 8,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 14,
+              "san": "O-O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Queen's gambit",
+          "candidate_color": "black",
+          "result": "0-1",
+          "candidate_result": "win",
+          "plies": 66,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 6,
+              "san": "O-O"
+            },
+            {
+              "side": "baseline",
+              "move": 8,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Sicilian",
+          "candidate_color": "white",
+          "result": "1-0",
+          "candidate_result": "win",
+          "plies": 43,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 14,
+              "san": "O-O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Sicilian",
+          "candidate_color": "black",
+          "result": "1-0",
+          "candidate_result": "loss",
+          "plies": 93,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 11,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 15,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Ruy Lopez",
+          "candidate_color": "white",
+          "result": "0-1",
+          "candidate_result": "loss",
+          "plies": 92,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 9,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 10,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Ruy Lopez",
+          "candidate_color": "black",
+          "result": "0-1",
+          "candidate_result": "win",
+          "plies": 138,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 6,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 8,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "French",
+          "candidate_color": "white",
+          "result": "1/2-1/2",
+          "candidate_result": "draw",
+          "plies": 120,
+          "termination": "THREEFOLD_REPETITION",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 6,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 7,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "French",
+          "candidate_color": "black",
+          "result": "1-0",
+          "candidate_result": "loss",
+          "plies": 107,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 7,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 9,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Caro-Kann",
+          "candidate_color": "white",
+          "result": "1/2-1/2",
+          "candidate_result": "draw",
+          "plies": 51,
+          "termination": "THREEFOLD_REPETITION",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 13,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Caro-Kann",
+          "candidate_color": "black",
+          "result": "1-0",
+          "candidate_result": "loss",
+          "plies": 115,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 10,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 19,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Pirc",
+          "candidate_color": "white",
+          "result": "1/2-1/2",
+          "candidate_result": "draw",
+          "plies": 133,
+          "termination": "THREEFOLD_REPETITION",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 11,
+              "san": "O-O-O+"
+            }
+          ]
+        },
+        {
+          "opening": "Pirc",
+          "candidate_color": "black",
+          "result": "1/2-1/2",
+          "candidate_result": "draw",
+          "plies": 69,
+          "termination": "THREEFOLD_REPETITION",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 5,
+              "san": "O-O"
+            },
+            {
+              "side": "baseline",
+              "move": 6,
+              "san": "O-O"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "initial_loss_reference_probes": [
+    {
+      "game_index": 1,
+      "ply": 12,
+      "fen": "r1bqk2r/ppp2ppp/3p1n2/n1b1p3/N1B1P3/3P1N2/PPP2PPP/R1BQK2R w KQkq - 2 7",
+      "chosen": "Bxf7+",
+      "reference": [
+        {
+          "cp": 173,
+          "mate": null,
+          "depth": 20,
+          "nodes": 949607,
+          "time": 1.309,
+          "pv_san": [
+            "Nxc5",
+            "Nxc4",
+            "dxc4",
+            "dxc5",
+            "Qxd8+",
+            "Kxd8",
+            "Nxe5",
+            "Be6",
+            "f3",
+            "Nd7",
+            "Nxd7",
+            "Kxd7",
+            "b3",
+            "f5",
+            "Bb2",
+            "fxe4",
+            "O-O-O+",
+            "Ke7",
+            "fxe4",
+            "Rac8",
+            "Rd3",
+            "Rhg8",
+            "Be5",
+            "g6",
+            "Bg3",
+            "Rgf8",
+            "a4",
+            "b6",
+            "Kd2",
+            "Rf7"
+          ],
+          "pv_uci": [
+            "a4c5",
+            "a5c4",
+            "d3c4",
+            "d6c5",
+            "d1d8",
+            "e8d8",
+            "f3e5",
+            "c8e6",
+            "f2f3",
+            "f6d7",
+            "e5d7",
+            "d8d7",
+            "b2b3",
+            "f7f5",
+            "c1b2",
+            "f5e4",
+            "e1c1",
+            "d7e7",
+            "f3e4",
+            "a8c8",
+            "d1d3",
+            "h8g8",
+            "b2e5",
+            "g7g6",
+            "e5g3",
+            "g8f8",
+            "a2a4",
+            "b7b6",
+            "c1d2",
+            "f8f7"
+          ]
+        },
+        {
+          "cp": 27,
+          "mate": null,
+          "depth": 20,
+          "nodes": 1000063,
+          "time": 1.375,
+          "pv_san": [
+            "Bb3",
+            "Bb6",
+            "c3",
+            "c5",
+            "Nxb6",
+            "axb6",
+            "Bc2",
+            "O-O",
+            "O-O",
+            "Nc6",
+            "Bg5",
+            "b5",
+            "d4",
+            "cxd4",
+            "cxd4",
+            "Bg4",
+            "h3",
+            "Bxf3",
+            "Qxf3"
+          ],
+          "pv_uci": [
+            "c4b3",
+            "c5b6",
+            "c2c3",
+            "c7c5",
+            "a4b6",
+            "a7b6",
+            "b3c2",
+            "e8g8",
+            "e1g1",
+            "a5c6",
+            "c1g5",
+            "b6b5",
+            "d3d4",
+            "c5d4",
+            "c3d4",
+            "c8g4",
+            "h2h3",
+            "g4f3",
+            "d1f3"
+          ]
+        },
+        {
+          "cp": 4,
+          "mate": null,
+          "depth": 20,
+          "nodes": 1000063,
+          "time": 1.375,
+          "pv_san": [
+            "Bd5",
+            "O-O",
+            "Nxc5",
+            "Nxd5",
+            "exd5",
+            "dxc5",
+            "Bd2",
+            "b6",
+            "Bxa5",
+            "bxa5",
+            "O-O",
+            "Qxd5",
+            "Qe1",
+            "f6",
+            "Nd2",
+            "Kh8",
+            "a3",
+            "Bb7",
+            "f3"
+          ],
+          "pv_uci": [
+            "c4d5",
+            "e8g8",
+            "a4c5",
+            "f6d5",
+            "e4d5",
+            "d6c5",
+            "c1d2",
+            "b7b6",
+            "d2a5",
+            "b6a5",
+            "e1g1",
+            "d8d5",
+            "d1e1",
+            "f7f6",
+            "f3d2",
+            "g8h8",
+            "a2a3",
+            "c8b7",
+            "f2f3"
+          ]
+        }
+      ],
+      "chosen_reference": [
+        {
+          "cp": -67,
+          "mate": null,
+          "depth": 23,
+          "nodes": 818881,
+          "time": 1.103,
+          "pv_san": [
+            "Bxf7+",
+            "Kxf7",
+            "Nxc5",
+            "dxc5",
+            "Nxe5+",
+            "Kg8",
+            "O-O",
+            "Qd4",
+            "Bf4",
+            "Qxb2",
+            "Rb1",
+            "Qc3",
+            "Bg3",
+            "Nc6",
+            "Nxc6",
+            "bxc6",
+            "f4",
+            "c4",
+            "Be1",
+            "Qd4+",
+            "Bf2",
+            "Qd7",
+            "f5",
+            "h5",
+            "h3",
+            "cxd3",
+            "e5",
+            "Ne4",
+            "e6",
+            "Qd5"
+          ],
+          "pv_uci": [
+            "c4f7",
+            "e8f7",
+            "a4c5",
+            "d6c5",
+            "f3e5",
+            "f7g8",
+            "e1g1",
+            "d8d4",
+            "c1f4",
+            "d4b2",
+            "a1b1",
+            "b2c3",
+            "f4g3",
+            "a5c6",
+            "e5c6",
+            "b7c6",
+            "f2f4",
+            "c5c4",
+            "g3e1",
+            "c3d4",
+            "e1f2",
+            "d4d7",
+            "f4f5",
+            "h7h5",
+            "h2h3",
+            "c4d3",
+            "e4e5",
+            "f6e4",
+            "e5e6",
+            "d7d5"
+          ]
+        }
+      ]
+    },
+    {
+      "game_index": 3,
+      "ply": 20,
+      "fen": "r4rk1/1ppbqppp/p2bpn2/3pN3/1n1P1B2/2NBP1Q1/PPP2PPP/R4RK1 w - - 2 11",
+      "chosen": "Be2",
+      "reference": [
+        {
+          "cp": 115,
+          "mate": null,
+          "depth": 18,
+          "nodes": 940161,
+          "time": 1.204,
+          "pv_san": [
+            "Bg5",
+            "Nxd3",
+            "cxd3",
+            "Bb5",
+            "Rad1",
+            "Qd8",
+            "f4",
+            "Nh5",
+            "Qh4",
+            "f6",
+            "Qxh5",
+            "Qe8",
+            "Qxe8",
+            "Bxe8",
+            "Bh4",
+            "fxe5",
+            "dxe5",
+            "Bc5",
+            "d4",
+            "Bb4",
+            "g4",
+            "Bxc3",
+            "bxc3"
+          ],
+          "pv_uci": [
+            "f4g5",
+            "b4d3",
+            "c2d3",
+            "d7b5",
+            "a1d1",
+            "e7d8",
+            "f2f4",
+            "f6h5",
+            "g3h4",
+            "f7f6",
+            "h4h5",
+            "d8e8",
+            "h5e8",
+            "b5e8",
+            "g5h4",
+            "f6e5",
+            "d4e5",
+            "d6c5",
+            "d3d4",
+            "c5b4",
+            "g2g4",
+            "b4c3",
+            "b2c3"
+          ]
+        },
+        {
+          "cp": 60,
+          "mate": null,
+          "depth": 18,
+          "nodes": 940161,
+          "time": 1.204,
+          "pv_san": [
+            "Be2",
+            "Ne8",
+            "Rad1",
+            "f6",
+            "Nxd7",
+            "Qxd7",
+            "e4",
+            "Bxf4",
+            "Qxf4",
+            "Rd8",
+            "a3",
+            "Nc6",
+            "exd5",
+            "exd5",
+            "Na4",
+            "b6",
+            "Rfe1",
+            "Ne7",
+            "Nc3",
+            "b5",
+            "h4",
+            "f5"
+          ],
+          "pv_uci": [
+            "d3e2",
+            "f6e8",
+            "a1d1",
+            "f7f6",
+            "e5d7",
+            "e7d7",
+            "e3e4",
+            "d6f4",
+            "g3f4",
+            "a8d8",
+            "a2a3",
+            "b4c6",
+            "e4d5",
+            "e6d5",
+            "c3a4",
+            "b7b6",
+            "f1e1",
+            "c6e7",
+            "a4c3",
+            "b6b5",
+            "h2h4",
+            "f6f5"
+          ]
+        },
+        {
+          "cp": 17,
+          "mate": null,
+          "depth": 18,
+          "nodes": 940161,
+          "time": 1.204,
+          "pv_san": [
+            "Qh3",
+            "h6",
+            "Bg3",
+            "Qe8",
+            "f4",
+            "Nxd3",
+            "cxd3",
+            "Nh7",
+            "e4",
+            "f5",
+            "Bh4"
+          ],
+          "pv_uci": [
+            "g3h3",
+            "h7h6",
+            "f4g3",
+            "e7e8",
+            "f2f4",
+            "b4d3",
+            "c2d3",
+            "f6h7",
+            "e3e4",
+            "f7f5",
+            "g3h4"
+          ]
+        }
+      ],
+      "chosen_reference": [
+        {
+          "cp": 76,
+          "mate": null,
+          "depth": 22,
+          "nodes": 922918,
+          "time": 1.285,
+          "pv_san": [
+            "Be2",
+            "Bb5",
+            "Nxb5",
+            "Ne4",
+            "Qh3",
+            "axb5",
+            "c3",
+            "g5",
+            "cxb4",
+            "gxf4",
+            "exf4",
+            "Bxe5",
+            "dxe5",
+            "Qxb4",
+            "Bd3",
+            "f5",
+            "exf6",
+            "Rxf6",
+            "Rae1",
+            "Qxb2",
+            "Bxe4",
+            "dxe4",
+            "Rxe4",
+            "Qxa2",
+            "Re5"
+          ],
+          "pv_uci": [
+            "d3e2",
+            "d7b5",
+            "c3b5",
+            "f6e4",
+            "g3h3",
+            "a6b5",
+            "c2c3",
+            "g7g5",
+            "c3b4",
+            "g5f4",
+            "e3f4",
+            "d6e5",
+            "d4e5",
+            "e7b4",
+            "e2d3",
+            "f7f5",
+            "e5f6",
+            "f8f6",
+            "a1e1",
+            "b4b2",
+            "d3e4",
+            "d5e4",
+            "e1e4",
+            "b2a2",
+            "e4e5"
+          ]
+        }
+      ]
+    },
+    {
+      "game_index": 5,
+      "ply": 18,
+      "fen": "r1bq1rk1/ppp1b1pp/2n2p2/3pB2n/3P4/2NBPN2/PP3PPP/R2QK2R w KQ - 0 10",
+      "chosen": "Qc2",
+      "reference": [
+        {
+          "cp": 64,
+          "mate": null,
+          "depth": 20,
+          "nodes": 922611,
+          "time": 1.216,
+          "pv_san": [
+            "Bg3",
+            "g6",
+            "a3",
+            "Be6",
+            "Rc1",
+            "Nxg3",
+            "hxg3",
+            "Kg7",
+            "O-O",
+            "Bf7",
+            "Re1",
+            "Rb8",
+            "e4",
+            "dxe4",
+            "Bxe4",
+            "Bd6",
+            "Bd5",
+            "Bxd5",
+            "Nxd5"
+          ],
+          "pv_uci": [
+            "e5g3",
+            "g7g6",
+            "a2a3",
+            "c8e6",
+            "a1c1",
+            "h5g3",
+            "h2g3",
+            "g8g7",
+            "e1g1",
+            "e6f7",
+            "f1e1",
+            "a8b8",
+            "e3e4",
+            "d5e4",
+            "d3e4",
+            "e7d6",
+            "e4d5",
+            "f7d5",
+            "c3d5"
+          ]
+        },
+        {
+          "cp": 6,
+          "mate": null,
+          "depth": 20,
+          "nodes": 922611,
+          "time": 1.216,
+          "pv_san": [
+            "Bf4",
+            "Nxf4",
+            "exf4",
+            "Bg4",
+            "h3",
+            "Bxf3",
+            "Qxf3",
+            "Nxd4",
+            "Qxd5+",
+            "Kh8",
+            "Qxb7",
+            "Rb8",
+            "Qd5",
+            "Rxb2",
+            "O-O",
+            "Qxd5",
+            "Nxd5",
+            "Ba3",
+            "Rfd1"
+          ],
+          "pv_uci": [
+            "e5f4",
+            "h5f4",
+            "e3f4",
+            "c8g4",
+            "h2h3",
+            "g4f3",
+            "d1f3",
+            "c6d4",
+            "f3d5",
+            "g8h8",
+            "d5b7",
+            "a8b8",
+            "b7d5",
+            "b8b2",
+            "e1g1",
+            "d8d5",
+            "c3d5",
+            "e7a3",
+            "f1d1"
+          ]
+        },
+        {
+          "cp": 0,
+          "mate": null,
+          "depth": 20,
+          "nodes": 922611,
+          "time": 1.216,
+          "pv_san": [
+            "Nd2",
+            "fxe5",
+            "Qxh5",
+            "e4",
+            "Ndxe4",
+            "dxe4",
+            "Bxe4",
+            "g6",
+            "Bxg6",
+            "hxg6",
+            "Qxg6+",
+            "Kh8",
+            "Qh6+",
+            "Kg8",
+            "Qg6+"
+          ],
+          "pv_uci": [
+            "f3d2",
+            "f6e5",
+            "d1h5",
+            "e5e4",
+            "d2e4",
+            "d5e4",
+            "d3e4",
+            "g7g6",
+            "e4g6",
+            "h7g6",
+            "h5g6",
+            "g8h8",
+            "g6h6",
+            "h8g8",
+            "h6g6"
+          ]
+        }
+      ],
+      "chosen_reference": [
+        {
+          "cp": -196,
+          "mate": null,
+          "depth": 23,
+          "nodes": 1000022,
+          "time": 1.192,
+          "pv_san": [
+            "Qc2",
+            "fxe5",
+            "Bxh7+",
+            "Kh8",
+            "Nxe5",
+            "Nxe5",
+            "dxe5",
+            "Bb4",
+            "O-O",
+            "Bxc3",
+            "bxc3",
+            "Qe7",
+            "f4",
+            "Qc5",
+            "Kh1",
+            "Qxe3",
+            "Rf3",
+            "Qb6",
+            "f5",
+            "Kxh7",
+            "Rh3",
+            "Qh6",
+            "g4",
+            "Kg8",
+            "Rxh5",
+            "Qe3",
+            "Qg2",
+            "Qxe5",
+            "Qh3",
+            "Kf7",
+            "Rf1",
+            "Qe4+",
+            "Kg1",
+            "Bd7"
+          ],
+          "pv_uci": [
+            "d1c2",
+            "f6e5",
+            "d3h7",
+            "g8h8",
+            "f3e5",
+            "c6e5",
+            "d4e5",
+            "e7b4",
+            "e1g1",
+            "b4c3",
+            "b2c3",
+            "d8e7",
+            "f2f4",
+            "e7c5",
+            "g1h1",
+            "c5e3",
+            "f1f3",
+            "e3b6",
+            "f4f5",
+            "h8h7",
+            "f3h3",
+            "b6h6",
+            "g2g4",
+            "h7g8",
+            "h3h5",
+            "h6e3",
+            "c2g2",
+            "e3e5",
+            "g2h3",
+            "g8f7",
+            "a1f1",
+            "e5e4",
+            "h1g1",
+            "c8d7"
+          ]
+        }
+      ]
+    }
+  ],
+  "balanced_candidate": {
+    "notes": "Reduced quadratic potential-pressure reward, plus a trapped-king constraint; no flight-based gate on the quadratic yet. Not selected for packaging after the fresh-opening regression.",
+    "development": {
+      "candidate_sha256": "350792bd01a04ff4799940b01f7b62c6c66359a2233ad7ca6359d7e6645d6de3",
+      "baseline_sha256": "d6801f08e41ab3e77c6dacf41aa6baf5cfd44576e1e713568fb637d189f03bc2",
+      "morphy": true,
+      "baseline_morphy": true,
+      "baseline_name": "Opera dd001bd",
+      "movetime": 0.1,
+      "summary": {
+        "win": 7,
+        "draw": 4,
+        "loss": 5,
+        "unfinished": 0
+      },
+      "games": [
+        {
+          "opening": "Open game",
+          "candidate_color": "white",
+          "result": "0-1",
+          "candidate_result": "loss",
+          "plies": 122,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 10,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Open game",
+          "candidate_color": "black",
+          "result": "1-0",
+          "candidate_result": "loss",
+          "plies": 111,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 6,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 6,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "London",
+          "candidate_color": "white",
+          "result": "1-0",
+          "candidate_result": "win",
+          "plies": 75,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 8,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 10,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "London",
+          "candidate_color": "black",
+          "result": "1-0",
+          "candidate_result": "loss",
+          "plies": 99,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 6,
+              "san": "O-O"
+            },
+            {
+              "side": "baseline",
+              "move": 8,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Queen's gambit",
+          "candidate_color": "white",
+          "result": "1-0",
+          "candidate_result": "win",
+          "plies": 139,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 6,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 9,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Queen's gambit",
+          "candidate_color": "black",
+          "result": "1/2-1/2",
+          "candidate_result": "draw",
+          "plies": 58,
+          "termination": "THREEFOLD_REPETITION",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 5,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Sicilian",
+          "candidate_color": "white",
+          "result": "1-0",
+          "candidate_result": "win",
+          "plies": 109,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 9,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Sicilian",
+          "candidate_color": "black",
+          "result": "1/2-1/2",
+          "candidate_result": "draw",
+          "plies": 71,
+          "termination": "THREEFOLD_REPETITION",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 11,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 11,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Ruy Lopez",
+          "candidate_color": "white",
+          "result": "1-0",
+          "candidate_result": "win",
+          "plies": 73,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 5,
+              "san": "O-O"
+            },
+            {
+              "side": "baseline",
+              "move": 7,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Ruy Lopez",
+          "candidate_color": "black",
+          "result": "0-1",
+          "candidate_result": "win",
+          "plies": 68,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 6,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 8,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "French",
+          "candidate_color": "white",
+          "result": "1-0",
+          "candidate_result": "win",
+          "plies": 41,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 6,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 7,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "French",
+          "candidate_color": "black",
+          "result": "1-0",
+          "candidate_result": "loss",
+          "plies": 159,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 8,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 9,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Caro-Kann",
+          "candidate_color": "white",
+          "result": "0-1",
+          "candidate_result": "loss",
+          "plies": 148,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 14,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Caro-Kann",
+          "candidate_color": "black",
+          "result": "1/2-1/2",
+          "candidate_result": "draw",
+          "plies": 110,
+          "termination": "THREEFOLD_REPETITION",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 9,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 13,
+              "san": "O-O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Pirc",
+          "candidate_color": "white",
+          "result": "1/2-1/2",
+          "candidate_result": "draw",
+          "plies": 61,
+          "termination": "THREEFOLD_REPETITION",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 6,
+              "san": "O-O"
+            },
+            {
+              "side": "baseline",
+              "move": 12,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Pirc",
+          "candidate_color": "black",
+          "result": "0-1",
+          "candidate_result": "win",
+          "plies": 62,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 8,
+              "san": "O-O"
+            },
+            {
+              "side": "baseline",
+              "move": 9,
+              "san": "O-O"
+            }
+          ]
+        }
+      ],
+      "openings": {
+        "Open game": "e4 e5 Nf3 Nc6 Bc4 Nf6 d3 Bc5",
+        "London": "d4 d5 Nf3 Nf6 Bf4 e6 e3 Bd6",
+        "Queen's gambit": "d4 d5 c4 e6 Nc3 Nf6 Nf3 Be7",
+        "Sicilian": "e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6",
+        "Ruy Lopez": "e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6",
+        "French": "e4 e6 d4 d5 Nc3 Nf6 e5 Nfd7",
+        "Caro-Kann": "e4 c6 d4 d5 Nc3 dxe4 Nxe4 Bf5",
+        "Pirc": "e4 d6 d4 Nf6 Nc3 g6 Nf3 Bg7"
+      }
+    },
+    "fresh_openings": {
+      "candidate_sha256": "350792bd01a04ff4799940b01f7b62c6c66359a2233ad7ca6359d7e6645d6de3",
+      "baseline_sha256": "d6801f08e41ab3e77c6dacf41aa6baf5cfd44576e1e713568fb637d189f03bc2",
+      "morphy": true,
+      "baseline_morphy": true,
+      "baseline_name": "Opera dd001bd",
+      "movetime": 0.25,
+      "openings": {
+        "English": "c4 e5 Nc3 Nf6 g3 d5 cxd5 Nxd5",
+        "Reti": "Nf3 d5 c4 dxc4 e3 Nf6 Bxc4 e6",
+        "Scotch": "e4 e5 Nf3 Nc6 d4 exd4 Nxd4 Bc5",
+        "King's Indian": "d4 Nf6 c4 g6 Nc3 Bg7 e4 d6"
+      },
+      "summary": {
+        "win": 0,
+        "draw": 4,
+        "loss": 4,
+        "unfinished": 0
+      },
+      "games": [
+        {
+          "opening": "English",
+          "candidate_color": "white",
+          "result": "1/2-1/2",
+          "candidate_result": "draw",
+          "plies": 127,
+          "termination": "THREEFOLD_REPETITION",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 10,
+              "san": "O-O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 11,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "English",
+          "candidate_color": "black",
+          "result": "1/2-1/2",
+          "candidate_result": "draw",
+          "plies": 146,
+          "termination": "THREEFOLD_REPETITION",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 11,
+              "san": "O-O"
+            },
+            {
+              "side": "baseline",
+              "move": 13,
+              "san": "O-O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Reti",
+          "candidate_color": "white",
+          "result": "1/2-1/2",
+          "candidate_result": "draw",
+          "plies": 84,
+          "termination": "THREEFOLD_REPETITION",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 5,
+              "san": "O-O"
+            },
+            {
+              "side": "baseline",
+              "move": 7,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Reti",
+          "candidate_color": "black",
+          "result": "1-0",
+          "candidate_result": "loss",
+          "plies": 141,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 6,
+              "san": "O-O"
+            },
+            {
+              "side": "baseline",
+              "move": 7,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Scotch",
+          "candidate_color": "white",
+          "result": "0-1",
+          "candidate_result": "loss",
+          "plies": 126,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 9,
+              "san": "O-O"
+            },
+            {
+              "side": "baseline",
+              "move": 9,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Scotch",
+          "candidate_color": "black",
+          "result": "1-0",
+          "candidate_result": "loss",
+          "plies": 117,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 13,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 14,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "King's Indian",
+          "candidate_color": "white",
+          "result": "1/2-1/2",
+          "candidate_result": "draw",
+          "plies": 110,
+          "termination": "THREEFOLD_REPETITION",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 7,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 8,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "King's Indian",
+          "candidate_color": "black",
+          "result": "1-0",
+          "candidate_result": "loss",
+          "plies": 155,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 7,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 7,
+              "san": "O-O"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "search_only": {
+    "notes": "Baseline evaluation with new check prediction, bounded quiet checks and move ordering. Same eight openings and 250 ms budget as the balanced candidate's unfavorable sample.",
+    "report": {
+      "candidate_sha256": "47658992ed4bd2ddde9b37ab33f37d062d8f476817b6a675688d00a9e0399595",
+      "baseline_sha256": "d6801f08e41ab3e77c6dacf41aa6baf5cfd44576e1e713568fb637d189f03bc2",
+      "morphy": true,
+      "baseline_morphy": true,
+      "baseline_name": "Opera dd001bd",
+      "movetime": 0.25,
+      "openings": {
+        "English": "c4 e5 Nc3 Nf6 g3 d5 cxd5 Nxd5",
+        "Reti": "Nf3 d5 c4 dxc4 e3 Nf6 Bxc4 e6",
+        "Scotch": "e4 e5 Nf3 Nc6 d4 exd4 Nxd4 Bc5",
+        "King's Indian": "d4 Nf6 c4 g6 Nc3 Bg7 e4 d6"
+      },
+      "summary": {
+        "win": 4,
+        "draw": 4,
+        "loss": 0,
+        "unfinished": 0
+      },
+      "games": [
+        {
+          "opening": "English",
+          "candidate_color": "white",
+          "result": "1/2-1/2",
+          "candidate_result": "draw",
+          "plies": 163,
+          "termination": "THREEFOLD_REPETITION",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 9,
+              "san": "O-O"
+            },
+            {
+              "side": "baseline",
+              "move": 9,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "English",
+          "candidate_color": "black",
+          "result": "0-1",
+          "candidate_result": "win",
+          "plies": 80,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 9,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 9,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Reti",
+          "candidate_color": "white",
+          "result": "1-0",
+          "candidate_result": "win",
+          "plies": 137,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 5,
+              "san": "O-O"
+            },
+            {
+              "side": "baseline",
+              "move": 7,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Reti",
+          "candidate_color": "black",
+          "result": "0-1",
+          "candidate_result": "win",
+          "plies": 116,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 7,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 8,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Scotch",
+          "candidate_color": "white",
+          "result": "1-0",
+          "candidate_result": "win",
+          "plies": 157,
+          "termination": "CHECKMATE",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 8,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "Scotch",
+          "candidate_color": "black",
+          "result": "1/2-1/2",
+          "candidate_result": "draw",
+          "plies": 132,
+          "termination": "THREEFOLD_REPETITION",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 9,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 9,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "King's Indian",
+          "candidate_color": "white",
+          "result": "1/2-1/2",
+          "candidate_result": "draw",
+          "plies": 179,
+          "termination": "THREEFOLD_REPETITION",
+          "castling": [
+            {
+              "side": "candidate",
+              "move": 7,
+              "san": "O-O"
+            },
+            {
+              "side": "baseline",
+              "move": 7,
+              "san": "O-O"
+            }
+          ]
+        },
+        {
+          "opening": "King's Indian",
+          "candidate_color": "black",
+          "result": "1/2-1/2",
+          "candidate_result": "draw",
+          "plies": 68,
+          "termination": "THREEFOLD_REPETITION",
+          "castling": [
+            {
+              "side": "baseline",
+              "move": 7,
+              "san": "O-O"
+            },
+            {
+              "side": "candidate",
+              "move": 7,
+              "san": "O-O"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

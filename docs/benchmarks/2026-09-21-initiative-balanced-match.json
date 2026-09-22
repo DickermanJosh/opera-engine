@@ -1,0 +1,326 @@
+{
+  "candidate_sha256": "350792bd01a04ff4799940b01f7b62c6c66359a2233ad7ca6359d7e6645d6de3",
+  "baseline_sha256": "d6801f08e41ab3e77c6dacf41aa6baf5cfd44576e1e713568fb637d189f03bc2",
+  "morphy": true,
+  "baseline_morphy": true,
+  "baseline_name": "Opera dd001bd",
+  "movetime": 0.1,
+  "summary": {
+    "win": 7,
+    "draw": 4,
+    "loss": 5,
+    "unfinished": 0
+  },
+  "games": [
+    {
+      "opening": "Open game",
+      "candidate_color": "white",
+      "result": "0-1",
+      "candidate_result": "loss",
+      "plies": 122,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 10,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Open game",
+      "candidate_color": "black",
+      "result": "1-0",
+      "candidate_result": "loss",
+      "plies": 111,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 6,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 6,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "London",
+      "candidate_color": "white",
+      "result": "1-0",
+      "candidate_result": "win",
+      "plies": 75,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 8,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 10,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "London",
+      "candidate_color": "black",
+      "result": "1-0",
+      "candidate_result": "loss",
+      "plies": 99,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 6,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 8,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Queen's gambit",
+      "candidate_color": "white",
+      "result": "1-0",
+      "candidate_result": "win",
+      "plies": 139,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 6,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 9,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Queen's gambit",
+      "candidate_color": "black",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 58,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 5,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Sicilian",
+      "candidate_color": "white",
+      "result": "1-0",
+      "candidate_result": "win",
+      "plies": 109,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 9,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Sicilian",
+      "candidate_color": "black",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 71,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 11,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 11,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Ruy Lopez",
+      "candidate_color": "white",
+      "result": "1-0",
+      "candidate_result": "win",
+      "plies": 73,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 5,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 7,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Ruy Lopez",
+      "candidate_color": "black",
+      "result": "0-1",
+      "candidate_result": "win",
+      "plies": 68,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 6,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 8,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "French",
+      "candidate_color": "white",
+      "result": "1-0",
+      "candidate_result": "win",
+      "plies": 41,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 6,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 7,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "French",
+      "candidate_color": "black",
+      "result": "1-0",
+      "candidate_result": "loss",
+      "plies": 159,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 8,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 9,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Caro-Kann",
+      "candidate_color": "white",
+      "result": "0-1",
+      "candidate_result": "loss",
+      "plies": 148,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 14,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Caro-Kann",
+      "candidate_color": "black",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 110,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 9,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 13,
+          "san": "O-O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Pirc",
+      "candidate_color": "white",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 61,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 6,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 12,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Pirc",
+      "candidate_color": "black",
+      "result": "0-1",
+      "candidate_result": "win",
+      "plies": 62,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 8,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 9,
+          "san": "O-O"
+        }
+      ]
+    }
+  ],
+  "openings": {
+    "Open game": "e4 e5 Nf3 Nc6 Bc4 Nf6 d3 Bc5",
+    "London": "d4 d5 Nf3 Nf6 Bf4 e6 e3 Bd6",
+    "Queen's gambit": "d4 d5 c4 e6 Nc3 Nf6 Nf3 Be7",
+    "Sicilian": "e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6",
+    "Ruy Lopez": "e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6",
+    "French": "e4 e6 d4 d5 Nc3 Nf6 e5 Nfd7",
+    "Caro-Kann": "e4 c6 d4 d5 Nc3 dxe4 Nxe4 Bf5",
+    "Pirc": "e4 d6 d4 Nf6 Nc3 g6 Nf3 Bg7"
+  }
+}

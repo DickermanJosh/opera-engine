@@ -1,0 +1,119 @@
+[Event "Opera core paired regression match"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Candidate"]
+[Black "Opera dd001bd"]
+[Result "1/2-1/2"]
+[Opening "English"]
+[MoveTime "0.25"]
+[CandidateMorphy "true"]
+[BaselineMorphy "true"]
+[Termination "THREEFOLD_REPETITION"]
+
+1. c4 e5 2. Nc3 Nf6 3. g3 d5 4. cxd5 Nxd5 5. Nf3 Nc6 6. e4 Nxc3 7. dxc3 Qxd1+ 8. Kxd1 Bg4 9. Be2 Bc5 10. Be3 Bxe3 11. fxe3 O-O-O+ 12. Kc1 h5 13. h3 Bxf3 14. Bxf3 Rd3 15. Rf1 Rd6 16. Be2 f6 17. Kc2 g6 18. Rad1 Rhd8 19. Rxd6 Rxd6 20. b4 Ne7 21. h4 b6 22. Ba6+ Kd7 23. Bc4 a5 24. bxa5 bxa5 25. Rb1 Rb6 26. Rd1+ Kc8 27. a4 c5 28. Bb5 Kb8 29. Rd8+ Ka7 30. Bc4 Rb8 31. Rd7+ Rb7 32. Rd6 Rb6 33. Rd8 Rb8 34. Rd2 Rb6 1/2-1/2
+
+[Event "Opera core paired regression match"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Opera dd001bd"]
+[Black "Candidate"]
+[Result "1/2-1/2"]
+[Opening "English"]
+[MoveTime "0.25"]
+[CandidateMorphy "true"]
+[BaselineMorphy "true"]
+[Termination "THREEFOLD_REPETITION"]
+
+1. c4 e5 2. Nc3 Nf6 3. g3 d5 4. cxd5 Nxd5 5. Nf3 Nc6 6. e4 Nxc3 7. bxc3 Bd6 8. d4 exd4 9. cxd4 O-O 10. Bb5 Bb4+ 11. Kf1 Bg4 12. Bxc6 Bxf3 13. Qxf3 Qxd4 14. Rb1 bxc6 15. Be3 Qc4+ 16. Kg2 Rfe8 17. Rhc1 Qxe4 18. Qxe4 Rxe4 19. Rxc6 Bd6 20. Ra6 f5 21. h4 f4 22. gxf4 Bxf4 23. Rxa7 Rxa7 24. Bxa7 Bd6 25. h5 Ra4 26. Rb8+ Kf7 27. Be3 Rxa2 28. Rd8 Ke7 29. h6 gxh6 30. Rh8 c5 31. Rxh7+ Ke6 32. Rxh6+ Kd5 33. Rh5+ Kc6 34. Rh6 Kd7 35. Rh7+ Ke6 36. Rh6+ Kd5 37. Rh5+ Kc6 38. Rh6 1/2-1/2
+
+[Event "Opera core paired regression match"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Candidate"]
+[Black "Opera dd001bd"]
+[Result "1-0"]
+[Opening "Reti"]
+[MoveTime "0.25"]
+[CandidateMorphy "true"]
+[BaselineMorphy "true"]
+[Termination "CHECKMATE"]
+
+1. Nf3 d5 2. c4 dxc4 3. e3 Nf6 4. Bxc4 e6 5. O-O Nc6 6. d4 Bd6 7. Nc3 O-O 8. e4 e5 9. d5 Na5 10. Bd3 Bd7 11. Bd2 Qe7 12. h3 c6 13. Rc1 Rac8 14. Qe2 a6 15. Rfd1 b5 16. Nxb5 axb5 17. Bxa5 cxd5 18. Rxc8 Bxc8 19. exd5 e4 20. Bxb5 exf3 21. Qxe7 Bxe7 22. d6 Bd8 23. Bb4 fxg2 24. Kxg2 Bd7 25. Bxd7 Nxd7 26. Rc1 Bf6 27. b3 Rb8 28. a3 Be5 29. Rc6 g6 30. Rc4 Rb6 31. Rc8+ Kg7 32. Rd8 Bxd6 33. Rxd7 Bxb4 34. axb4 Rxb4 35. Rd3 g5 36. Rc3 h6 37. f3 f5 38. Rc7+ Kf6 39. Rc3 f4 40. Kf1 Rb6 41. Ke1 h5 42. Kd1 h4 43. Kc2 Kf5 44. Rc4 Re6 45. Rc5+ Kf6 46. Kd2 Re3 47. Rc3 Re6 48. b4 Rb6 49. Rc4 Rd6+ 50. Kc2 Rb6 51. Kb3 Re6 52. b5 Re3+ 53. Rc3 Ke6 54. Kc2 Kd5 55. Rxe3 fxe3 56. Kd3 e2 57. Kxe2 Kc5 58. Ke3 Kxb5 59. Ke4 Kc4 60. Kf5 Kd5 61. Kxg5 Ke6 62. f4 Kf7 63. Kf5 Ke7 64. Kg6 Kf8 65. f5 Kg8 66. f6 Kh8 67. Kf7 Kh7 68. Ke7 Kg6 69. f7 Kf5 70. f8=Q+ Ke5 71. Qf6+ Kd5 72. Qxh4 Kc5 73. Qf2+ Kd5 74. h4 Kc4 75. h5 Kd5 76. h6 Kc6 77. h7 Kb5 78. h8=Q Kc6 79. Qb8 Kd5 80. Qb5+ Ke4 81. Qbf5# 1-0
+
+[Event "Opera core paired regression match"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Opera dd001bd"]
+[Black "Candidate"]
+[Result "0-1"]
+[Opening "Reti"]
+[MoveTime "0.25"]
+[CandidateMorphy "true"]
+[BaselineMorphy "true"]
+[Termination "CHECKMATE"]
+
+1. Nf3 d5 2. c4 dxc4 3. e3 Nf6 4. Bxc4 e6 5. Nc3 Bb4 6. d4 O-O 7. O-O Bd7 8. Bd2 Nc6 9. Qb3 Qe7 10. Bd3 a5 11. a3 a4 12. Qc4 Bd6 13. Nb5 Nd5 14. e4 Nb6 15. Qa2 f6 16. Rac1 Rfd8 17. h3 Be8 18. Qb1 Bg6 19. Qa2 Bh5 20. g4 Bg6 21. Rfd1 Qd7 22. Re1 Qe7 23. e5 Bxd3 24. exd6 cxd6 25. Rxe6 Qf7 26. Nc7 Rac8 27. Nd5 Bc4 28. Rxc4 Nxd5 29. Re1 Nb6 30. Rec1 Rf8 31. b3 axb3 32. Qxb3 Nxd4 33. Nxd4 Nxc4 34. Bf4 Rfe8 35. Rb1 b6 36. Qc3 d5 37. Ra1 Qd7 38. Qd3 Re4 39. Bh2 h5 40. gxh5 Ne5 41. Bxe5 Rxe5 42. Qf3 Rg5+ 43. Kh1 Qe8 44. Rb1 Qe5 45. Qe3 Qxe3 46. fxe3 Rc3 47. Ne6 Rg3 48. Nf4 Rgxe3 49. h6 Rf3 50. Nxd5 Rc2 51. h4 gxh6 52. a4 f5 53. h5 f4 54. Kg1 Rg3+ 55. Kf1 Rh3 56. Nf6+ Kf7 57. Kg1 f3 58. Rb2 Rxb2 59. Ne4 Rg2+ 60. Kf1 Rh1# 0-1
+
+[Event "Opera core paired regression match"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Candidate"]
+[Black "Opera dd001bd"]
+[Result "0-1"]
+[Opening "Scotch"]
+[MoveTime "0.25"]
+[CandidateMorphy "true"]
+[BaselineMorphy "true"]
+[Termination "CHECKMATE"]
+
+1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Bc5 5. Be3 Bxd4 6. Bxd4 Nf6 7. e5 Qe7 8. Be2 Nxe5 9. O-O O-O 10. Nc3 d6 11. Re1 Bf5 12. Bd3 Bxd3 13. Qxd3 Rfe8 14. Qg3 Nh5 15. Qe3 c5 16. Bxe5 Qxe5 17. Qxe5 Rxe5 18. Nb5 Rae8 19. Rxe5 dxe5 20. Rd1 a6 21. Nc7 Rb8 22. g3 Nf6 23. Nd5 Ne4 24. Re1 Ng5 25. Kg2 f6 26. h4 Nf7 27. Rd1 Rd8 28. a4 Kh8 29. Nc3 Rxd1 30. Nxd1 Nd6 31. Nc3 f5 32. Nd5 Kg8 33. b3 Kf7 34. h5 c4 35. a5 e4 36. Ne3 c3 37. g4 fxg4 38. Kg3 Kf6 39. Kf4 g5+ 40. hxg6 h5 41. Nd5+ Kxg6 42. Nxc3 Kf6 43. b4 Ke6 44. Kg5 Ke5 45. Ne2 e3 46. fxe3 Nf5 47. Kxh5 Nxe3 48. c3 Ke4 49. Kg5 Kd3 50. Ng3 Kxc3 51. Kf4 Nc4 52. b5 axb5 53. Kxg4 Nxa5 54. Ne4+ Kc2 55. Nd6 b4 56. Nb5 Kd3 57. Kf3 Nc4 58. Nc7 b3 59. Nd5 b2 60. Nf4+ Kc3 61. Ne2+ Kb4 62. Kg2 b1=Q 63. Ng3 Kc5 64. Kf3 Qd3+ 65. Kf2 b5 66. Nf1 b4 67. Kg2 b3 68. Nh2 b2 69. Ng4 b1=Q 70. Nh2 Qa2+ 71. Kg1 Qg3+ 72. Kf1 Qaf2# 0-1
+
+[Event "Opera core paired regression match"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Opera dd001bd"]
+[Black "Candidate"]
+[Result "0-1"]
+[Opening "Scotch"]
+[MoveTime "0.25"]
+[CandidateMorphy "true"]
+[BaselineMorphy "true"]
+[Termination "CHECKMATE"]
+
+1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Bc5 5. Be3 Bxd4 6. Bxd4 Nf6 7. e5 Ne4 8. Qg4 Ng5 9. Be3 h6 10. Qg3 d6 11. Nc3 dxe5 12. Bd3 O-O 13. O-O-O Re8 14. h4 Ne6 15. Be4 Ned4 16. Bxc6 bxc6 17. f4 Qe7 18. Bxd4 exd4 19. Rxd4 Bf5 20. Rdd1 Qb4 21. Kb1 Rab8 22. b3 Qa3 23. Qf3 Rxb3+ 24. axb3 Qxb3+ 25. Ka1 Bxc2 26. Rc1 Rb8 27. Rb1 Bxb1 28. Rxb1 Qa3+ 29. Na2 Rxb1+ 30. Kxb1 Qxf3 31. gxf3 a5 32. Nc1 Kh7 33. f5 g5 34. fxg6+ Kxg6 35. Ka2 Kh5 36. Nb3 a4 37. Na5 Kxh4 38. Nxc6 Kg3 39. Ka3 h5 40. Nd4 c5 41. Nf5+ Kf4 42. Nh4 Kg5 43. Ng2 h4 44. f4+ Kg4 45. Nxh4 Kxh4 46. Kxa4 Kg4 47. f5 Kxf5 48. Kb5 Ke4 49. Kxc5 f5 50. Kc4 f4 51. Kc3 Ke3 52. Kb3 f3 53. Kc4 f2 54. Kc3 f1=Q 55. Kb3 Qb5+ 56. Kc3 Qa4 57. Kb2 Kd2 58. Kb1 Kc3 59. Kc1 Qa1# 0-1
+
+[Event "Opera core paired regression match"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Candidate"]
+[Black "Opera dd001bd"]
+[Result "0-1"]
+[Opening "King's Indian"]
+[MoveTime "0.25"]
+[CandidateMorphy "true"]
+[BaselineMorphy "true"]
+[Termination "CHECKMATE"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 Nc6 6. Be2 Bg4 7. O-O O-O 8. Be3 Nd7 9. d5 Nce5 10. Nd4 c5 11. dxc6 Bxe2 12. Qxe2 Nxc6 13. Nxc6 bxc6 14. Qd2 Qa5 15. Nd5 Qxd2 16. Nxe7+ Kh8 17. Bxd2 Rfe8 18. Nxc6 Rxe4 19. Rfe1 Rxc4 20. Rac1 Rxc1 21. Bxc1 Ne5 22. Nxe5 Bxe5 23. Re2 a5 24. f4 Bf6 25. g4 d5 26. g5 Bg7 27. b3 Bc3 28. Re7 Rc8 29. Ba3 f6 30. Rd7 fxg5 31. fxg5 Bd4+ 32. Kg2 Rc2+ 33. Kf3 Rxa2 34. Bd6 Rf2+ 35. Kg4 Rf5 36. Bf4 Bb6 37. Re7 d4 38. Be5+ Kg8 39. Bf6 Rb5 40. Rg7+ Kf8 41. Rxh7 d3 42. Rd7 Rxb3 43. Kf3 d2+ 44. Ke2 Be3 45. h4 Bf4 46. Rd4 Rb1 47. Rxd2 Bxd2 48. Kxd2 Rh1 49. Bd4 Rxh4 50. Kd3 a4 51. Kc3 Kf7 52. Bf6 a3 53. Kb3 Rh3+ 54. Ka2 Ke6 55. Bd4 Kd5 56. Ba1 Re3 57. Bg7 Rf3 58. Bf6 Ke6 59. Bd8 Kd6 60. Bf6 Kd7 61. Ba1 Ke6 62. Bd4 Kd6 63. Bf6 Kd7 64. Bd4 Kc6 65. Ba1 Kc5 66. Be5 Kb4 67. Bd6+ Ka4 68. Bc5 Rd3 69. Bxa3 Rxa3+ 70. Kb2 Rg3 71. Kc2 Kb4 72. Kd2 Kc4 73. Ke2 Rxg5 74. Ke3 Rf5 75. Ke4 Rf8 76. Ke5 g5 77. Kd6 g4 78. Ke7 Rf1 79. Kd6 g3 80. Ke6 g2 81. Ke5 g1=Q 82. Ke6 Qg6+ 83. Kd7 Rf7+ 84. Kc8 Qg8# 0-1
+
+[Event "Opera core paired regression match"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Opera dd001bd"]
+[Black "Candidate"]
+[Result "1/2-1/2"]
+[Opening "King's Indian"]
+[MoveTime "0.25"]
+[CandidateMorphy "true"]
+[BaselineMorphy "true"]
+[Termination "THREEFOLD_REPETITION"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 Nc6 6. Be2 Bg4 7. O-O O-O 8. Be3 Qd7 9. Qb3 e5 10. d5 Nd4 11. Nxd4 exd4 12. Bxd4 Bxe2 13. Nxe2 Nxe4 14. Bxg7 Kxg7 15. f3 Nc5 16. Qc3+ Kg8 17. b4 Na4 18. Qd4 Qe7 19. Rae1 Rfe8 20. f4 Nb6 21. c5 Nd7 22. cxd6 Qxd6 23. f5 Qb6 24. fxg6 hxg6 25. Qxb6 Nxb6 26. Nc3 Rad8 27. Rxe8+ Rxe8 28. a4 a6 29. a5 Nc4 30. h4 Ne3 31. Re1 Re7 32. Kf2 Ng4+ 33. Kf1 Nh2+ 34. Kf2 Ng4+ 35. Kf1 Ne3+ 36. Kf2 1/2-1/2

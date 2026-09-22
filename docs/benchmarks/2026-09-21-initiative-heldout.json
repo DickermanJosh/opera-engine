@@ -1,0 +1,177 @@
+{
+  "candidate_sha256": "bd00e3b1c4b24126c1468e04ce825d3fe9b00746038eab9db4e8bc88a127a0e2",
+  "baseline_sha256": "d6801f08e41ab3e77c6dacf41aa6baf5cfd44576e1e713568fb637d189f03bc2",
+  "morphy": true,
+  "baseline_morphy": true,
+  "baseline_name": "Opera dd001bd",
+  "movetime": 0.25,
+  "openings": {
+    "Catalan": "d4 Nf6 c4 e6 g3 d5 Bg2 Be7",
+    "Dutch": "d4 f5 g3 Nf6 Bg2 e6 Nf3 Be7",
+    "Scandinavian": "e4 d5 exd5 Qxd5 Nc3 Qa5 d4 Nf6",
+    "Alekhine": "e4 Nf6 e5 Nd5 d4 d6 Nf3 g6"
+  },
+  "summary": {
+    "win": 2,
+    "draw": 5,
+    "loss": 1,
+    "unfinished": 0
+  },
+  "games": [
+    {
+      "opening": "Catalan",
+      "candidate_color": "white",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 89,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 5,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 7,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Catalan",
+      "candidate_color": "black",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 92,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 5,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 7,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Dutch",
+      "candidate_color": "white",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 113,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 6,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 7,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Dutch",
+      "candidate_color": "black",
+      "result": "1-0",
+      "candidate_result": "loss",
+      "plies": 143,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 5,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 6,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Scandinavian",
+      "candidate_color": "white",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 48,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 10,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Scandinavian",
+      "candidate_color": "black",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 92,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 8,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 22,
+          "san": "O-O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Alekhine",
+      "candidate_color": "white",
+      "result": "1-0",
+      "candidate_result": "win",
+      "plies": 89,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 7,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 10,
+          "san": "O-O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Alekhine",
+      "candidate_color": "black",
+      "result": "0-1",
+      "candidate_result": "win",
+      "plies": 112,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 8,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 9,
+          "san": "O-O"
+        }
+      ]
+    }
+  ]
+}

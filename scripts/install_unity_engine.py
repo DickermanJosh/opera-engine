@@ -37,8 +37,11 @@ def main():
     if args.platform != "Windows":
         target.chmod(target.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
     revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
+    dirty = bool(subprocess.check_output(
+        ["git", "status", "--porcelain", "--untracked-files=normal"], cwd=root, text=True).strip())
     metadata = {
-        "packaged_from_checkout": revision,
+        "packaged_from_checkout": revision + ("-dirty" if dirty else ""),
+        "working_tree_dirty": dirty,
         "source_binary": str(source.resolve()),
         "platform": args.platform,
         "architecture": args.arch,

@@ -26,6 +26,7 @@ public:
     static constexpr int TT_MOVE_SCORE = 1000000;
     static constexpr int GOOD_CAPTURE_BASE = 100000;
     static constexpr int KILLER_MOVE_SCORE = 90000;
+    static constexpr int CHECK_MOVE_SCORE = 80000;
     static constexpr int HISTORY_MAX_SCORE = 1000;
     static constexpr int BAD_CAPTURE_BASE = -100000;
     

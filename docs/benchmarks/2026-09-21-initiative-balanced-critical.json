@@ -1,0 +1,317 @@
+{
+  "created_utc": "2026-09-21T21:33:48.901296+00:00",
+  "score_perspective": "white",
+  "threads": 1,
+  "hash_mb": 16,
+  "morphy": true,
+  "movetime_ms": 3000,
+  "cold_game_per_position": true,
+  "positions": [
+    {
+      "input": "docs/games/2026-09-21-bot-match-sample.pgn",
+      "game_index": 5,
+      "ply": 22,
+      "played": "Bc4",
+      "fen": "r2qk2r/1p3ppp/p1p2n2/n1pBp2b/4P1P1/2NP1N1P/PPP2P2/R2Q1RK1 w kq - 0 12",
+      "analysis": {
+        "cp": 183,
+        "mate": null,
+        "depth": 10,
+        "nodes": 2086825,
+        "time": 2.988,
+        "pv_san": [
+          "Bb3",
+          "Nxb3",
+          "axb3",
+          "Bg6",
+          "Nxe5",
+          "Qc7",
+          "Nf3",
+          "O-O",
+          "Qd2",
+          "h6"
+        ],
+        "pv_uci": [
+          "d5b3",
+          "a5b3",
+          "a2b3",
+          "h5g6",
+          "f3e5",
+          "d8c7",
+          "e5f3",
+          "e8g8",
+          "d1d2",
+          "h7h6"
+        ]
+      }
+    },
+    {
+      "input": "docs/games/2026-09-21-bot-match-sample.pgn",
+      "game_index": 5,
+      "ply": 36,
+      "played": "bxa6",
+      "fen": "3rk2r/4qppn/p1p3p1/nP6/4P1P1/1BN2Q1P/PPP2P2/R4RK1 w k - 3 19",
+      "analysis": {
+        "cp": 303,
+        "mate": null,
+        "depth": 9,
+        "nodes": 2122783,
+        "time": 2.989,
+        "pv_san": [
+          "Rfd1",
+          "Nxb3",
+          "Rxd8+",
+          "Qxd8",
+          "Rd1",
+          "Nd2",
+          "Qe3",
+          "Ng5",
+          "Rxd2",
+          "Nf3+",
+          "Qxf3",
+          "Qxd2",
+          "bxc6",
+          "Qxc2"
+        ],
+        "pv_uci": [
+          "f1d1",
+          "a5b3",
+          "d1d8",
+          "e7d8",
+          "a1d1",
+          "b3d2",
+          "f3e3",
+          "h7g5",
+          "d1d2",
+          "g5f3",
+          "e3f3",
+          "d8d2",
+          "b5c6",
+          "d2c2"
+        ]
+      }
+    },
+    {
+      "input": "docs/games/2026-09-21-bot-match-sample.pgn",
+      "game_index": 5,
+      "ply": 56,
+      "played": "Qh8+",
+      "fen": "4k3/q4pp1/P1p5/6p1/4PPPQ/1PN1r2n/1PPr4/R4R1K w - - 0 29",
+      "analysis": {
+        "cp": 167,
+        "mate": null,
+        "depth": 8,
+        "nodes": 1925773,
+        "time": 2.989,
+        "pv_san": [
+          "Qh8+",
+          "Ke7",
+          "Rad1",
+          "Rxd1",
+          "Nxd1",
+          "Rg3",
+          "Kh2",
+          "Qxa6",
+          "c4",
+          "gxf4",
+          "Qxg7"
+        ],
+        "pv_uci": [
+          "h4h8",
+          "e8e7",
+          "a1d1",
+          "d2d1",
+          "c3d1",
+          "e3g3",
+          "h1h2",
+          "a7a6",
+          "c2c4",
+          "g5f4",
+          "h8g7"
+        ]
+      }
+    },
+    {
+      "input": "docs/games/2026-09-21-bot-match-sample.pgn",
+      "game_index": 5,
+      "ply": 58,
+      "played": "Ne2",
+      "fen": "7Q/q3kpp1/P1p5/6p1/4PPP1/1PN1r2n/1PPr4/R4R1K w - - 2 30",
+      "analysis": {
+        "cp": 228,
+        "mate": null,
+        "depth": 7,
+        "nodes": 1918614,
+        "time": 2.989,
+        "pv_san": [
+          "e5",
+          "Rxc3",
+          "f5",
+          "Qd7",
+          "Ra5",
+          "Rd1",
+          "bxc3",
+          "Rxf1+",
+          "Kh2"
+        ],
+        "pv_uci": [
+          "e4e5",
+          "e3c3",
+          "f4f5",
+          "a7d7",
+          "a1a5",
+          "d2d1",
+          "b2c3",
+          "d1f1",
+          "h1h2"
+        ]
+      }
+    },
+    {
+      "input": "docs/games/2026-09-21-bot-match-sample.pgn",
+      "game_index": 2,
+      "ply": 38,
+      "played": "Qxf6",
+      "fen": "r1b2b1r/ppkn4/2p2q2/3BppQp/6p1/1PN5/PBPP1PPP/R3R1K1 w - - 2 20",
+      "analysis": {
+        "cp": 151,
+        "mate": null,
+        "depth": 10,
+        "nodes": 1925001,
+        "time": 2.989,
+        "pv_san": [
+          "Nb5+",
+          "Kb6",
+          "Qe3+",
+          "Bc5",
+          "d4",
+          "cxd5",
+          "Qd3",
+          "e4",
+          "dxc5+",
+          "Nxc5",
+          "Bxf6",
+          "exd3"
+        ],
+        "pv_uci": [
+          "c3b5",
+          "c7b6",
+          "g5e3",
+          "f8c5",
+          "d2d4",
+          "c6d5",
+          "e3d3",
+          "e5e4",
+          "d4c5",
+          "d7c5",
+          "b2f6",
+          "e4d3"
+        ]
+      }
+    },
+    {
+      "input": "docs/benchmarks/2026-09-21-initiative-initial-match.pgn",
+      "game_index": 1,
+      "ply": 12,
+      "played": "Bxf7+",
+      "fen": "r1bqk2r/ppp2ppp/3p1n2/n1b1p3/N1B1P3/3P1N2/PPP2PPP/R1BQK2R w KQkq - 2 7",
+      "analysis": {
+        "cp": 87,
+        "mate": null,
+        "depth": 11,
+        "nodes": 2011911,
+        "time": 2.989,
+        "pv_san": [
+          "Nxc5",
+          "O-O",
+          "Bb5",
+          "dxc5",
+          "O-O",
+          "c6",
+          "Ba4",
+          "b5",
+          "Be3",
+          "bxa4",
+          "Nxe5"
+        ],
+        "pv_uci": [
+          "a4c5",
+          "e8g8",
+          "c4b5",
+          "d6c5",
+          "e1g1",
+          "c7c6",
+          "b5a4",
+          "b7b5",
+          "c1e3",
+          "b5a4",
+          "f3e5"
+        ]
+      }
+    },
+    {
+      "input": "docs/benchmarks/2026-09-21-initiative-initial-match.pgn",
+      "game_index": 5,
+      "ply": 18,
+      "played": "Qc2",
+      "fen": "r1bq1rk1/ppp1b1pp/2n2p2/3pB2n/3P4/2NBPN2/PP3PPP/R2QK2R w KQ - 0 10",
+      "analysis": {
+        "cp": 26,
+        "mate": null,
+        "depth": 9,
+        "nodes": 1810581,
+        "time": 2.988,
+        "pv_san": [
+          "Nd2",
+          "fxe5",
+          "Qxh5",
+          "e4",
+          "Ndxe4",
+          "dxe4",
+          "Bc4+",
+          "Kh8",
+          "Nxe4"
+        ],
+        "pv_uci": [
+          "f3d2",
+          "f6e5",
+          "d1h5",
+          "e5e4",
+          "d2e4",
+          "d5e4",
+          "d3c4",
+          "g8h8",
+          "c3e4"
+        ]
+      }
+    },
+    {
+      "input": "earlier user game, quiet mate preparation",
+      "fen": "N1b2bnr/1p4pp/p2p4/2k1Np2/2P5/8/PP3PPP/R2QKB1R w KQ - 2 15",
+      "analysis": {
+        "cp": null,
+        "mate": 2,
+        "depth": 2,
+        "nodes": 1217,
+        "time": 0.001,
+        "pv_san": [
+          "a3",
+          "Ne7",
+          "b4#"
+        ],
+        "pv_uci": [
+          "a2a3",
+          "g8e7",
+          "b2b4"
+        ]
+      }
+    }
+  ],
+  "engine": {
+    "uci": {
+      "name": "Opera Engine",
+      "author": "Opera Engine Team"
+    },
+    "sha256": "350792bd01a04ff4799940b01f7b62c6c66359a2233ad7ca6359d7e6645d6de3"
+  }
+}

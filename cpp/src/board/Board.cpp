@@ -944,6 +944,36 @@ bool Board::wouldBeInCheck(const MoveGen& move, Color color) const {
     return !isLegalMove(move, color);
 }
 
+bool Board::givesCheck(const MoveGen& move) const {
+    const Color us = sideToMove;
+    const Square king = getKingSquare(~us);
+    if (king == NO_SQUARE) return false;
+    const Square from = move.from(), to = move.to();
+    const Piece moving = getPiece(from);
+    if (moving == NO_PIECE || colorOf(moving) != us) return false;
+    const PieceType type = move.isPromotion() ? typeOf(move.promotionPiece()) : typeOf(moving);
+    const Bitboard source = 1ULL << from, target = 1ULL << to;
+    const Square captured = move.isEnPassant() ? to + (us == WHITE ? SOUTH : NORTH) : to;
+    Bitboard occupancy = (occupied[2] & ~source & ~(1ULL << captured)) | target;
+    Bitboard removed = source, added_rook = 0;
+    if (move.isCastling()) {
+        const Square rook_from = to > from ? from + 3 : from - 4;
+        const Square rook_to = to > from ? from + 1 : from - 1;
+        removed |= 1ULL << rook_from;
+        added_rook = 1ULL << rook_to;
+        occupancy = (occupancy & ~(1ULL << rook_from)) | added_rook;
+    }
+    auto pieces_after = [&](PieceType pt) {
+        return (getPieceBitboard(us, pt) & ~removed) | (type == pt ? target : 0ULL) |
+               (pt == ROOK ? added_rook : 0ULL);
+    };
+    return (getPawnAttacks(king, ~us) & pieces_after(PAWN)) |
+           (getKnightAttacks(king) & pieces_after(KNIGHT)) |
+           (getKingAttacks(king) & pieces_after(KING)) |
+           (getBishopAttacks(king, occupancy) & (pieces_after(BISHOP) | pieces_after(QUEEN))) |
+           (getRookAttacks(king, occupancy) & (pieces_after(ROOK) | pieces_after(QUEEN)));
+}
+
 void Board::makeNullMove() {
     BoardState state;
     state.castling = castling;

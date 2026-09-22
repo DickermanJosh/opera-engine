@@ -160,7 +160,7 @@ public:
      * @param beta Beta bound
      * @return Position evaluation after tactical resolution
      */
-    int quiescence(int ply, int alpha, int beta);
+    int quiescence(int ply, int alpha, int beta, int checking_plies = 1);
     
     /**
      * Get the principal variation found by search

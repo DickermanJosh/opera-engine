@@ -113,6 +113,9 @@ public:
     // Attack/defend queries
     bool isSquareAttacked(Square sq, Color attackingColor) const;
     bool isInCheck(Color color) const;
+    // Generated move precondition; includes discovered and special-move checks.
+    // Does not mutate board/history or certify the mover's own king safety.
+    bool givesCheck(const MoveGen& move) const;
     
     // Piece counting
     int getPieceCount(Color color, PieceType pieceType) const;

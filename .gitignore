@@ -113,6 +113,9 @@ logs/
 
 # Chess databases and books
 *.pgn
+!docs/games/morphy-opera-1858.pgn
+!docs/games/2026-09-21-bot-match-sample.pgn
+!docs/benchmarks/2026-09-21-initiative-*.pgn
 *.bin
 *.db
 shared/data/*.pgn

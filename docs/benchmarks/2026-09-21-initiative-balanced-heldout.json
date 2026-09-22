@@ -1,0 +1,182 @@
+{
+  "candidate_sha256": "350792bd01a04ff4799940b01f7b62c6c66359a2233ad7ca6359d7e6645d6de3",
+  "baseline_sha256": "d6801f08e41ab3e77c6dacf41aa6baf5cfd44576e1e713568fb637d189f03bc2",
+  "morphy": true,
+  "baseline_morphy": true,
+  "baseline_name": "Opera dd001bd",
+  "movetime": 0.25,
+  "openings": {
+    "English": "c4 e5 Nc3 Nf6 g3 d5 cxd5 Nxd5",
+    "Reti": "Nf3 d5 c4 dxc4 e3 Nf6 Bxc4 e6",
+    "Scotch": "e4 e5 Nf3 Nc6 d4 exd4 Nxd4 Bc5",
+    "King's Indian": "d4 Nf6 c4 g6 Nc3 Bg7 e4 d6"
+  },
+  "summary": {
+    "win": 0,
+    "draw": 4,
+    "loss": 4,
+    "unfinished": 0
+  },
+  "games": [
+    {
+      "opening": "English",
+      "candidate_color": "white",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 127,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 10,
+          "san": "O-O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 11,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "English",
+      "candidate_color": "black",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 146,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 11,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 13,
+          "san": "O-O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Reti",
+      "candidate_color": "white",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 84,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 5,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 7,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Reti",
+      "candidate_color": "black",
+      "result": "1-0",
+      "candidate_result": "loss",
+      "plies": 141,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 6,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 7,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Scotch",
+      "candidate_color": "white",
+      "result": "0-1",
+      "candidate_result": "loss",
+      "plies": 126,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 9,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 9,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Scotch",
+      "candidate_color": "black",
+      "result": "1-0",
+      "candidate_result": "loss",
+      "plies": 117,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 13,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 14,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "King's Indian",
+      "candidate_color": "white",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 110,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 7,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 8,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "King's Indian",
+      "candidate_color": "black",
+      "result": "1-0",
+      "candidate_result": "loss",
+      "plies": 155,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 7,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 7,
+          "san": "O-O"
+        }
+      ]
+    }
+  ]
+}

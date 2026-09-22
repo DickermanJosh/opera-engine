@@ -172,7 +172,7 @@ int AlphaBetaSearch::pvs(int depth, int ply, int alpha, int beta, bool is_pv_nod
     return best_score;
 }
 
-int AlphaBetaSearch::quiescence(int ply, int alpha, int beta) {
+int AlphaBetaSearch::quiescence(int ply, int alpha, int beta, int checking_plies) {
     ++stats.nodes;
     if (should_stop()) return alpha;
     if (ply < MAX_PLY) pv_table[ply].clear();
@@ -190,6 +190,14 @@ int AlphaBetaSearch::quiescence(int ply, int alpha, int beta) {
     int best = checked ? -INFINITY_SCORE : evaluate();
     if (best >= beta) return best;
     alpha = std::max(alpha, best);
+    // Include quiet checks at the horizon entry, then continue with captures
+    // and mandatory evasions. Do not restart this allowance after each capture:
+    // that expands long exchange sequences far beyond the intended budget.
+    if (!checked && checking_plies > 0) {
+        for (const auto& move : all_moves)
+            if (!move.isCapture() && !move.isPromotion() && !move.isEnPassant() && board.givesCheck(move))
+                tactical.add(move);
+    }
     move_ordering.score_moves(tactical, ply);
     move_ordering.sort_moves(tactical);
     for (const auto& move : tactical) {
@@ -200,7 +208,8 @@ int AlphaBetaSearch::quiescence(int ply, int alpha, int beta) {
             board.unmakeMove(move);
             continue;
         }
-        const int score = -quiescence(ply + 1, -beta, -alpha);
+        const int score = -quiescence(ply + 1, -beta, -alpha,
+                                     std::max(0, checking_plies - 1));
         board.unmakeMove(move);
         if (stop_flag.load(std::memory_order_relaxed)) return alpha;
         best = std::max(best, score);

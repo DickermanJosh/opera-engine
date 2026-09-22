@@ -1,0 +1,1234 @@
+{
+  "created_utc": "2026-09-21T21:23:20.218248+00:00",
+  "baseline_revision": "dd001bd037121440dc5f0c7714ed8d0881c8b633",
+  "candidate_revision": "dd001bd037121440dc5f0c7714ed8d0881c8b633 plus attacking-principles working tree",
+  "toolchain": "Both binaries built with Apple Command Line Tools clang 17",
+  "method": "Sequential cold-game searches, 16 MB Hash, 1 thread, MorphyStyle=true; no concurrent engine jobs",
+  "reports": {
+    "baseline": {
+      "engine": "/private/tmp/opera-initiative-baseline",
+      "sha256": "d6801f08e41ab3e77c6dacf41aa6baf5cfd44576e1e713568fb637d189f03bc2",
+      "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+      "morphy": true,
+      "limit": {
+        "depth": 6
+      },
+      "positions": [
+        {
+          "name": "start",
+          "repeat": 0,
+          "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+          "move": "e2e4",
+          "san": "e4",
+          "elapsed": 0.027534792010555975,
+          "depth": 6,
+          "nodes": 25637,
+          "score": "PovScore(Cp(+35), WHITE)",
+          "pv": [
+            "e2e4",
+            "b8c6",
+            "d2d4",
+            "d7d5",
+            "e4d5",
+            "d8d5"
+          ]
+        },
+        {
+          "name": "e4",
+          "repeat": 0,
+          "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+          "move": "d7d5",
+          "san": "d5",
+          "elapsed": 0.04858762500225566,
+          "depth": 6,
+          "nodes": 43633,
+          "score": "PovScore(Cp(-84), BLACK)",
+          "pv": [
+            "d7d5",
+            "e4d5",
+            "g8f6",
+            "b1c3",
+            "c7c6",
+            "d2d4",
+            "c6d5"
+          ]
+        },
+        {
+          "name": "italian_castling",
+          "repeat": 0,
+          "fen": "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 1 5",
+          "move": "b1c3",
+          "san": "Nc3",
+          "elapsed": 0.06413787500059698,
+          "depth": 6,
+          "nodes": 46858,
+          "score": "PovScore(Cp(+46), WHITE)",
+          "pv": [
+            "b1c3",
+            "d7d6",
+            "e1g1",
+            "c8e6",
+            "c4e6",
+            "f7e6"
+          ]
+        },
+        {
+          "name": "four_knights_pin",
+          "repeat": 0,
+          "fen": "r2qkb1r/pppbnppp/3p1n2/1B1Pp3/4P3/2N2N2/PPP2PPP/R1BQ1RK1 b kq - 3 7",
+          "move": "d7b5",
+          "san": "Bxb5",
+          "elapsed": 0.019420041993726045,
+          "depth": 6,
+          "nodes": 15942,
+          "score": "PovScore(Cp(-64), BLACK)",
+          "pv": [
+            "d7b5",
+            "c3b5",
+            "f6e4",
+            "c1g5",
+            "a7a6",
+            "b5c3",
+            "e4c3",
+            "b2c3"
+          ]
+        },
+        {
+          "name": "london",
+          "repeat": 0,
+          "fen": "rnbq1rk1/ppp2ppp/3bpn2/3p4/3P4/3BPNB1/PPP2PPP/RN1QK2R b KQ - 4 6",
+          "move": "d6g3",
+          "san": "Bxg3",
+          "elapsed": 0.029513999994378537,
+          "depth": 6,
+          "nodes": 25564,
+          "score": "PovScore(Cp(+27), BLACK)",
+          "pv": [
+            "d6g3",
+            "h2g3",
+            "b8c6",
+            "e1g1",
+            "c8d7",
+            "b1c3"
+          ]
+        },
+        {
+          "name": "london_centre",
+          "repeat": 0,
+          "fen": "r1bqk2r/pp3ppp/2nbpn2/2pp4/3P1B2/2P1PN2/PP1N1PPP/R2QKB1R w KQkq - 2 7",
+          "move": "f1b5",
+          "san": "Bb5",
+          "elapsed": 0.05281745899992529,
+          "depth": 6,
+          "nodes": 42627,
+          "score": "PovScore(Cp(-18), WHITE)",
+          "pv": [
+            "f1b5",
+            "d6f4",
+            "e3f4",
+            "c5d4",
+            "b5c6",
+            "b7c6",
+            "c3d4"
+          ]
+        },
+        {
+          "name": "kiwipete",
+          "repeat": 0,
+          "fen": "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+          "move": "d5e6",
+          "san": "dxe6",
+          "elapsed": 0.40094345800753217,
+          "depth": 6,
+          "nodes": 264319,
+          "score": "PovScore(Cp(+37), WHITE)",
+          "pv": [
+            "d5e6",
+            "a6e2",
+            "e6f7",
+            "e8d8",
+            "e1e2",
+            "h3g2",
+            "f3g2",
+            "e7e5",
+            "f2f4"
+          ]
+        },
+        {
+          "name": "rook_ending",
+          "repeat": 0,
+          "fen": "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+          "move": "b4f4",
+          "san": "Rxf4+",
+          "elapsed": 0.011027166998246685,
+          "depth": 6,
+          "nodes": 14429,
+          "score": "PovScore(Cp(+20), WHITE)",
+          "pv": [
+            "b4f4",
+            "h4g3",
+            "f4f3",
+            "g3g2",
+            "a5b4",
+            "h5h4",
+            "b4c3",
+            "d6d5",
+            "f3f7"
+          ]
+        },
+        {
+          "name": "promotion",
+          "repeat": 0,
+          "fen": "4k3/P7/8/8/8/8/7p/4K3 w - - 0 1",
+          "move": "a7a8q",
+          "san": "a8=Q+",
+          "elapsed": 0.011470792000181973,
+          "depth": 6,
+          "nodes": 15180,
+          "score": "PovScore(Cp(+914), WHITE)",
+          "pv": [
+            "a7a8q",
+            "e8e7",
+            "a8e4",
+            "e7d6",
+            "e4f4",
+            "d6d5",
+            "f4h2",
+            "d5e4",
+            "h2e2",
+            "e4d5"
+          ]
+        },
+        {
+          "name": "knight_fork",
+          "repeat": 0,
+          "fen": "r3k3/pp3ppp/8/3N4/8/8/PPP2PPP/4K3 w q - 0 1",
+          "move": "d5c7",
+          "san": "Nc7+",
+          "elapsed": 0.01010037500236649,
+          "depth": 6,
+          "nodes": 15828,
+          "score": "PovScore(Cp(+205), WHITE)",
+          "pv": [
+            "d5c7",
+            "e8d7",
+            "c7a8",
+            "d7c8",
+            "e1d2",
+            "c8b8",
+            "a8b6",
+            "a7b6"
+          ]
+        },
+        {
+          "name": "start",
+          "repeat": 1,
+          "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+          "move": "e2e4",
+          "san": "e4",
+          "elapsed": 0.025443999998969957,
+          "depth": 6,
+          "nodes": 25637,
+          "score": "PovScore(Cp(+35), WHITE)",
+          "pv": [
+            "e2e4",
+            "b8c6",
+            "d2d4",
+            "d7d5",
+            "e4d5",
+            "d8d5"
+          ]
+        },
+        {
+          "name": "e4",
+          "repeat": 1,
+          "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+          "move": "d7d5",
+          "san": "d5",
+          "elapsed": 0.0480494160001399,
+          "depth": 6,
+          "nodes": 43633,
+          "score": "PovScore(Cp(-84), BLACK)",
+          "pv": [
+            "d7d5",
+            "e4d5",
+            "g8f6",
+            "b1c3",
+            "c7c6",
+            "d2d4",
+            "c6d5"
+          ]
+        },
+        {
+          "name": "italian_castling",
+          "repeat": 1,
+          "fen": "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 1 5",
+          "move": "b1c3",
+          "san": "Nc3",
+          "elapsed": 0.0642142500000773,
+          "depth": 6,
+          "nodes": 46858,
+          "score": "PovScore(Cp(+46), WHITE)",
+          "pv": [
+            "b1c3",
+            "d7d6",
+            "e1g1",
+            "c8e6",
+            "c4e6",
+            "f7e6"
+          ]
+        },
+        {
+          "name": "four_knights_pin",
+          "repeat": 1,
+          "fen": "r2qkb1r/pppbnppp/3p1n2/1B1Pp3/4P3/2N2N2/PPP2PPP/R1BQ1RK1 b kq - 3 7",
+          "move": "d7b5",
+          "san": "Bxb5",
+          "elapsed": 0.01936866599135101,
+          "depth": 6,
+          "nodes": 15942,
+          "score": "PovScore(Cp(-64), BLACK)",
+          "pv": [
+            "d7b5",
+            "c3b5",
+            "f6e4",
+            "c1g5",
+            "a7a6",
+            "b5c3",
+            "e4c3",
+            "b2c3"
+          ]
+        },
+        {
+          "name": "london",
+          "repeat": 1,
+          "fen": "rnbq1rk1/ppp2ppp/3bpn2/3p4/3P4/3BPNB1/PPP2PPP/RN1QK2R b KQ - 4 6",
+          "move": "d6g3",
+          "san": "Bxg3",
+          "elapsed": 0.029753665992757306,
+          "depth": 6,
+          "nodes": 25564,
+          "score": "PovScore(Cp(+27), BLACK)",
+          "pv": [
+            "d6g3",
+            "h2g3",
+            "b8c6",
+            "e1g1",
+            "c8d7",
+            "b1c3"
+          ]
+        },
+        {
+          "name": "london_centre",
+          "repeat": 1,
+          "fen": "r1bqk2r/pp3ppp/2nbpn2/2pp4/3P1B2/2P1PN2/PP1N1PPP/R2QKB1R w KQkq - 2 7",
+          "move": "f1b5",
+          "san": "Bb5",
+          "elapsed": 0.052782249986194074,
+          "depth": 6,
+          "nodes": 42627,
+          "score": "PovScore(Cp(-18), WHITE)",
+          "pv": [
+            "f1b5",
+            "d6f4",
+            "e3f4",
+            "c5d4",
+            "b5c6",
+            "b7c6",
+            "c3d4"
+          ]
+        },
+        {
+          "name": "kiwipete",
+          "repeat": 1,
+          "fen": "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+          "move": "d5e6",
+          "san": "dxe6",
+          "elapsed": 0.4111878749972675,
+          "depth": 6,
+          "nodes": 264319,
+          "score": "PovScore(Cp(+37), WHITE)",
+          "pv": [
+            "d5e6",
+            "a6e2",
+            "e6f7",
+            "e8d8",
+            "e1e2",
+            "h3g2",
+            "f3g2",
+            "e7e5",
+            "f2f4"
+          ]
+        },
+        {
+          "name": "rook_ending",
+          "repeat": 1,
+          "fen": "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+          "move": "b4f4",
+          "san": "Rxf4+",
+          "elapsed": 0.011374207999324426,
+          "depth": 6,
+          "nodes": 14429,
+          "score": "PovScore(Cp(+20), WHITE)",
+          "pv": [
+            "b4f4",
+            "h4g3",
+            "f4f3",
+            "g3g2",
+            "a5b4",
+            "h5h4",
+            "b4c3",
+            "d6d5",
+            "f3f7"
+          ]
+        },
+        {
+          "name": "promotion",
+          "repeat": 1,
+          "fen": "4k3/P7/8/8/8/8/7p/4K3 w - - 0 1",
+          "move": "a7a8q",
+          "san": "a8=Q+",
+          "elapsed": 0.011357750001479872,
+          "depth": 6,
+          "nodes": 15180,
+          "score": "PovScore(Cp(+914), WHITE)",
+          "pv": [
+            "a7a8q",
+            "e8e7",
+            "a8e4",
+            "e7d6",
+            "e4f4",
+            "d6d5",
+            "f4h2",
+            "d5e4",
+            "h2e2",
+            "e4d5"
+          ]
+        },
+        {
+          "name": "knight_fork",
+          "repeat": 1,
+          "fen": "r3k3/pp3ppp/8/3N4/8/8/PPP2PPP/4K3 w q - 0 1",
+          "move": "d5c7",
+          "san": "Nc7+",
+          "elapsed": 0.00962995900772512,
+          "depth": 6,
+          "nodes": 15828,
+          "score": "PovScore(Cp(+205), WHITE)",
+          "pv": [
+            "d5c7",
+            "e8d7",
+            "c7a8",
+            "d7c8",
+            "e1d2",
+            "c8b8",
+            "a8b6",
+            "a7b6"
+          ]
+        },
+        {
+          "name": "start",
+          "repeat": 2,
+          "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+          "move": "e2e4",
+          "san": "e4",
+          "elapsed": 0.025929708004696295,
+          "depth": 6,
+          "nodes": 25637,
+          "score": "PovScore(Cp(+35), WHITE)",
+          "pv": [
+            "e2e4",
+            "b8c6",
+            "d2d4",
+            "d7d5",
+            "e4d5",
+            "d8d5"
+          ]
+        },
+        {
+          "name": "e4",
+          "repeat": 2,
+          "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+          "move": "d7d5",
+          "san": "d5",
+          "elapsed": 0.04958049999549985,
+          "depth": 6,
+          "nodes": 43633,
+          "score": "PovScore(Cp(-84), BLACK)",
+          "pv": [
+            "d7d5",
+            "e4d5",
+            "g8f6",
+            "b1c3",
+            "c7c6",
+            "d2d4",
+            "c6d5"
+          ]
+        },
+        {
+          "name": "italian_castling",
+          "repeat": 2,
+          "fen": "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 1 5",
+          "move": "b1c3",
+          "san": "Nc3",
+          "elapsed": 0.06723645799502265,
+          "depth": 6,
+          "nodes": 46858,
+          "score": "PovScore(Cp(+46), WHITE)",
+          "pv": [
+            "b1c3",
+            "d7d6",
+            "e1g1",
+            "c8e6",
+            "c4e6",
+            "f7e6"
+          ]
+        },
+        {
+          "name": "four_knights_pin",
+          "repeat": 2,
+          "fen": "r2qkb1r/pppbnppp/3p1n2/1B1Pp3/4P3/2N2N2/PPP2PPP/R1BQ1RK1 b kq - 3 7",
+          "move": "d7b5",
+          "san": "Bxb5",
+          "elapsed": 0.020447375005460344,
+          "depth": 6,
+          "nodes": 15942,
+          "score": "PovScore(Cp(-64), BLACK)",
+          "pv": [
+            "d7b5",
+            "c3b5",
+            "f6e4",
+            "c1g5",
+            "a7a6",
+            "b5c3",
+            "e4c3",
+            "b2c3"
+          ]
+        },
+        {
+          "name": "london",
+          "repeat": 2,
+          "fen": "rnbq1rk1/ppp2ppp/3bpn2/3p4/3P4/3BPNB1/PPP2PPP/RN1QK2R b KQ - 4 6",
+          "move": "d6g3",
+          "san": "Bxg3",
+          "elapsed": 0.02984983399801422,
+          "depth": 6,
+          "nodes": 25564,
+          "score": "PovScore(Cp(+27), BLACK)",
+          "pv": [
+            "d6g3",
+            "h2g3",
+            "b8c6",
+            "e1g1",
+            "c8d7",
+            "b1c3"
+          ]
+        },
+        {
+          "name": "london_centre",
+          "repeat": 2,
+          "fen": "r1bqk2r/pp3ppp/2nbpn2/2pp4/3P1B2/2P1PN2/PP1N1PPP/R2QKB1R w KQkq - 2 7",
+          "move": "f1b5",
+          "san": "Bb5",
+          "elapsed": 0.05293258301389869,
+          "depth": 6,
+          "nodes": 42627,
+          "score": "PovScore(Cp(-18), WHITE)",
+          "pv": [
+            "f1b5",
+            "d6f4",
+            "e3f4",
+            "c5d4",
+            "b5c6",
+            "b7c6",
+            "c3d4"
+          ]
+        },
+        {
+          "name": "kiwipete",
+          "repeat": 2,
+          "fen": "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+          "move": "d5e6",
+          "san": "dxe6",
+          "elapsed": 0.4110832919977838,
+          "depth": 6,
+          "nodes": 264319,
+          "score": "PovScore(Cp(+37), WHITE)",
+          "pv": [
+            "d5e6",
+            "a6e2",
+            "e6f7",
+            "e8d8",
+            "e1e2",
+            "h3g2",
+            "f3g2",
+            "e7e5",
+            "f2f4"
+          ]
+        },
+        {
+          "name": "rook_ending",
+          "repeat": 2,
+          "fen": "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+          "move": "b4f4",
+          "san": "Rxf4+",
+          "elapsed": 0.011133666994282976,
+          "depth": 6,
+          "nodes": 14429,
+          "score": "PovScore(Cp(+20), WHITE)",
+          "pv": [
+            "b4f4",
+            "h4g3",
+            "f4f3",
+            "g3g2",
+            "a5b4",
+            "h5h4",
+            "b4c3",
+            "d6d5",
+            "f3f7"
+          ]
+        },
+        {
+          "name": "promotion",
+          "repeat": 2,
+          "fen": "4k3/P7/8/8/8/8/7p/4K3 w - - 0 1",
+          "move": "a7a8q",
+          "san": "a8=Q+",
+          "elapsed": 0.011422750001656823,
+          "depth": 6,
+          "nodes": 15180,
+          "score": "PovScore(Cp(+914), WHITE)",
+          "pv": [
+            "a7a8q",
+            "e8e7",
+            "a8e4",
+            "e7d6",
+            "e4f4",
+            "d6d5",
+            "f4h2",
+            "d5e4",
+            "h2e2",
+            "e4d5"
+          ]
+        },
+        {
+          "name": "knight_fork",
+          "repeat": 2,
+          "fen": "r3k3/pp3ppp/8/3N4/8/8/PPP2PPP/4K3 w q - 0 1",
+          "move": "d5c7",
+          "san": "Nc7+",
+          "elapsed": 0.009924790996592492,
+          "depth": 6,
+          "nodes": 15828,
+          "score": "PovScore(Cp(+205), WHITE)",
+          "pv": [
+            "d5c7",
+            "e8d7",
+            "c7a8",
+            "d7c8",
+            "e1d2",
+            "c8b8",
+            "a8b6",
+            "a7b6"
+          ]
+        }
+      ]
+    },
+    "candidate": {
+      "engine": "/private/tmp/opera-initiative-rust/release/opera-uci",
+      "sha256": "f25fd3a2303fbaa1e5ddcd9f944f7b7deb7899a807713bf4d132ff039e5f3596",
+      "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+      "morphy": true,
+      "limit": {
+        "depth": 6
+      },
+      "positions": [
+        {
+          "name": "start",
+          "repeat": 0,
+          "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+          "move": "e2e4",
+          "san": "e4",
+          "elapsed": 0.04637837500195019,
+          "depth": 6,
+          "nodes": 35048,
+          "score": "PovScore(Cp(+26), WHITE)",
+          "pv": [
+            "e2e4",
+            "e7e5",
+            "d2d4",
+            "b8c6",
+            "g1f3",
+            "g8f6"
+          ]
+        },
+        {
+          "name": "e4",
+          "repeat": 0,
+          "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+          "move": "g8f6",
+          "san": "Nf6",
+          "elapsed": 0.05712124999263324,
+          "depth": 6,
+          "nodes": 42747,
+          "score": "PovScore(Cp(-96), BLACK)",
+          "pv": [
+            "g8f6",
+            "b1c3",
+            "d7d5",
+            "e4d5",
+            "c7c6",
+            "d2d4",
+            "c6d5"
+          ]
+        },
+        {
+          "name": "italian_castling",
+          "repeat": 0,
+          "fen": "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 1 5",
+          "move": "b1c3",
+          "san": "Nc3",
+          "elapsed": 0.07315308399847709,
+          "depth": 6,
+          "nodes": 44457,
+          "score": "PovScore(Cp(+45), WHITE)",
+          "pv": [
+            "b1c3",
+            "d7d6",
+            "e1g1",
+            "c8e6",
+            "c4e6",
+            "f7e6"
+          ]
+        },
+        {
+          "name": "four_knights_pin",
+          "repeat": 0,
+          "fen": "r2qkb1r/pppbnppp/3p1n2/1B1Pp3/4P3/2N2N2/PPP2PPP/R1BQ1RK1 b kq - 3 7",
+          "move": "d7b5",
+          "san": "Bxb5",
+          "elapsed": 0.021844083006726578,
+          "depth": 6,
+          "nodes": 14262,
+          "score": "PovScore(Cp(-159), BLACK)",
+          "pv": [
+            "d7b5",
+            "c3b5",
+            "f6e4",
+            "f3g5",
+            "e4f6",
+            "c2c4"
+          ]
+        },
+        {
+          "name": "london",
+          "repeat": 0,
+          "fen": "rnbq1rk1/ppp2ppp/3bpn2/3p4/3P4/3BPNB1/PPP2PPP/RN1QK2R b KQ - 4 6",
+          "move": "c8d7",
+          "san": "Bd7",
+          "elapsed": 0.059311375007382594,
+          "depth": 6,
+          "nodes": 43081,
+          "score": "PovScore(Cp(-14), BLACK)",
+          "pv": [
+            "c8d7",
+            "b1c3",
+            "b8c6",
+            "g3d6",
+            "c7d6",
+            "e1g1"
+          ]
+        },
+        {
+          "name": "london_centre",
+          "repeat": 0,
+          "fen": "r1bqk2r/pp3ppp/2nbpn2/2pp4/3P1B2/2P1PN2/PP1N1PPP/R2QKB1R w KQkq - 2 7",
+          "move": "f3e5",
+          "san": "Ne5",
+          "elapsed": 0.07433808299538214,
+          "depth": 6,
+          "nodes": 50469,
+          "score": "PovScore(Cp(-13), WHITE)",
+          "pv": [
+            "f3e5",
+            "e8g8",
+            "f1d3",
+            "c5c4",
+            "e5c6",
+            "b7c6"
+          ]
+        },
+        {
+          "name": "kiwipete",
+          "repeat": 0,
+          "fen": "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+          "move": "e2a6",
+          "san": "Bxa6",
+          "elapsed": 0.505805832988699,
+          "depth": 6,
+          "nodes": 308154,
+          "score": "PovScore(Cp(+6), WHITE)",
+          "pv": [
+            "e2a6",
+            "b4c3",
+            "d2c3",
+            "e6d5",
+            "e1g1",
+            "h3g2"
+          ]
+        },
+        {
+          "name": "rook_ending",
+          "repeat": 0,
+          "fen": "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+          "move": "b4c4",
+          "san": "Rc4",
+          "elapsed": 0.03262779199576471,
+          "depth": 6,
+          "nodes": 35401,
+          "score": "PovScore(Cp(+37), WHITE)",
+          "pv": [
+            "b4c4",
+            "h5h7",
+            "c4f4",
+            "h4g3",
+            "e2e3",
+            "g3g2",
+            "a5b4"
+          ]
+        },
+        {
+          "name": "promotion",
+          "repeat": 0,
+          "fen": "4k3/P7/8/8/8/8/7p/4K3 w - - 0 1",
+          "move": "a7a8q",
+          "san": "a8=Q+",
+          "elapsed": 0.02763904200401157,
+          "depth": 6,
+          "nodes": 30363,
+          "score": "PovScore(Cp(+976), WHITE)",
+          "pv": [
+            "a7a8q",
+            "e8d7",
+            "a8h1",
+            "d7e7",
+            "h1h2",
+            "e7e6",
+            "h2e2",
+            "e6d5"
+          ]
+        },
+        {
+          "name": "knight_fork",
+          "repeat": 0,
+          "fen": "r3k3/pp3ppp/8/3N4/8/8/PPP2PPP/4K3 w q - 0 1",
+          "move": "d5c7",
+          "san": "Nc7+",
+          "elapsed": 0.010563333999016322,
+          "depth": 6,
+          "nodes": 10440,
+          "score": "PovScore(Cp(+356), WHITE)",
+          "pv": [
+            "d5c7",
+            "e8e7",
+            "c7a8",
+            "e7d6",
+            "e1d2",
+            "b7b5",
+            "d2d3"
+          ]
+        },
+        {
+          "name": "start",
+          "repeat": 1,
+          "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+          "move": "e2e4",
+          "san": "e4",
+          "elapsed": 0.045691249993979,
+          "depth": 6,
+          "nodes": 35048,
+          "score": "PovScore(Cp(+26), WHITE)",
+          "pv": [
+            "e2e4",
+            "e7e5",
+            "d2d4",
+            "b8c6",
+            "g1f3",
+            "g8f6"
+          ]
+        },
+        {
+          "name": "e4",
+          "repeat": 1,
+          "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+          "move": "g8f6",
+          "san": "Nf6",
+          "elapsed": 0.05711995800083969,
+          "depth": 6,
+          "nodes": 42747,
+          "score": "PovScore(Cp(-96), BLACK)",
+          "pv": [
+            "g8f6",
+            "b1c3",
+            "d7d5",
+            "e4d5",
+            "c7c6",
+            "d2d4",
+            "c6d5"
+          ]
+        },
+        {
+          "name": "italian_castling",
+          "repeat": 1,
+          "fen": "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 1 5",
+          "move": "b1c3",
+          "san": "Nc3",
+          "elapsed": 0.07486516601056792,
+          "depth": 6,
+          "nodes": 44457,
+          "score": "PovScore(Cp(+45), WHITE)",
+          "pv": [
+            "b1c3",
+            "d7d6",
+            "e1g1",
+            "c8e6",
+            "c4e6",
+            "f7e6"
+          ]
+        },
+        {
+          "name": "four_knights_pin",
+          "repeat": 1,
+          "fen": "r2qkb1r/pppbnppp/3p1n2/1B1Pp3/4P3/2N2N2/PPP2PPP/R1BQ1RK1 b kq - 3 7",
+          "move": "d7b5",
+          "san": "Bxb5",
+          "elapsed": 0.021617959006107412,
+          "depth": 6,
+          "nodes": 14262,
+          "score": "PovScore(Cp(-159), BLACK)",
+          "pv": [
+            "d7b5",
+            "c3b5",
+            "f6e4",
+            "f3g5",
+            "e4f6",
+            "c2c4"
+          ]
+        },
+        {
+          "name": "london",
+          "repeat": 1,
+          "fen": "rnbq1rk1/ppp2ppp/3bpn2/3p4/3P4/3BPNB1/PPP2PPP/RN1QK2R b KQ - 4 6",
+          "move": "c8d7",
+          "san": "Bd7",
+          "elapsed": 0.05866708300891332,
+          "depth": 6,
+          "nodes": 43081,
+          "score": "PovScore(Cp(-14), BLACK)",
+          "pv": [
+            "c8d7",
+            "b1c3",
+            "b8c6",
+            "g3d6",
+            "c7d6",
+            "e1g1"
+          ]
+        },
+        {
+          "name": "london_centre",
+          "repeat": 1,
+          "fen": "r1bqk2r/pp3ppp/2nbpn2/2pp4/3P1B2/2P1PN2/PP1N1PPP/R2QKB1R w KQkq - 2 7",
+          "move": "f3e5",
+          "san": "Ne5",
+          "elapsed": 0.07325187500100583,
+          "depth": 6,
+          "nodes": 50469,
+          "score": "PovScore(Cp(-13), WHITE)",
+          "pv": [
+            "f3e5",
+            "e8g8",
+            "f1d3",
+            "c5c4",
+            "e5c6",
+            "b7c6"
+          ]
+        },
+        {
+          "name": "kiwipete",
+          "repeat": 1,
+          "fen": "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+          "move": "e2a6",
+          "san": "Bxa6",
+          "elapsed": 0.5066236250131624,
+          "depth": 6,
+          "nodes": 308154,
+          "score": "PovScore(Cp(+6), WHITE)",
+          "pv": [
+            "e2a6",
+            "b4c3",
+            "d2c3",
+            "e6d5",
+            "e1g1",
+            "h3g2"
+          ]
+        },
+        {
+          "name": "rook_ending",
+          "repeat": 1,
+          "fen": "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+          "move": "b4c4",
+          "san": "Rc4",
+          "elapsed": 0.033398250001482666,
+          "depth": 6,
+          "nodes": 35401,
+          "score": "PovScore(Cp(+37), WHITE)",
+          "pv": [
+            "b4c4",
+            "h5h7",
+            "c4f4",
+            "h4g3",
+            "e2e3",
+            "g3g2",
+            "a5b4"
+          ]
+        },
+        {
+          "name": "promotion",
+          "repeat": 1,
+          "fen": "4k3/P7/8/8/8/8/7p/4K3 w - - 0 1",
+          "move": "a7a8q",
+          "san": "a8=Q+",
+          "elapsed": 0.028043625003192574,
+          "depth": 6,
+          "nodes": 30363,
+          "score": "PovScore(Cp(+976), WHITE)",
+          "pv": [
+            "a7a8q",
+            "e8d7",
+            "a8h1",
+            "d7e7",
+            "h1h2",
+            "e7e6",
+            "h2e2",
+            "e6d5"
+          ]
+        },
+        {
+          "name": "knight_fork",
+          "repeat": 1,
+          "fen": "r3k3/pp3ppp/8/3N4/8/8/PPP2PPP/4K3 w q - 0 1",
+          "move": "d5c7",
+          "san": "Nc7+",
+          "elapsed": 0.010659708001185209,
+          "depth": 6,
+          "nodes": 10440,
+          "score": "PovScore(Cp(+356), WHITE)",
+          "pv": [
+            "d5c7",
+            "e8e7",
+            "c7a8",
+            "e7d6",
+            "e1d2",
+            "b7b5",
+            "d2d3"
+          ]
+        },
+        {
+          "name": "start",
+          "repeat": 2,
+          "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+          "move": "e2e4",
+          "san": "e4",
+          "elapsed": 0.045427334000123665,
+          "depth": 6,
+          "nodes": 35048,
+          "score": "PovScore(Cp(+26), WHITE)",
+          "pv": [
+            "e2e4",
+            "e7e5",
+            "d2d4",
+            "b8c6",
+            "g1f3",
+            "g8f6"
+          ]
+        },
+        {
+          "name": "e4",
+          "repeat": 2,
+          "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+          "move": "g8f6",
+          "san": "Nf6",
+          "elapsed": 0.0573402080044616,
+          "depth": 6,
+          "nodes": 42747,
+          "score": "PovScore(Cp(-96), BLACK)",
+          "pv": [
+            "g8f6",
+            "b1c3",
+            "d7d5",
+            "e4d5",
+            "c7c6",
+            "d2d4",
+            "c6d5"
+          ]
+        },
+        {
+          "name": "italian_castling",
+          "repeat": 2,
+          "fen": "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 1 5",
+          "move": "b1c3",
+          "san": "Nc3",
+          "elapsed": 0.07501233299262822,
+          "depth": 6,
+          "nodes": 44457,
+          "score": "PovScore(Cp(+45), WHITE)",
+          "pv": [
+            "b1c3",
+            "d7d6",
+            "e1g1",
+            "c8e6",
+            "c4e6",
+            "f7e6"
+          ]
+        },
+        {
+          "name": "four_knights_pin",
+          "repeat": 2,
+          "fen": "r2qkb1r/pppbnppp/3p1n2/1B1Pp3/4P3/2N2N2/PPP2PPP/R1BQ1RK1 b kq - 3 7",
+          "move": "d7b5",
+          "san": "Bxb5",
+          "elapsed": 0.021679916986613534,
+          "depth": 6,
+          "nodes": 14262,
+          "score": "PovScore(Cp(-159), BLACK)",
+          "pv": [
+            "d7b5",
+            "c3b5",
+            "f6e4",
+            "f3g5",
+            "e4f6",
+            "c2c4"
+          ]
+        },
+        {
+          "name": "london",
+          "repeat": 2,
+          "fen": "rnbq1rk1/ppp2ppp/3bpn2/3p4/3P4/3BPNB1/PPP2PPP/RN1QK2R b KQ - 4 6",
+          "move": "c8d7",
+          "san": "Bd7",
+          "elapsed": 0.058994708000682294,
+          "depth": 6,
+          "nodes": 43081,
+          "score": "PovScore(Cp(-14), BLACK)",
+          "pv": [
+            "c8d7",
+            "b1c3",
+            "b8c6",
+            "g3d6",
+            "c7d6",
+            "e1g1"
+          ]
+        },
+        {
+          "name": "london_centre",
+          "repeat": 2,
+          "fen": "r1bqk2r/pp3ppp/2nbpn2/2pp4/3P1B2/2P1PN2/PP1N1PPP/R2QKB1R w KQkq - 2 7",
+          "move": "f3e5",
+          "san": "Ne5",
+          "elapsed": 0.0737135419913102,
+          "depth": 6,
+          "nodes": 50469,
+          "score": "PovScore(Cp(-13), WHITE)",
+          "pv": [
+            "f3e5",
+            "e8g8",
+            "f1d3",
+            "c5c4",
+            "e5c6",
+            "b7c6"
+          ]
+        },
+        {
+          "name": "kiwipete",
+          "repeat": 2,
+          "fen": "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+          "move": "e2a6",
+          "san": "Bxa6",
+          "elapsed": 0.5083636659983313,
+          "depth": 6,
+          "nodes": 308154,
+          "score": "PovScore(Cp(+6), WHITE)",
+          "pv": [
+            "e2a6",
+            "b4c3",
+            "d2c3",
+            "e6d5",
+            "e1g1",
+            "h3g2"
+          ]
+        },
+        {
+          "name": "rook_ending",
+          "repeat": 2,
+          "fen": "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+          "move": "b4c4",
+          "san": "Rc4",
+          "elapsed": 0.03262108299531974,
+          "depth": 6,
+          "nodes": 35401,
+          "score": "PovScore(Cp(+37), WHITE)",
+          "pv": [
+            "b4c4",
+            "h5h7",
+            "c4f4",
+            "h4g3",
+            "e2e3",
+            "g3g2",
+            "a5b4"
+          ]
+        },
+        {
+          "name": "promotion",
+          "repeat": 2,
+          "fen": "4k3/P7/8/8/8/8/7p/4K3 w - - 0 1",
+          "move": "a7a8q",
+          "san": "a8=Q+",
+          "elapsed": 0.02744100001291372,
+          "depth": 6,
+          "nodes": 30363,
+          "score": "PovScore(Cp(+976), WHITE)",
+          "pv": [
+            "a7a8q",
+            "e8d7",
+            "a8h1",
+            "d7e7",
+            "h1h2",
+            "e7e6",
+            "h2e2",
+            "e6d5"
+          ]
+        },
+        {
+          "name": "knight_fork",
+          "repeat": 2,
+          "fen": "r3k3/pp3ppp/8/3N4/8/8/PPP2PPP/4K3 w q - 0 1",
+          "move": "d5c7",
+          "san": "Nc7+",
+          "elapsed": 0.010623750000377186,
+          "depth": 6,
+          "nodes": 10440,
+          "score": "PovScore(Cp(+356), WHITE)",
+          "pv": [
+            "d5c7",
+            "e8e7",
+            "c7a8",
+            "e7d6",
+            "e1d2",
+            "b7b5",
+            "d2d3"
+          ]
+        }
+      ]
+    }
+  }
+}

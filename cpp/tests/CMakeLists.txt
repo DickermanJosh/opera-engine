@@ -9,6 +9,7 @@ include_directories(../include)
 
 # Test sources
 set(TEST_SOURCES
+    AttackingPrinciplesTest.cpp
     CoreRegressionTest.cpp
     BoardTest.cpp
     MoveGenTest.cpp

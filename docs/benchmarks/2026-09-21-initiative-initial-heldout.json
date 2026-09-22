@@ -1,0 +1,166 @@
+{
+  "candidate_sha256": "f25fd3a2303fbaa1e5ddcd9f944f7b7deb7899a807713bf4d132ff039e5f3596",
+  "baseline_sha256": "d6801f08e41ab3e77c6dacf41aa6baf5cfd44576e1e713568fb637d189f03bc2",
+  "morphy": true,
+  "baseline_morphy": true,
+  "baseline_name": "Opera dd001bd",
+  "movetime": 0.1,
+  "summary": {
+    "win": 4,
+    "draw": 0,
+    "loss": 4,
+    "unfinished": 0
+  },
+  "games": [
+    {
+      "opening": "Ruy Lopez",
+      "candidate_color": "white",
+      "result": "1-0",
+      "candidate_result": "win",
+      "plies": 163,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 10,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 10,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Ruy Lopez",
+      "candidate_color": "black",
+      "result": "1-0",
+      "candidate_result": "loss",
+      "plies": 109,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 6,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 14,
+          "san": "O-O-O"
+        }
+      ]
+    },
+    {
+      "opening": "French",
+      "candidate_color": "white",
+      "result": "1-0",
+      "candidate_result": "win",
+      "plies": 139,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 6,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 11,
+          "san": "O-O-O"
+        }
+      ]
+    },
+    {
+      "opening": "French",
+      "candidate_color": "black",
+      "result": "0-1",
+      "candidate_result": "win",
+      "plies": 56,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 7,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 12,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Caro-Kann",
+      "candidate_color": "white",
+      "result": "0-1",
+      "candidate_result": "loss",
+      "plies": 146,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 13,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Caro-Kann",
+      "candidate_color": "black",
+      "result": "0-1",
+      "candidate_result": "win",
+      "plies": 174,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 11,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 16,
+          "san": "O-O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Pirc",
+      "candidate_color": "white",
+      "result": "0-1",
+      "candidate_result": "loss",
+      "plies": 104,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 6,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Pirc",
+      "candidate_color": "black",
+      "result": "1-0",
+      "candidate_result": "loss",
+      "plies": 135,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 6,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 6,
+          "san": "O-O"
+        }
+      ]
+    }
+  ]
+}

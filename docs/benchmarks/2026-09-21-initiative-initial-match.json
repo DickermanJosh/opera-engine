@@ -1,0 +1,166 @@
+{
+  "candidate_sha256": "f25fd3a2303fbaa1e5ddcd9f944f7b7deb7899a807713bf4d132ff039e5f3596",
+  "baseline_sha256": "d6801f08e41ab3e77c6dacf41aa6baf5cfd44576e1e713568fb637d189f03bc2",
+  "morphy": true,
+  "baseline_morphy": true,
+  "baseline_name": "Opera dd001bd",
+  "movetime": 0.1,
+  "summary": {
+    "win": 1,
+    "draw": 3,
+    "loss": 4,
+    "unfinished": 0
+  },
+  "games": [
+    {
+      "opening": "Open game",
+      "candidate_color": "white",
+      "result": "0-1",
+      "candidate_result": "loss",
+      "plies": 148,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 12,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Open game",
+      "candidate_color": "black",
+      "result": "1-0",
+      "candidate_result": "loss",
+      "plies": 129,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 6,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 6,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "London",
+      "candidate_color": "white",
+      "result": "0-1",
+      "candidate_result": "loss",
+      "plies": 176,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 5,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 8,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "London",
+      "candidate_color": "black",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 33,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 8,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 8,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Queen's gambit",
+      "candidate_color": "white",
+      "result": "0-1",
+      "candidate_result": "loss",
+      "plies": 78,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 8,
+          "san": "O-O"
+        },
+        {
+          "side": "candidate",
+          "move": 14,
+          "san": "O-O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Queen's gambit",
+      "candidate_color": "black",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 39,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 6,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 8,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Sicilian",
+      "candidate_color": "white",
+      "result": "1-0",
+      "candidate_result": "win",
+      "plies": 53,
+      "termination": "CHECKMATE",
+      "castling": [
+        {
+          "side": "candidate",
+          "move": 8,
+          "san": "O-O"
+        },
+        {
+          "side": "baseline",
+          "move": 10,
+          "san": "O-O"
+        }
+      ]
+    },
+    {
+      "opening": "Sicilian",
+      "candidate_color": "black",
+      "result": "1/2-1/2",
+      "candidate_result": "draw",
+      "plies": 86,
+      "termination": "THREEFOLD_REPETITION",
+      "castling": [
+        {
+          "side": "baseline",
+          "move": 14,
+          "san": "O-O-O"
+        }
+      ]
+    }
+  ]
+}
